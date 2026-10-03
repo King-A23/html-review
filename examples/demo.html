@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>纸间 · 把想法写在页面上</title>
+  <style>
+    :root{color-scheme:light;--ink:#202b36;--muted:#62717b;--paper:#f6f5f0;--accent:#32594b;--line:#d9ded7}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.7}a{color:var(--accent)}button,a{touch-action:manipulation}button:focus-visible,a:focus-visible{outline:3px solid #ab6c32;outline-offset:4px}.shell{width:min(1120px,calc(100% - 64px));margin:auto}header{display:flex;align-items:center;justify-content:space-between;padding:28px 0;border-bottom:1px solid var(--line)}.brand{font-size:22px;font-weight:750;letter-spacing:.12em;text-decoration:none;color:var(--ink)}.brand small{display:inline-block;margin-left:12px;font-size:11px;font-weight:500;letter-spacing:.16em;color:var(--muted)}nav{display:flex;gap:24px;font-size:14px}nav a{text-decoration:none}.hero{display:grid;grid-template-columns:1.3fr 1fr;gap:56px;align-items:center;padding:76px 0 64px}.eyebrow{font-size:12px;letter-spacing:.16em;font-weight:700;color:var(--accent)}h1{font-size:clamp(34px,4.5vw,58px);font-weight:650;line-height:1.22;letter-spacing:-.035em;margin:18px 0 24px}h1 span{display:block;color:var(--accent)}.lead{font-size:18px;color:var(--muted);max-width:510px}.lead strong{font-weight:600;color:var(--ink)}.hero-art{width:100%;height:auto;display:block;border-radius:24px;background:#e5eadd}.hero-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:28px}button{font:inherit;cursor:pointer}.primary{border:0;border-radius:8px;background:var(--accent);color:white;padding:11px 20px;font-size:14px}.count{color:var(--muted);font-size:13px}section{scroll-margin-top:20px}.section-heading{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:24px}.section-heading h2{font-size:25px;letter-spacing:-.025em;margin:0}.section-heading p{font-size:14px;color:var(--muted);margin:0}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.card{padding:28px;background:#fff;border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;min-height:252px}.number{font-family:ui-monospace,monospace;color:#798879;font-size:12px}.card h3{font-size:20px;font-weight:650;margin:24px 0 10px}.card p{font-size:14px;color:var(--muted);margin:0 0 20px}.card a{font-size:13px;font-weight:650;text-decoration:none;margin-top:auto;align-self:start}.note{margin:44px 0 56px;padding:24px 28px;background:#e8ede5;border-left:3px solid var(--accent);border-radius:0 8px 8px 0}.note p{margin:0;font-size:15px}.note span{font-weight:650}.note small{display:block;margin-top:10px;color:var(--muted);font-size:12px}footer{display:flex;justify-content:space-between;gap:20px;padding:22px 0 32px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}@media(max-width:720px){.shell{width:calc(100% - 36px)}header{padding:20px 0}.brand small{display:none}nav{gap:15px}.hero{grid-template-columns:1fr;padding:42px 0;gap:28px}.hero-art{max-height:280px}.cards{grid-template-columns:1fr;gap:16px}.card{min-height:200px}.section-heading{display:block}.section-heading p{margin-top:8px}.note{margin:28px 0 36px}footer{flex-direction:column;gap:6px}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <a class="brand" href="#main">纸间<small>BETWEEN THE LINES</small></a>
+      <nav aria-label="主导航"><a href="#process">工作方式</a><a href="#about">关于这个页面</a></nav>
+    </header>
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div>
+          <div class="eyebrow">一个页面，一次清楚的对话</div>
+          <h1 id="hero-title">让想法有落点，<span>让修改有方向。</span></h1>
+          <p class="lead" id="hero-description">把阅读时的小发现，变成下一版的好变化。选中文字、标记元素，再写下<strong>值得被认真理解的意见</strong>。✍️</p>
+          <div class="hero-actions"><button type="button" class="primary" id="demo-button">试试页面交互</button><output class="count" id="demo-count" aria-live="polite">已点击 0 次</output></div>
+        </div>
+        <svg id="hero-illustration" class="hero-art" viewBox="0 0 430 340" role="img" aria-labelledby="art-title art-description" xmlns="http://www.w3.org/2000/svg">
+          <title id="art-title">纸张与批注卡片</title><desc id="art-description">绿色背景上，一页文字与一张橙色便笺相互连接，表示将阅读反馈交给下一次修改。</desc>
+          <rect width="430" height="340" fill="#e5eadd"/><circle cx="358" cy="61" r="78" fill="#d8e0cd"/><circle cx="41" cy="301" r="99" fill="#d7e0d5"/>
+          <g transform="translate(92 50) rotate(-6 110 120)"><rect x="7" y="8" width="205" height="249" rx="10" fill="#c9d3c5"/><rect width="205" height="249" rx="10" fill="#fffef9"/><rect x="25" y="29" width="80" height="10" rx="5" fill="#32594b"/><path d="M25 69H178M25 90H159M25 111H175M25 151H177M25 172H135M25 193H167" stroke="#d0d7ce" stroke-width="7" stroke-linecap="round"/><rect x="20" y="96" width="146" height="25" rx="4" fill="#f0cf79" opacity=".65"/></g>
+          <path d="M250 147Q302 141 316 182" fill="none" stroke="#a46d43" stroke-width="2" stroke-dasharray="5 5"/>
+          <g transform="translate(232 188) rotate(5 65 50)"><rect x="4" y="5" width="143" height="97" rx="9" fill="#c3cabc"/><rect width="143" height="97" rx="9" fill="#edcca9"/><path d="M21 28H121M21 47H105M21 66H83" stroke="#ac744f" stroke-width="5" stroke-linecap="round"/></g>
+          <circle cx="76" cy="63" r="8" fill="#a7b894"/><path d="M336 115v18m-9-9h18" stroke="#809775" stroke-width="2"/>
+        </svg>
+      </section>
+      <section id="process" aria-labelledby="process-title">
+        <div class="section-heading"><h2 id="process-title">从发现，到改好</h2><p>把反馈放回它发生的地方。</p></div>
+        <div class="cards">
+          <article class="card" id="card-read"><span class="number">01 / READ</span><h3>认真阅读</h3><p>从真实的渲染结果出发，看文字是否清楚，体验是否顺手。</p><a href="#about">了解详情 →</a></article>
+          <article class="card" id="card-note"><span class="number">02 / ANNOTATE</span><h3>具体表达</h3><p>把意见和原文放在一起，记录你希望改变的内容与原因。</p><a href="#about">了解详情 →</a></article>
+          <article class="card" id="card-collaborate"><span class="number">03 / REFINE</span><h3>协作修改</h3><p>把带批注的副本交给伙伴，让每一处修改都有明确的依据。</p><a href="#about">了解详情 →</a></article>
+        </div>
+      </section>
+      <section class="note" id="about" aria-label="关于示例">
+        <p id="cross-node-text">每一条<span>具体的建议</span>，都让<em>下一次修改</em>更清楚。</p>
+        <small>这是一个完全独立的演示 HTML。你可以批注文案、插图、按钮和卡片布局；点击按钮时计数会更新。</small>
+      </section>
+    </main>
+    <footer><span>纸间 · 让反馈留在页面上</span><span>LOCAL FIRST / MADE FOR CLEARER FEEDBACK</span></footer>
+  </div>
+  <script>
+    (() => {
+      let clicks = 0;
+      document.getElementById('demo-button').addEventListener('click', () => {
+        clicks += 1;
+        document.getElementById('demo-count').textContent = `已点击 ${clicks} 次`;
+      });
+    })();
+  </script>
+</body>
+</html>

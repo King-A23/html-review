@@ -1,0 +1,1559 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>demo.html · HTML 批注</title>
+  <style>
+:root{font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif;color:#26312f;background:#f2f3ee;font-synthesis:none;font-size:14px;--accent:#c65330;--accent-dark:#a63f20;--line:#dce1d9;--muted:#748078;--surface:#fff;--soft:#f5f6f1}
+*{box-sizing:border-box}body{margin:0}button,select,textarea{font:inherit}button{border:1px solid var(--line);border-radius:7px;padding:9px 13px;background:white;color:inherit;cursor:pointer;transition:background .15s,border-color .15s}button:hover{background:#f5f6f1;border-color:#a9b3a7}button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #e8a98a;outline-offset:2px}button.primary{background:var(--accent);border-color:var(--accent);color:white}button.primary:hover:not(:disabled){background:var(--accent-dark)}button.quiet{border-color:transparent;background:transparent}.text-button{border:none;padding:3px 0;background:transparent;color:var(--accent);font-size:12px}.text-button:hover{background:transparent;color:var(--accent-dark);text-decoration:underline}[hidden]{display:none!important}.app-header{height:76px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;background:#fff;border-bottom:1px solid var(--line);gap:20px}.brand{display:flex;gap:11px;align-items:center;white-space:nowrap}.brand-icon{width:36px;height:36px;background:#fcf0e9;color:var(--accent);display:grid;place-items:center;font-size:29px;border-radius:10px}.brand strong{font-size:18px;letter-spacing:.02em;display:block}.brand-subtitle{display:block;font-size:11px;color:var(--muted);margin-top:3px}.header-actions{display:flex;align-items:center;gap:9px}.workspace{display:grid;grid-template-columns:334px minmax(0,1fr);height:calc(100dvh - 76px);min-height:550px}.sidebar{display:flex;flex-direction:column;overflow:auto;background:var(--surface);border-right:1px solid var(--line)}.source-info{padding:23px 22px 19px;border-bottom:1px solid var(--line)}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.13em;font-weight:700;color:var(--muted)}h1{font-size:17px;margin:8px 0 7px;overflow-wrap:anywhere}h2{font-size:14px;margin:0}.muted{color:var(--muted);font-size:11px;line-height:1.7}.version{font-family:Consolas,monospace;font-size:10px;color:#899185;margin-top:6px;word-break:break-all}.editor-section{padding:20px 22px;border-bottom:1px solid var(--line)}.section-heading{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:14px}.mode-tabs{display:grid;grid-template-columns:repeat(4,1fr);background:#f1f3ef;padding:4px;gap:3px;border-radius:8px}.mode-tabs button{font-size:12px;padding:7px 4px;border:none;background:transparent;color:#798175}.mode-tabs button[aria-pressed=true]{background:white;box-shadow:0 1px 4px #27312412;color:#26312f;font-weight:600}.mode-hint{font-size:11px;color:#7b857a;line-height:1.7;min-height:36px;margin:11px 0 15px}.field-label{display:block;font-size:12px;font-weight:600;margin:12px 0 8px}.field-label select{margin-top:7px;width:100%}select{max-width:100%;border:1px solid var(--line);background:white;border-radius:6px;padding:7px;color:#505a50;font-size:12px}textarea{width:100%;resize:vertical;min-height:94px;max-height:260px;line-height:1.7;padding:11px 12px;border:1px solid #d9dfd5;border-radius:7px;background:#fcfdfa;color:#26312f;font-size:12px}textarea::placeholder{color:#9ca397}textarea:disabled{background:#f6f7f3}.editor-actions{display:flex;align-items:center;gap:12px;margin-top:10px}.editor-actions button{font-size:12px;padding:8px 16px}.target-preview{margin-bottom:15px;background:#fff8f0;border-left:3px solid #d88b58;border-radius:3px;padding:10px 12px}.tag{font-size:10px;font-weight:600;color:#aa603b}.target-preview p{font-size:12px;line-height:1.7;margin:5px 0;white-space:pre-wrap;max-height:110px;overflow:auto;overflow-wrap:anywhere}.target-preview code{font-size:10px;color:#9a7e65;display:block;overflow-wrap:anywhere;max-height:44px;overflow:auto}.target-preview button{margin-top:7px;display:block}.annotations-section{padding:20px 22px;flex:1}.count{font-size:11px;font-weight:500;color:var(--muted);margin-left:5px}.empty-list{font-size:12px;color:#9aa18f;line-height:1.9;padding:14px 0}.annotation-card{border:1px solid var(--line);padding:12px;border-radius:8px;margin-bottom:10px;background:#fff}.annotation-card.active{border-color:#dc9875;background:#fffbf7}.annotation-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.annotation-number{font-size:10px;color:#a2aa9b}.annotation-comment{font-size:12px;line-height:1.65;margin:9px 0;white-space:pre-wrap;overflow-wrap:anywhere}.annotation-quote{font-size:10px;line-height:1.7;color:#8d967f;border-left:2px solid #e0e6d8;padding-left:8px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:53px;overflow:hidden}.annotation-actions{display:flex;gap:16px;align-items:center;margin-top:9px}.annotation-actions button{font-size:11px}.annotation-actions .delete-button{margin-left:auto;color:#91968a}.location-status{font-size:10px;color:#87917f;margin-top:8px}.location-status.missing,.location-status.ambiguous{color:#b54830}.sidebar-footer{padding:14px 22px;border-top:1px solid var(--line);font-size:10px;color:#90998b;display:grid;gap:6px;background:#fdfefa}.privacy-dot{color:#789675}.preview-section{display:flex;flex-direction:column;min-width:0;min-height:0}.preview-toolbar{height:51px;flex-shrink:0;border-bottom:1px solid var(--line);padding:0 24px;display:flex;align-items:center;justify-content:space-between;background:#f9faf6;color:#788274;font-size:11px;gap:12px}.preview-controls{display:flex;align-items:center;gap:10px}.preview-controls select{padding:5px;font-size:11px}.preview-stage{position:relative;flex:1;min-height:0;overflow:auto;display:flex;align-items:stretch;justify-content:flex-start;padding:18px}.preview-stage:has(iframe[hidden]){align-items:center;justify-content:center}.preview-stage iframe{border:0;background:white;display:block;min-width:0;width:100%;flex-shrink:0;height:100%;min-height:350px;margin:0 auto;box-shadow:0 2px 18px #3541320a;border-radius:3px}.welcome{padding:28px 20px 42px;max-width:580px;text-align:center}.welcome-mark{font-family:Consolas,monospace;color:#cbd2c3;font-size:47px;letter-spacing:5px;margin-bottom:28px}.welcome-mark span{color:var(--accent)}.welcome h2{font-size:38px;font-weight:550;line-height:1.35;letter-spacing:-.02em;margin:14px 0 18px;color:#394535}.welcome>p{font-size:13px;line-height:1.9;color:#85907b}.welcome>.primary{margin:17px 0 32px;padding:11px 24px;font-size:13px}.welcome-steps{display:flex;gap:24px;justify-content:center;border-top:1px solid #dce2d5;padding-top:24px;font-size:11px;color:#86917b}.welcome-steps b{font-size:10px;color:#b3bca6;margin-right:6px}.welcome p.welcome-note{font-size:10px;margin-top:22px;color:#a0a990}.warnings,.status{font-size:12px;line-height:1.65;padding:10px 22px;flex-shrink:0;max-height:130px;overflow:auto;overflow-wrap:anywhere}.warnings{background:#fff6e4;color:#8a6528;border-bottom:1px solid #ebdec4}.warnings ul{padding-left:18px;margin:4px 0}.status{background:#edf4ed;color:#52745a;border-bottom:1px solid #d1e1cf}.status.error{color:#ac4534;background:#fff0ec;border-color:#ecd0c8}dialog{border:1px solid var(--line);border-radius:12px;max-width:680px;width:calc(100% - 36px);padding:0;box-shadow:0 20px 80px #15231530;color:#384331}dialog::backdrop{background:#25302755;backdrop-filter:blur(2px)}.dialog-heading{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.dialog-heading h2{font-size:17px}.dialog-heading button{font-size:24px;border:none;padding:0 3px;line-height:1}.dialog-body{padding:10px 24px 24px;max-height:70dvh;overflow:auto;font-size:13px;line-height:1.9}.dialog-body ol{padding-left:20px}.dialog-body li{margin:14px 0}.dialog-body p{color:#7b8474}.dialog-body pre{font-family:Consolas,monospace;font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f7f1;padding:16px;border-radius:6px}
+@media(max-width:950px){.brand-subtitle{display:none}.app-header{padding:0 16px}.header-actions{gap:5px}.header-actions button{font-size:12px;padding:8px 10px}.workspace{grid-template-columns:300px minmax(0,1fr)}.source-info,.editor-section,.annotations-section{padding-left:17px;padding-right:17px}.preview-toolbar{padding:0 12px}.preview-stage{padding:10px}.welcome h2{font-size:30px}.welcome-steps{gap:12px}.preview-controls label{display:none}}
+@media(max-width:700px){.app-header{height:auto;min-height:74px;padding:13px;flex-wrap:wrap;gap:12px}.header-actions{width:100%;flex-wrap:wrap}.header-actions .quiet{margin-left:auto;order:5}.workspace{height:auto;min-height:0;display:flex;flex-direction:column-reverse}.preview-section{height:62dvh;min-height:400px}.sidebar{border-right:0;border-top:1px solid var(--line)}.source-info{padding-top:16px}.editor-section{padding-top:16px}.welcome{padding:15px}.welcome-mark{display:none}.welcome h2{font-size:26px}.welcome>.primary{margin:7px 0 18px}.welcome-steps{display:none}.welcome p.welcome-note{margin:10px 0}.preview-toolbar{height:44px}}
+
+</style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand"><span class="brand-icon" aria-hidden="true">✎</span><div><strong>HTML 批注</strong><span class="brand-subtitle">把修改意见留在页面上</span></div></div>
+    <div class="header-actions">
+      <button id="help-button" class="quiet" type="button">使用说明</button>
+      <button id="open-button" type="button" disabled="">打开 HTML</button>
+      <button id="folder-button" type="button" disabled="">导入文件夹</button>
+      <button id="download-button" class="primary" type="button" disabled="">↓ 下载批注副本</button>
+    </div>
+    <input id="file-input" type="file" accept=".html,.htm,text/html" hidden="" style="">
+    <input id="folder-input" type="file" webkitdirectory="" multiple="" hidden="" style="">
+  </header>
+  <main class="workspace">
+    <aside class="sidebar" aria-label="批注工作区">
+      <section class="source-info">
+        <span class="eyebrow">当前文件</span>
+        <h1 id="source-name">demo.html</h1>
+        <div id="source-meta" class="muted">7.5 KiB · utf-8 · 0 个内嵌资源</div>
+        <div id="source-version" class="version" title="35e757fa036e5de0f4332c7cc88d8d056e97b801db177eb1dec3c7c25606a72e">SHA-256 35e757fa036e5de0…</div>
+        <label id="entry-label" class="field-label" hidden="">文件夹中的页面<select id="entry-select" disabled=""></select></label>
+      </section>
+      <section class="editor-section">
+        <div class="section-heading"><h2 id="editor-title">添加批注</h2><button id="cancel-edit" class="text-button" type="button" hidden="">取消编辑</button></div>
+        <div class="mode-tabs" role="group" aria-label="批注模式">
+          <button type="button" data-mode="browse" aria-pressed="true">浏览</button>
+          <button type="button" data-mode="text" aria-pressed="false">文字</button>
+          <button type="button" data-mode="element" aria-pressed="false">元素</button>
+          <button type="button" data-mode="page" aria-pressed="false">整页</button>
+        </div>
+        <p id="mode-hint" class="mode-hint">可以正常阅读和点击页面。切换到文字或元素模式开始批注。</p>
+        <div id="target-preview" class="target-preview" hidden=""><span id="target-kind" class="tag">整页</span><p id="target-text">整页 · 纸间 · 把想法写在页面上</p><code id="target-selector">视口 1070 × 796px</code><button id="parent-target" class="text-button" type="button" hidden="">↑ 选父级容器</button></div>
+        <label class="field-label" for="comment-input">修改意见</label>
+        <textarea id="comment-input" rows="4" maxlength="20000" placeholder="例如：将这段介绍缩短为两句话，并保留核心结论。" style="" disabled=""></textarea>
+        <div class="editor-actions"><button id="save-button" class="primary" type="button" disabled="">保存批注</button><span id="draft-status" class="muted"></span></div>
+      </section>
+      <section class="annotations-section">
+        <div class="section-heading"><h2>批注 <span id="annotation-count" class="count">3</span></h2><button id="data-button" class="text-button" type="button" disabled="">查看数据</button></div>
+        <div id="annotation-list" class="annotation-list"></div>
+      </section>
+      <footer class="sidebar-footer"><span id="save-state">● 有未下载的修改，请下载副本保存</span><span class="privacy-dot">● 仅在本地处理</span></footer>
+    </aside>
+    <section class="preview-section" aria-label="HTML 页面预览">
+      <div class="preview-toolbar"><span id="preview-label">demo.html</span><div class="preview-controls"><label for="preview-width">视口</label><select id="preview-width"><option value="fluid">自适应</option><option value="390">手机 390px</option><option value="768">平板 768px</option><option value="1280">桌面 1280px</option></select><button id="reload-preview" class="text-button" type="button" disabled="">重载页面</button></div></div>
+      <div id="warnings" class="warnings" hidden=""></div>
+      <div id="status" class="status" role="status" aria-live="polite" hidden="">正在处理本地文件…</div>
+      <div id="preview-stage" class="preview-stage">
+        <div id="welcome" class="welcome" hidden="">
+          <div class="welcome-mark" aria-hidden="true">⟦ <span>✎</span> ⟧</div>
+          <span class="eyebrow">本地 HTML 审阅工具</span>
+          <h2>打开页面，<br>说明想怎么改。</h2>
+          <p>选择文字、点选元素，或描述整页布局。<br>下载带批注的副本，交给任何 coding agent。</p>
+          <button id="example-button" class="primary" type="button" disabled="">体验示例 →</button>
+          <div class="welcome-steps"><span><b>01</b> 打开 HTML</span><span><b>02</b> 留下批注</span><span><b>03</b> 下载副本</span></div>
+          <p class="welcome-note">支持直接双击打开 · 无需服务器<br>带相对图片或样式的页面，请使用「导入文件夹」。</p>
+        </div>
+        <iframe id="preview-frame" title="原始 HTML 页面" sandbox="allow-scripts" referrerpolicy="no-referrer" style="width: 100%; min-width: 0px;" hidden=""></iframe>
+      </div>
+    </section>
+  </main>
+  <dialog id="help-dialog"><div class="dialog-heading"><h2>让修改意见有明确的落点</h2><button type="button" data-close="help-dialog" aria-label="关闭使用说明">×</button></div><div class="dialog-body"><ol><li><b>打开 HTML：</b>页面在右侧沙箱中渲染；带相对资源时导入整个文件夹。</li><li><b>留下批注：</b>文字模式拖选原文，元素模式点击目标。布局问题可选父级容器，或使用整页模式并记录当前视口。</li><li><b>保存与下载：</b>先保存批注，再下载副本。关闭页面前请下载；修改不会自动写回磁盘。</li><li><b>继续编辑：</b>直接打开下载的 .review.html，或者再次导入本工具，即可编辑、删除和追加批注。</li><li><b>交给 agent：</b>提供批注副本和原 HTML。让 agent 读取 html-review-data JSON，校验 source.sha256，再结合原文、选择器和上下文修改原文件。</li></ol><p>预览允许原页面脚本运行，请只打开可信的 HTML。沙箱限制登录、存储、表单提交和页面跳转；动态资源请求、ES 模块、嵌套 iframe 等可能无法完全重现。原始文件字节始终单独保存。</p><p>目录导入会把该目录中的文件嵌入副本，请选只包含本页面所需资源的目录。单文件上限 20 MiB，文件夹总大小上限 50 MiB、最多 500 个文件。</p></div></dialog>
+  <dialog id="data-dialog"><div class="dialog-heading"><h2>结构化批注数据</h2><button type="button" data-close="data-dialog" aria-label="关闭批注数据">×</button></div><div class="dialog-body"><p>下载副本包含完整 JSON 和原始文件字节。下方为便于阅读的摘要，省略了 base64 内容。</p><pre id="data-preview"></pre></div></dialog>
+  <script id="html-review-data" type="application/json">{
+  "format": "html-review",
+  "schemaVersion": 1,
+  "createdAt": "2026-10-03T13:08:55.482Z",
+  "updatedAt": "2026-10-03T13:08:57.573Z",
+  "source": {
+    "name": "demo.html",
+    "path": "demo.html",
+    "byteLength": 7687,
+    "lastModified": 1791032008134,
+    "sha256": "35e757fa036e5de0f4332c7cc88d8d056e97b801db177eb1dec3c7c25606a72e",
+    "encoding": "utf-8",
+    "base64": "PCFkb2N0eXBlIGh0bWw+CjxodG1sIGxhbmc9InpoLUNOIj4KPGhlYWQ+CiAgPG1ldGEgY2hhcnNldD0idXRmLTgiPgogIDxtZXRhIG5hbWU9InZpZXdwb3J0IiBjb250ZW50PSJ3aWR0aD1kZXZpY2Utd2lkdGgsIGluaXRpYWwtc2NhbGU9MSI+CiAgPHRpdGxlPue6uOmXtCDCtyDmiormg7Pms5XlhpnlnKjpobXpnaLkuIo8L3RpdGxlPgogIDxzdHlsZT4KICAgIDpyb290e2NvbG9yLXNjaGVtZTpsaWdodDstLWluazojMjAyYjM2Oy0tbXV0ZWQ6IzYyNzE3YjstLXBhcGVyOiNmNmY1ZjA7LS1hY2NlbnQ6IzMyNTk0YjstLWxpbmU6I2Q5ZGVkN30KICAgICp7Ym94LXNpemluZzpib3JkZXItYm94fWJvZHl7bWFyZ2luOjA7YmFja2dyb3VuZDp2YXIoLS1wYXBlcik7Y29sb3I6dmFyKC0taW5rKTtmb250LWZhbWlseTpzeXN0ZW0tdWksLWFwcGxlLXN5c3RlbSwiU2Vnb2UgVUkiLCJNaWNyb3NvZnQgWWFIZWkiLHNhbnMtc2VyaWY7bGluZS1oZWlnaHQ6MS43fWF7Y29sb3I6dmFyKC0tYWNjZW50KX1idXR0b24sYXt0b3VjaC1hY3Rpb246bWFuaXB1bGF0aW9ufWJ1dHRvbjpmb2N1cy12aXNpYmxlLGE6Zm9jdXMtdmlzaWJsZXtvdXRsaW5lOjNweCBzb2xpZCAjYWI2YzMyO291dGxpbmUtb2Zmc2V0OjRweH0uc2hlbGx7d2lkdGg6bWluKDExMjBweCxjYWxjKDEwMCUgLSA2NHB4KSk7bWFyZ2luOmF1dG99aGVhZGVye2Rpc3BsYXk6ZmxleDthbGlnbi1pdGVtczpjZW50ZXI7anVzdGlmeS1jb250ZW50OnNwYWNlLWJldHdlZW47cGFkZGluZzoyOHB4IDA7Ym9yZGVyLWJvdHRvbToxcHggc29saWQgdmFyKC0tbGluZSl9LmJyYW5ke2ZvbnQtc2l6ZToyMnB4O2ZvbnQtd2VpZ2h0Ojc1MDtsZXR0ZXItc3BhY2luZzouMTJlbTt0ZXh0LWRlY29yYXRpb246bm9uZTtjb2xvcjp2YXIoLS1pbmspfS5icmFuZCBzbWFsbHtkaXNwbGF5OmlubGluZS1ibG9jazttYXJnaW4tbGVmdDoxMnB4O2ZvbnQtc2l6ZToxMXB4O2ZvbnQtd2VpZ2h0OjUwMDtsZXR0ZXItc3BhY2luZzouMTZlbTtjb2xvcjp2YXIoLS1tdXRlZCl9bmF2e2Rpc3BsYXk6ZmxleDtnYXA6MjRweDtmb250LXNpemU6MTRweH1uYXYgYXt0ZXh0LWRlY29yYXRpb246bm9uZX0uaGVyb3tkaXNwbGF5OmdyaWQ7Z3JpZC10ZW1wbGF0ZS1jb2x1bW5zOjEuM2ZyIDFmcjtnYXA6NTZweDthbGlnbi1pdGVtczpjZW50ZXI7cGFkZGluZzo3NnB4IDAgNjRweH0uZXllYnJvd3tmb250LXNpemU6MTJweDtsZXR0ZXItc3BhY2luZzouMTZlbTtmb250LXdlaWdodDo3MDA7Y29sb3I6dmFyKC0tYWNjZW50KX1oMXtmb250LXNpemU6Y2xhbXAoMzRweCw0LjV2dyw1OHB4KTtmb250LXdlaWdodDo2NTA7bGluZS1oZWlnaHQ6MS4yMjtsZXR0ZXItc3BhY2luZzotLjAzNWVtO21hcmdpbjoxOHB4IDAgMjRweH1oMSBzcGFue2Rpc3BsYXk6YmxvY2s7Y29sb3I6dmFyKC0tYWNjZW50KX0ubGVhZHtmb250LXNpemU6MThweDtjb2xvcjp2YXIoLS1tdXRlZCk7bWF4LXdpZHRoOjUxMHB4fS5sZWFkIHN0cm9uZ3tmb250LXdlaWdodDo2MDA7Y29sb3I6dmFyKC0taW5rKX0uaGVyby1hcnR7d2lkdGg6MTAwJTtoZWlnaHQ6YXV0bztkaXNwbGF5OmJsb2NrO2JvcmRlci1yYWRpdXM6MjRweDtiYWNrZ3JvdW5kOiNlNWVhZGR9Lmhlcm8tYWN0aW9uc3tkaXNwbGF5OmZsZXg7YWxpZ24taXRlbXM6Y2VudGVyO2dhcDoxOHB4O2ZsZXgtd3JhcDp3cmFwO21hcmdpbi10b3A6MjhweH1idXR0b257Zm9udDppbmhlcml0O2N1cnNvcjpwb2ludGVyfS5wcmltYXJ5e2JvcmRlcjowO2JvcmRlci1yYWRpdXM6OHB4O2JhY2tncm91bmQ6dmFyKC0tYWNjZW50KTtjb2xvcjp3aGl0ZTtwYWRkaW5nOjExcHggMjBweDtmb250LXNpemU6MTRweH0uY291bnR7Y29sb3I6dmFyKC0tbXV0ZWQpO2ZvbnQtc2l6ZToxM3B4fXNlY3Rpb257c2Nyb2xsLW1hcmdpbi10b3A6MjBweH0uc2VjdGlvbi1oZWFkaW5ne2Rpc3BsYXk6ZmxleDtqdXN0aWZ5LWNvbnRlbnQ6c3BhY2UtYmV0d2VlbjthbGlnbi1pdGVtczplbmQ7Z2FwOjI0cHg7bWFyZ2luLWJvdHRvbToyNHB4fS5zZWN0aW9uLWhlYWRpbmcgaDJ7Zm9udC1zaXplOjI1cHg7bGV0dGVyLXNwYWNpbmc6LS4wMjVlbTttYXJnaW46MH0uc2VjdGlvbi1oZWFkaW5nIHB7Zm9udC1zaXplOjE0cHg7Y29sb3I6dmFyKC0tbXV0ZWQpO21hcmdpbjowfS5jYXJkc3tkaXNwbGF5OmdyaWQ7Z3JpZC10ZW1wbGF0ZS1jb2x1bW5zOnJlcGVhdCgzLG1pbm1heCgwLDFmcikpO2dhcDoyMHB4fS5jYXJke3BhZGRpbmc6MjhweDtiYWNrZ3JvdW5kOiNmZmY7Ym9yZGVyOjFweCBzb2xpZCB2YXIoLS1saW5lKTtib3JkZXItcmFkaXVzOjEycHg7ZGlzcGxheTpmbGV4O2ZsZXgtZGlyZWN0aW9uOmNvbHVtbjttaW4taGVpZ2h0OjI1MnB4fS5udW1iZXJ7Zm9udC1mYW1pbHk6dWktbW9ub3NwYWNlLG1vbm9zcGFjZTtjb2xvcjojNzk4ODc5O2ZvbnQtc2l6ZToxMnB4fS5jYXJkIGgze2ZvbnQtc2l6ZToyMHB4O2ZvbnQtd2VpZ2h0OjY1MDttYXJnaW46MjRweCAwIDEwcHh9LmNhcmQgcHtmb250LXNpemU6MTRweDtjb2xvcjp2YXIoLS1tdXRlZCk7bWFyZ2luOjAgMCAyMHB4fS5jYXJkIGF7Zm9udC1zaXplOjEzcHg7Zm9udC13ZWlnaHQ6NjUwO3RleHQtZGVjb3JhdGlvbjpub25lO21hcmdpbi10b3A6YXV0bzthbGlnbi1zZWxmOnN0YXJ0fS5ub3Rle21hcmdpbjo0NHB4IDAgNTZweDtwYWRkaW5nOjI0cHggMjhweDtiYWNrZ3JvdW5kOiNlOGVkZTU7Ym9yZGVyLWxlZnQ6M3B4IHNvbGlkIHZhcigtLWFjY2VudCk7Ym9yZGVyLXJhZGl1czowIDhweCA4cHggMH0ubm90ZSBwe21hcmdpbjowO2ZvbnQtc2l6ZToxNXB4fS5ub3RlIHNwYW57Zm9udC13ZWlnaHQ6NjUwfS5ub3RlIHNtYWxse2Rpc3BsYXk6YmxvY2s7bWFyZ2luLXRvcDoxMHB4O2NvbG9yOnZhcigtLW11dGVkKTtmb250LXNpemU6MTJweH1mb290ZXJ7ZGlzcGxheTpmbGV4O2p1c3RpZnktY29udGVudDpzcGFjZS1iZXR3ZWVuO2dhcDoyMHB4O3BhZGRpbmc6MjJweCAwIDMycHg7Ym9yZGVyLXRvcDoxcHggc29saWQgdmFyKC0tbGluZSk7Y29sb3I6dmFyKC0tbXV0ZWQpO2ZvbnQtc2l6ZToxMnB4fUBtZWRpYShtYXgtd2lkdGg6NzIwcHgpey5zaGVsbHt3aWR0aDpjYWxjKDEwMCUgLSAzNnB4KX1oZWFkZXJ7cGFkZGluZzoyMHB4IDB9LmJyYW5kIHNtYWxse2Rpc3BsYXk6bm9uZX1uYXZ7Z2FwOjE1cHh9Lmhlcm97Z3JpZC10ZW1wbGF0ZS1jb2x1bW5zOjFmcjtwYWRkaW5nOjQycHggMDtnYXA6MjhweH0uaGVyby1hcnR7bWF4LWhlaWdodDoyODBweH0uY2FyZHN7Z3JpZC10ZW1wbGF0ZS1jb2x1bW5zOjFmcjtnYXA6MTZweH0uY2FyZHttaW4taGVpZ2h0OjIwMHB4fS5zZWN0aW9uLWhlYWRpbmd7ZGlzcGxheTpibG9ja30uc2VjdGlvbi1oZWFkaW5nIHB7bWFyZ2luLXRvcDo4cHh9Lm5vdGV7bWFyZ2luOjI4cHggMCAzNnB4fWZvb3RlcntmbGV4LWRpcmVjdGlvbjpjb2x1bW47Z2FwOjZweH19CiAgPC9zdHlsZT4KPC9oZWFkPgo8Ym9keT4KICA8ZGl2IGNsYXNzPSJzaGVsbCI+CiAgICA8aGVhZGVyPgogICAgICA8YSBjbGFzcz0iYnJhbmQiIGhyZWY9IiNtYWluIj7nurjpl7Q8c21hbGw+QkVUV0VFTiBUSEUgTElORVM8L3NtYWxsPjwvYT4KICAgICAgPG5hdiBhcmlhLWxhYmVsPSLkuLvlr7zoiKoiPjxhIGhyZWY9IiNwcm9jZXNzIj7lt6XkvZzmlrnlvI88L2E+PGEgaHJlZj0iI2Fib3V0Ij7lhbPkuo7ov5nkuKrpobXpnaI8L2E+PC9uYXY+CiAgICA8L2hlYWRlcj4KICAgIDxtYWluIGlkPSJtYWluIj4KICAgICAgPHNlY3Rpb24gY2xhc3M9Imhlcm8iIGFyaWEtbGFiZWxsZWRieT0iaGVyby10aXRsZSI+CiAgICAgICAgPGRpdj4KICAgICAgICAgIDxkaXYgY2xhc3M9ImV5ZWJyb3ciPuS4gOS4qumhtemdou+8jOS4gOasoea4healmueahOWvueivnTwvZGl2PgogICAgICAgICAgPGgxIGlkPSJoZXJvLXRpdGxlIj7orqnmg7Pms5XmnInokL3ngrnvvIw8c3Bhbj7orqnkv67mlLnmnInmlrnlkJHjgII8L3NwYW4+PC9oMT4KICAgICAgICAgIDxwIGNsYXNzPSJsZWFkIiBpZD0iaGVyby1kZXNjcmlwdGlvbiI+5oqK6ZiF6K+75pe255qE5bCP5Y+R546w77yM5Y+Y5oiQ5LiL5LiA54mI55qE5aW95Y+Y5YyW44CC6YCJ5Lit5paH5a2X44CB5qCH6K6w5YWD57Sg77yM5YaN5YaZ5LiLPHN0cm9uZz7lgLzlvpfooqvorqTnnJ/nkIbop6PnmoTmhI/op4E8L3N0cm9uZz7jgILinI3vuI88L3A+CiAgICAgICAgICA8ZGl2IGNsYXNzPSJoZXJvLWFjdGlvbnMiPjxidXR0b24gdHlwZT0iYnV0dG9uIiBjbGFzcz0icHJpbWFyeSIgaWQ9ImRlbW8tYnV0dG9uIj7or5Xor5XpobXpnaLkuqTkupI8L2J1dHRvbj48b3V0cHV0IGNsYXNzPSJjb3VudCIgaWQ9ImRlbW8tY291bnQiIGFyaWEtbGl2ZT0icG9saXRlIj7lt7Lngrnlh7sgMCDmrKE8L291dHB1dD48L2Rpdj4KICAgICAgICA8L2Rpdj4KICAgICAgICA8c3ZnIGlkPSJoZXJvLWlsbHVzdHJhdGlvbiIgY2xhc3M9Imhlcm8tYXJ0IiB2aWV3Qm94PSIwIDAgNDMwIDM0MCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9ImFydC10aXRsZSBhcnQtZGVzY3JpcHRpb24iIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgICAgICAgICA8dGl0bGUgaWQ9ImFydC10aXRsZSI+57q45byg5LiO5om55rOo5Y2h54mHPC90aXRsZT48ZGVzYyBpZD0iYXJ0LWRlc2NyaXB0aW9uIj7nu7/oibLog4zmma/kuIrvvIzkuIDpobXmloflrZfkuI7kuIDlvKDmqZnoibLkvr/nrLrnm7jkupLov57mjqXvvIzooajnpLrlsIbpmIXor7vlj43ppojkuqTnu5nkuIvkuIDmrKHkv67mlLnjgII8L2Rlc2M+CiAgICAgICAgICA8cmVjdCB3aWR0aD0iNDMwIiBoZWlnaHQ9IjM0MCIgZmlsbD0iI2U1ZWFkZCIvPjxjaXJjbGUgY3g9IjM1OCIgY3k9IjYxIiByPSI3OCIgZmlsbD0iI2Q4ZTBjZCIvPjxjaXJjbGUgY3g9IjQxIiBjeT0iMzAxIiByPSI5OSIgZmlsbD0iI2Q3ZTBkNSIvPgogICAgICAgICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoOTIgNTApIHJvdGF0ZSgtNiAxMTAgMTIwKSI+PHJlY3QgeD0iNyIgeT0iOCIgd2lkdGg9IjIwNSIgaGVpZ2h0PSIyNDkiIHJ4PSIxMCIgZmlsbD0iI2M5ZDNjNSIvPjxyZWN0IHdpZHRoPSIyMDUiIGhlaWdodD0iMjQ5IiByeD0iMTAiIGZpbGw9IiNmZmZlZjkiLz48cmVjdCB4PSIyNSIgeT0iMjkiIHdpZHRoPSI4MCIgaGVpZ2h0PSIxMCIgcng9IjUiIGZpbGw9IiMzMjU5NGIiLz48cGF0aCBkPSJNMjUgNjlIMTc4TTI1IDkwSDE1OU0yNSAxMTFIMTc1TTI1IDE1MUgxNzdNMjUgMTcySDEzNU0yNSAxOTNIMTY3IiBzdHJva2U9IiNkMGQ3Y2UiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHJlY3QgeD0iMjAiIHk9Ijk2IiB3aWR0aD0iMTQ2IiBoZWlnaHQ9IjI1IiByeD0iNCIgZmlsbD0iI2YwY2Y3OSIgb3BhY2l0eT0iLjY1Ii8+PC9nPgogICAgICAgICAgPHBhdGggZD0iTTI1MCAxNDdRMzAyIDE0MSAzMTYgMTgyIiBmaWxsPSJub25lIiBzdHJva2U9IiNhNDZkNDMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWRhc2hhcnJheT0iNSA1Ii8+CiAgICAgICAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyMzIgMTg4KSByb3RhdGUoNSA2NSA1MCkiPjxyZWN0IHg9IjQiIHk9IjUiIHdpZHRoPSIxNDMiIGhlaWdodD0iOTciIHJ4PSI5IiBmaWxsPSIjYzNjYWJjIi8+PHJlY3Qgd2lkdGg9IjE0MyIgaGVpZ2h0PSI5NyIgcng9IjkiIGZpbGw9IiNlZGNjYTkiLz48cGF0aCBkPSJNMjEgMjhIMTIxTTIxIDQ3SDEwNU0yMSA2Nkg4MyIgc3Ryb2tlPSIjYWM3NDRmIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvZz4KICAgICAgICAgIDxjaXJjbGUgY3g9Ijc2IiBjeT0iNjMiIHI9IjgiIGZpbGw9IiNhN2I4OTQiLz48cGF0aCBkPSJNMzM2IDExNXYxOG0tOS05aDE4IiBzdHJva2U9IiM4MDk3NzUiIHN0cm9rZS13aWR0aD0iMiIvPgogICAgICAgIDwvc3ZnPgogICAgICA8L3NlY3Rpb24+CiAgICAgIDxzZWN0aW9uIGlkPSJwcm9jZXNzIiBhcmlhLWxhYmVsbGVkYnk9InByb2Nlc3MtdGl0bGUiPgogICAgICAgIDxkaXYgY2xhc3M9InNlY3Rpb24taGVhZGluZyI+PGgyIGlkPSJwcm9jZXNzLXRpdGxlIj7ku47lj5HnjrDvvIzliLDmlLnlpb08L2gyPjxwPuaKiuWPjemmiOaUvuWbnuWug+WPkeeUn+eahOWcsOaWueOAgjwvcD48L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJjYXJkcyI+CiAgICAgICAgICA8YXJ0aWNsZSBjbGFzcz0iY2FyZCIgaWQ9ImNhcmQtcmVhZCI+PHNwYW4gY2xhc3M9Im51bWJlciI+MDEgLyBSRUFEPC9zcGFuPjxoMz7orqTnnJ/pmIXor7s8L2gzPjxwPuS7juecn+WunueahOa4suafk+e7k+aenOWHuuWPke+8jOeci+aWh+Wtl+aYr+WQpua4healmu+8jOS9k+mqjOaYr+WQpumhuuaJi+OAgjwvcD48YSBocmVmPSIjYWJvdXQiPuS6huino+ivpuaDhSDihpI8L2E+PC9hcnRpY2xlPgogICAgICAgICAgPGFydGljbGUgY2xhc3M9ImNhcmQiIGlkPSJjYXJkLW5vdGUiPjxzcGFuIGNsYXNzPSJudW1iZXIiPjAyIC8gQU5OT1RBVEU8L3NwYW4+PGgzPuWFt+S9k+ihqOi+vjwvaDM+PHA+5oqK5oSP6KeB5ZKM5Y6f5paH5pS+5Zyo5LiA6LW377yM6K6w5b2V5L2g5biM5pyb5pS55Y+Y55qE5YaF5a655LiO5Y6f5Zug44CCPC9wPjxhIGhyZWY9IiNhYm91dCI+5LqG6Kej6K+m5oOFIOKGkjwvYT48L2FydGljbGU+CiAgICAgICAgICA8YXJ0aWNsZSBjbGFzcz0iY2FyZCIgaWQ9ImNhcmQtY29sbGFib3JhdGUiPjxzcGFuIGNsYXNzPSJudW1iZXIiPjAzIC8gUkVGSU5FPC9zcGFuPjxoMz7ljY/kvZzkv67mlLk8L2gzPjxwPuaKiuW4puaJueazqOeahOWJr+acrOS6pOe7meS8meS8tO+8jOiuqeavj+S4gOWkhOS/ruaUuemDveacieaYjuehrueahOS+neaNruOAgjwvcD48YSBocmVmPSIjYWJvdXQiPuS6huino+ivpuaDhSDihpI8L2E+PC9hcnRpY2xlPgogICAgICAgIDwvZGl2PgogICAgICA8L3NlY3Rpb24+CiAgICAgIDxzZWN0aW9uIGNsYXNzPSJub3RlIiBpZD0iYWJvdXQiIGFyaWEtbGFiZWw9IuWFs+S6juekuuS+iyI+CiAgICAgICAgPHAgaWQ9ImNyb3NzLW5vZGUtdGV4dCI+5q+P5LiA5p2hPHNwYW4+5YW35L2T55qE5bu66K6uPC9zcGFuPu+8jOmDveiuqTxlbT7kuIvkuIDmrKHkv67mlLk8L2VtPuabtOa4healmuOAgjwvcD4KICAgICAgICA8c21hbGw+6L+Z5piv5LiA5Liq5a6M5YWo54us56uL55qE5ryU56S6IEhUTUzjgILkvaDlj6/ku6Xmibnms6jmlofmoYjjgIHmj5Llm77jgIHmjInpkq7lkozljaHniYfluIPlsYDvvJvngrnlh7vmjInpkq7ml7borqHmlbDkvJrmm7TmlrDjgII8L3NtYWxsPgogICAgICA8L3NlY3Rpb24+CiAgICA8L21haW4+CiAgICA8Zm9vdGVyPjxzcGFuPue6uOmXtCDCtyDorqnlj43ppojnlZnlnKjpobXpnaLkuIo8L3NwYW4+PHNwYW4+TE9DQUwgRklSU1QgLyBNQURFIEZPUiBDTEVBUkVSIEZFRURCQUNLPC9zcGFuPjwvZm9vdGVyPgogIDwvZGl2PgogIDxzY3JpcHQ+CiAgICAoKCkgPT4gewogICAgICBsZXQgY2xpY2tzID0gMDsKICAgICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2RlbW8tYnV0dG9uJykuYWRkRXZlbnRMaXN0ZW5lcignY2xpY2snLCAoKSA9PiB7CiAgICAgICAgY2xpY2tzICs9IDE7CiAgICAgICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2RlbW8tY291bnQnKS50ZXh0Q29udGVudCA9IGDlt7Lngrnlh7sgJHtjbGlja3N9IOasoWA7CiAgICAgIH0pOwogICAgfSkoKTsKICA8L3NjcmlwdD4KPC9ib2R5Pgo8L2h0bWw+Cg=="
+  },
+  "resources": [],
+  "annotations": [
+    {
+      "id": "050f005b-76bc-4b8f-8dec-55a25eb29b2c",
+      "kind": "text",
+      "comment": "改为：具体的建议，让修改位置与要求一目了然。",
+      "createdAt": "2026-10-03T13:08:55.728Z",
+      "updatedAt": "2026-10-03T13:08:56.795Z",
+      "target": {
+        "selector": "#cross-node-text",
+        "domPath": [
+          1,
+          0,
+          1,
+          2,
+          0
+        ],
+        "tag": "p",
+        "id": "cross-node-text",
+        "classes": [],
+        "attributes": {},
+        "attributeFingerprints": {},
+        "text": "每一条具体的建议，都让下一次修改更清楚。",
+        "textLength": 20,
+        "textFingerprint": "6b21391b",
+        "context": {
+          "ancestor": {
+            "tag": "section",
+            "id": "about",
+            "text": "每一条具体的建议，都让下一次修改更清楚。 这是一个完全独立的演示 HTML。你可以批注文案、插图、按钮和卡片布局；点击按钮时计数会更新。"
+          },
+          "siblingBefore": null,
+          "siblingAfter": {
+            "tag": "small",
+            "id": "",
+            "text": "这是一个完全独立的演示 HTML。你可以批注文案、插图、按钮和卡片布局；点击按钮时计数会更新。"
+          }
+        },
+        "rect": {
+          "x": 63,
+          "y": 587,
+          "width": 300,
+          "height": 19,
+          "scrollX": 0,
+          "scrollY": 363
+        },
+        "kind": "text",
+        "quote": {
+          "exact": "每一条具体的建议，都让下一次修改更清楚。",
+          "prefix": "FINE协作修改把带批注的副本交给伙伴，让每一处修改都有明确的依据。了解详情 →\n        \n      \n      \n        ",
+          "suffix": "\n        这是一个完全独立的演示 HTML。你可以批注文案、插图、按钮和卡片布局；点击按钮时计数会更新。\n      \n    \n   "
+        },
+        "position": {
+          "start": 598,
+          "end": 618
+        },
+        "range": {
+          "start": {
+            "path": [
+              2,
+              1,
+              3,
+              5,
+              1
+            ],
+            "offset": 0
+          },
+          "end": {
+            "path": [
+              2,
+              1,
+              3,
+              5,
+              1
+            ],
+            "offset": 5
+          }
+        }
+      },
+      "view": {
+        "width": 1070,
+        "height": 796,
+        "devicePixelRatio": 1
+      }
+    },
+    {
+      "id": "b7dcde10-99af-486c-8286-1f1fb897d009",
+      "kind": "element",
+      "comment": "这张卡片增加浅绿色背景；三张卡片保持等高，按钮底部对齐。",
+      "createdAt": "2026-10-03T13:08:55.811Z",
+      "updatedAt": "2026-10-03T13:08:55.811Z",
+      "target": {
+        "selector": "#card-collaborate",
+        "domPath": [
+          1,
+          0,
+          1,
+          1,
+          1,
+          2
+        ],
+        "tag": "article",
+        "id": "card-collaborate",
+        "classes": [
+          "card"
+        ],
+        "attributes": {},
+        "attributeFingerprints": {},
+        "text": "03 / REFINE协作修改把带批注的副本交给伙伴，让每一处修改都有明确的依据。了解详情 →",
+        "textLength": 47,
+        "textFingerprint": "be772166",
+        "context": {
+          "ancestor": {
+            "tag": "div",
+            "id": "",
+            "text": "01 / READ认真阅读从真实的渲染结果出发，看文字是否清楚，体验是否顺手。了解详情 → 02 / ANNOTATE具体表达把意见和原文放在一起，记录你希望改变的内容与原因。了解详情 → 03 / REFINE协作修改把带批注的副本交给伙伴，让每一处修改都有明确的依据。了解详情 →"
+          },
+          "siblingBefore": {
+            "tag": "article",
+            "id": "card-note",
+            "text": "02 / ANNOTATE具体表达把意见和原文放在一起，记录你希望改变的内容与原因。了解详情 →"
+          },
+          "siblingAfter": null
+        },
+        "rect": {
+          "x": 716,
+          "y": 264,
+          "width": 322,
+          "height": 252,
+          "scrollX": 0,
+          "scrollY": 363
+        },
+        "kind": "element"
+      },
+      "view": {
+        "width": 1070,
+        "height": 796,
+        "devicePixelRatio": 1
+      }
+    },
+    {
+      "id": "95f318db-1102-4f51-923d-a9532be78905",
+      "kind": "page",
+      "comment": "手机宽度下缩小标题与说明之间的间距，卡片改为单列，正文保持易读。",
+      "createdAt": "2026-10-03T13:08:55.858Z",
+      "updatedAt": "2026-10-03T13:08:55.858Z",
+      "target": {
+        "kind": "page",
+        "text": "纸间 · 把想法写在页面上",
+        "scope": "whole-document",
+        "context": {
+          "sourcePath": "demo.html"
+        },
+        "viewport": {
+          "width": 390,
+          "height": 796,
+          "devicePixelRatio": 1
+        }
+      },
+      "view": {
+        "width": 390,
+        "height": 796,
+        "devicePixelRatio": 1
+      }
+    }
+  ]
+}</script>
+  <script type="application/json" id="html-review-example">{"name":"demo.html","base64":"PCFkb2N0eXBlIGh0bWw+CjxodG1sIGxhbmc9InpoLUNOIj4KPGhlYWQ+CiAgPG1ldGEgY2hhcnNldD0idXRmLTgiPgogIDxtZXRhIG5hbWU9InZpZXdwb3J0IiBjb250ZW50PSJ3aWR0aD1kZXZpY2Utd2lkdGgsIGluaXRpYWwtc2NhbGU9MSI+CiAgPHRpdGxlPue6uOmXtCDCtyDmiormg7Pms5XlhpnlnKjpobXpnaLkuIo8L3RpdGxlPgogIDxzdHlsZT4KICAgIDpyb290e2NvbG9yLXNjaGVtZTpsaWdodDstLWluazojMjAyYjM2Oy0tbXV0ZWQ6IzYyNzE3YjstLXBhcGVyOiNmNmY1ZjA7LS1hY2NlbnQ6IzMyNTk0YjstLWxpbmU6I2Q5ZGVkN30KICAgICp7Ym94LXNpemluZzpib3JkZXItYm94fWJvZHl7bWFyZ2luOjA7YmFja2dyb3VuZDp2YXIoLS1wYXBlcik7Y29sb3I6dmFyKC0taW5rKTtmb250LWZhbWlseTpzeXN0ZW0tdWksLWFwcGxlLXN5c3RlbSwiU2Vnb2UgVUkiLCJNaWNyb3NvZnQgWWFIZWkiLHNhbnMtc2VyaWY7bGluZS1oZWlnaHQ6MS43fWF7Y29sb3I6dmFyKC0tYWNjZW50KX1idXR0b24sYXt0b3VjaC1hY3Rpb246bWFuaXB1bGF0aW9ufWJ1dHRvbjpmb2N1cy12aXNpYmxlLGE6Zm9jdXMtdmlzaWJsZXtvdXRsaW5lOjNweCBzb2xpZCAjYWI2YzMyO291dGxpbmUtb2Zmc2V0OjRweH0uc2hlbGx7d2lkdGg6bWluKDExMjBweCxjYWxjKDEwMCUgLSA2NHB4KSk7bWFyZ2luOmF1dG99aGVhZGVye2Rpc3BsYXk6ZmxleDthbGlnbi1pdGVtczpjZW50ZXI7anVzdGlmeS1jb250ZW50OnNwYWNlLWJldHdlZW47cGFkZGluZzoyOHB4IDA7Ym9yZGVyLWJvdHRvbToxcHggc29saWQgdmFyKC0tbGluZSl9LmJyYW5ke2ZvbnQtc2l6ZToyMnB4O2ZvbnQtd2VpZ2h0Ojc1MDtsZXR0ZXItc3BhY2luZzouMTJlbTt0ZXh0LWRlY29yYXRpb246bm9uZTtjb2xvcjp2YXIoLS1pbmspfS5icmFuZCBzbWFsbHtkaXNwbGF5OmlubGluZS1ibG9jazttYXJnaW4tbGVmdDoxMnB4O2ZvbnQtc2l6ZToxMXB4O2ZvbnQtd2VpZ2h0OjUwMDtsZXR0ZXItc3BhY2luZzouMTZlbTtjb2xvcjp2YXIoLS1tdXRlZCl9bmF2e2Rpc3BsYXk6ZmxleDtnYXA6MjRweDtmb250LXNpemU6MTRweH1uYXYgYXt0ZXh0LWRlY29yYXRpb246bm9uZX0uaGVyb3tkaXNwbGF5OmdyaWQ7Z3JpZC10ZW1wbGF0ZS1jb2x1bW5zOjEuM2ZyIDFmcjtnYXA6NTZweDthbGlnbi1pdGVtczpjZW50ZXI7cGFkZGluZzo3NnB4IDAgNjRweH0uZXllYnJvd3tmb250LXNpemU6MTJweDtsZXR0ZXItc3BhY2luZzouMTZlbTtmb250LXdlaWdodDo3MDA7Y29sb3I6dmFyKC0tYWNjZW50KX1oMXtmb250LXNpemU6Y2xhbXAoMzRweCw0LjV2dyw1OHB4KTtmb250LXdlaWdodDo2NTA7bGluZS1oZWlnaHQ6MS4yMjtsZXR0ZXItc3BhY2luZzotLjAzNWVtO21hcmdpbjoxOHB4IDAgMjRweH1oMSBzcGFue2Rpc3BsYXk6YmxvY2s7Y29sb3I6dmFyKC0tYWNjZW50KX0ubGVhZHtmb250LXNpemU6MThweDtjb2xvcjp2YXIoLS1tdXRlZCk7bWF4LXdpZHRoOjUxMHB4fS5sZWFkIHN0cm9uZ3tmb250LXdlaWdodDo2MDA7Y29sb3I6dmFyKC0taW5rKX0uaGVyby1hcnR7d2lkdGg6MTAwJTtoZWlnaHQ6YXV0bztkaXNwbGF5OmJsb2NrO2JvcmRlci1yYWRpdXM6MjRweDtiYWNrZ3JvdW5kOiNlNWVhZGR9Lmhlcm8tYWN0aW9uc3tkaXNwbGF5OmZsZXg7YWxpZ24taXRlbXM6Y2VudGVyO2dhcDoxOHB4O2ZsZXgtd3JhcDp3cmFwO21hcmdpbi10b3A6MjhweH1idXR0b257Zm9udDppbmhlcml0O2N1cnNvcjpwb2ludGVyfS5wcmltYXJ5e2JvcmRlcjowO2JvcmRlci1yYWRpdXM6OHB4O2JhY2tncm91bmQ6dmFyKC0tYWNjZW50KTtjb2xvcjp3aGl0ZTtwYWRkaW5nOjExcHggMjBweDtmb250LXNpemU6MTRweH0uY291bnR7Y29sb3I6dmFyKC0tbXV0ZWQpO2ZvbnQtc2l6ZToxM3B4fXNlY3Rpb257c2Nyb2xsLW1hcmdpbi10b3A6MjBweH0uc2VjdGlvbi1oZWFkaW5ne2Rpc3BsYXk6ZmxleDtqdXN0aWZ5LWNvbnRlbnQ6c3BhY2UtYmV0d2VlbjthbGlnbi1pdGVtczplbmQ7Z2FwOjI0cHg7bWFyZ2luLWJvdHRvbToyNHB4fS5zZWN0aW9uLWhlYWRpbmcgaDJ7Zm9udC1zaXplOjI1cHg7bGV0dGVyLXNwYWNpbmc6LS4wMjVlbTttYXJnaW46MH0uc2VjdGlvbi1oZWFkaW5nIHB7Zm9udC1zaXplOjE0cHg7Y29sb3I6dmFyKC0tbXV0ZWQpO21hcmdpbjowfS5jYXJkc3tkaXNwbGF5OmdyaWQ7Z3JpZC10ZW1wbGF0ZS1jb2x1bW5zOnJlcGVhdCgzLG1pbm1heCgwLDFmcikpO2dhcDoyMHB4fS5jYXJke3BhZGRpbmc6MjhweDtiYWNrZ3JvdW5kOiNmZmY7Ym9yZGVyOjFweCBzb2xpZCB2YXIoLS1saW5lKTtib3JkZXItcmFkaXVzOjEycHg7ZGlzcGxheTpmbGV4O2ZsZXgtZGlyZWN0aW9uOmNvbHVtbjttaW4taGVpZ2h0OjI1MnB4fS5udW1iZXJ7Zm9udC1mYW1pbHk6dWktbW9ub3NwYWNlLG1vbm9zcGFjZTtjb2xvcjojNzk4ODc5O2ZvbnQtc2l6ZToxMnB4fS5jYXJkIGgze2ZvbnQtc2l6ZToyMHB4O2ZvbnQtd2VpZ2h0OjY1MDttYXJnaW46MjRweCAwIDEwcHh9LmNhcmQgcHtmb250LXNpemU6MTRweDtjb2xvcjp2YXIoLS1tdXRlZCk7bWFyZ2luOjAgMCAyMHB4fS5jYXJkIGF7Zm9udC1zaXplOjEzcHg7Zm9udC13ZWlnaHQ6NjUwO3RleHQtZGVjb3JhdGlvbjpub25lO21hcmdpbi10b3A6YXV0bzthbGlnbi1zZWxmOnN0YXJ0fS5ub3Rle21hcmdpbjo0NHB4IDAgNTZweDtwYWRkaW5nOjI0cHggMjhweDtiYWNrZ3JvdW5kOiNlOGVkZTU7Ym9yZGVyLWxlZnQ6M3B4IHNvbGlkIHZhcigtLWFjY2VudCk7Ym9yZGVyLXJhZGl1czowIDhweCA4cHggMH0ubm90ZSBwe21hcmdpbjowO2ZvbnQtc2l6ZToxNXB4fS5ub3RlIHNwYW57Zm9udC13ZWlnaHQ6NjUwfS5ub3RlIHNtYWxse2Rpc3BsYXk6YmxvY2s7bWFyZ2luLXRvcDoxMHB4O2NvbG9yOnZhcigtLW11dGVkKTtmb250LXNpemU6MTJweH1mb290ZXJ7ZGlzcGxheTpmbGV4O2p1c3RpZnktY29udGVudDpzcGFjZS1iZXR3ZWVuO2dhcDoyMHB4O3BhZGRpbmc6MjJweCAwIDMycHg7Ym9yZGVyLXRvcDoxcHggc29saWQgdmFyKC0tbGluZSk7Y29sb3I6dmFyKC0tbXV0ZWQpO2ZvbnQtc2l6ZToxMnB4fUBtZWRpYShtYXgtd2lkdGg6NzIwcHgpey5zaGVsbHt3aWR0aDpjYWxjKDEwMCUgLSAzNnB4KX1oZWFkZXJ7cGFkZGluZzoyMHB4IDB9LmJyYW5kIHNtYWxse2Rpc3BsYXk6bm9uZX1uYXZ7Z2FwOjE1cHh9Lmhlcm97Z3JpZC10ZW1wbGF0ZS1jb2x1bW5zOjFmcjtwYWRkaW5nOjQycHggMDtnYXA6MjhweH0uaGVyby1hcnR7bWF4LWhlaWdodDoyODBweH0uY2FyZHN7Z3JpZC10ZW1wbGF0ZS1jb2x1bW5zOjFmcjtnYXA6MTZweH0uY2FyZHttaW4taGVpZ2h0OjIwMHB4fS5zZWN0aW9uLWhlYWRpbmd7ZGlzcGxheTpibG9ja30uc2VjdGlvbi1oZWFkaW5nIHB7bWFyZ2luLXRvcDo4cHh9Lm5vdGV7bWFyZ2luOjI4cHggMCAzNnB4fWZvb3RlcntmbGV4LWRpcmVjdGlvbjpjb2x1bW47Z2FwOjZweH19CiAgPC9zdHlsZT4KPC9oZWFkPgo8Ym9keT4KICA8ZGl2IGNsYXNzPSJzaGVsbCI+CiAgICA8aGVhZGVyPgogICAgICA8YSBjbGFzcz0iYnJhbmQiIGhyZWY9IiNtYWluIj7nurjpl7Q8c21hbGw+QkVUV0VFTiBUSEUgTElORVM8L3NtYWxsPjwvYT4KICAgICAgPG5hdiBhcmlhLWxhYmVsPSLkuLvlr7zoiKoiPjxhIGhyZWY9IiNwcm9jZXNzIj7lt6XkvZzmlrnlvI88L2E+PGEgaHJlZj0iI2Fib3V0Ij7lhbPkuo7ov5nkuKrpobXpnaI8L2E+PC9uYXY+CiAgICA8L2hlYWRlcj4KICAgIDxtYWluIGlkPSJtYWluIj4KICAgICAgPHNlY3Rpb24gY2xhc3M9Imhlcm8iIGFyaWEtbGFiZWxsZWRieT0iaGVyby10aXRsZSI+CiAgICAgICAgPGRpdj4KICAgICAgICAgIDxkaXYgY2xhc3M9ImV5ZWJyb3ciPuS4gOS4qumhtemdou+8jOS4gOasoea4healmueahOWvueivnTwvZGl2PgogICAgICAgICAgPGgxIGlkPSJoZXJvLXRpdGxlIj7orqnmg7Pms5XmnInokL3ngrnvvIw8c3Bhbj7orqnkv67mlLnmnInmlrnlkJHjgII8L3NwYW4+PC9oMT4KICAgICAgICAgIDxwIGNsYXNzPSJsZWFkIiBpZD0iaGVyby1kZXNjcmlwdGlvbiI+5oqK6ZiF6K+75pe255qE5bCP5Y+R546w77yM5Y+Y5oiQ5LiL5LiA54mI55qE5aW95Y+Y5YyW44CC6YCJ5Lit5paH5a2X44CB5qCH6K6w5YWD57Sg77yM5YaN5YaZ5LiLPHN0cm9uZz7lgLzlvpfooqvorqTnnJ/nkIbop6PnmoTmhI/op4E8L3N0cm9uZz7jgILinI3vuI88L3A+CiAgICAgICAgICA8ZGl2IGNsYXNzPSJoZXJvLWFjdGlvbnMiPjxidXR0b24gdHlwZT0iYnV0dG9uIiBjbGFzcz0icHJpbWFyeSIgaWQ9ImRlbW8tYnV0dG9uIj7or5Xor5XpobXpnaLkuqTkupI8L2J1dHRvbj48b3V0cHV0IGNsYXNzPSJjb3VudCIgaWQ9ImRlbW8tY291bnQiIGFyaWEtbGl2ZT0icG9saXRlIj7lt7Lngrnlh7sgMCDmrKE8L291dHB1dD48L2Rpdj4KICAgICAgICA8L2Rpdj4KICAgICAgICA8c3ZnIGlkPSJoZXJvLWlsbHVzdHJhdGlvbiIgY2xhc3M9Imhlcm8tYXJ0IiB2aWV3Qm94PSIwIDAgNDMwIDM0MCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9ImFydC10aXRsZSBhcnQtZGVzY3JpcHRpb24iIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgICAgICAgICA8dGl0bGUgaWQ9ImFydC10aXRsZSI+57q45byg5LiO5om55rOo5Y2h54mHPC90aXRsZT48ZGVzYyBpZD0iYXJ0LWRlc2NyaXB0aW9uIj7nu7/oibLog4zmma/kuIrvvIzkuIDpobXmloflrZfkuI7kuIDlvKDmqZnoibLkvr/nrLrnm7jkupLov57mjqXvvIzooajnpLrlsIbpmIXor7vlj43ppojkuqTnu5nkuIvkuIDmrKHkv67mlLnjgII8L2Rlc2M+CiAgICAgICAgICA8cmVjdCB3aWR0aD0iNDMwIiBoZWlnaHQ9IjM0MCIgZmlsbD0iI2U1ZWFkZCIvPjxjaXJjbGUgY3g9IjM1OCIgY3k9IjYxIiByPSI3OCIgZmlsbD0iI2Q4ZTBjZCIvPjxjaXJjbGUgY3g9IjQxIiBjeT0iMzAxIiByPSI5OSIgZmlsbD0iI2Q3ZTBkNSIvPgogICAgICAgICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoOTIgNTApIHJvdGF0ZSgtNiAxMTAgMTIwKSI+PHJlY3QgeD0iNyIgeT0iOCIgd2lkdGg9IjIwNSIgaGVpZ2h0PSIyNDkiIHJ4PSIxMCIgZmlsbD0iI2M5ZDNjNSIvPjxyZWN0IHdpZHRoPSIyMDUiIGhlaWdodD0iMjQ5IiByeD0iMTAiIGZpbGw9IiNmZmZlZjkiLz48cmVjdCB4PSIyNSIgeT0iMjkiIHdpZHRoPSI4MCIgaGVpZ2h0PSIxMCIgcng9IjUiIGZpbGw9IiMzMjU5NGIiLz48cGF0aCBkPSJNMjUgNjlIMTc4TTI1IDkwSDE1OU0yNSAxMTFIMTc1TTI1IDE1MUgxNzdNMjUgMTcySDEzNU0yNSAxOTNIMTY3IiBzdHJva2U9IiNkMGQ3Y2UiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHJlY3QgeD0iMjAiIHk9Ijk2IiB3aWR0aD0iMTQ2IiBoZWlnaHQ9IjI1IiByeD0iNCIgZmlsbD0iI2YwY2Y3OSIgb3BhY2l0eT0iLjY1Ii8+PC9nPgogICAgICAgICAgPHBhdGggZD0iTTI1MCAxNDdRMzAyIDE0MSAzMTYgMTgyIiBmaWxsPSJub25lIiBzdHJva2U9IiNhNDZkNDMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWRhc2hhcnJheT0iNSA1Ii8+CiAgICAgICAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyMzIgMTg4KSByb3RhdGUoNSA2NSA1MCkiPjxyZWN0IHg9IjQiIHk9IjUiIHdpZHRoPSIxNDMiIGhlaWdodD0iOTciIHJ4PSI5IiBmaWxsPSIjYzNjYWJjIi8+PHJlY3Qgd2lkdGg9IjE0MyIgaGVpZ2h0PSI5NyIgcng9IjkiIGZpbGw9IiNlZGNjYTkiLz48cGF0aCBkPSJNMjEgMjhIMTIxTTIxIDQ3SDEwNU0yMSA2Nkg4MyIgc3Ryb2tlPSIjYWM3NDRmIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvZz4KICAgICAgICAgIDxjaXJjbGUgY3g9Ijc2IiBjeT0iNjMiIHI9IjgiIGZpbGw9IiNhN2I4OTQiLz48cGF0aCBkPSJNMzM2IDExNXYxOG0tOS05aDE4IiBzdHJva2U9IiM4MDk3NzUiIHN0cm9rZS13aWR0aD0iMiIvPgogICAgICAgIDwvc3ZnPgogICAgICA8L3NlY3Rpb24+CiAgICAgIDxzZWN0aW9uIGlkPSJwcm9jZXNzIiBhcmlhLWxhYmVsbGVkYnk9InByb2Nlc3MtdGl0bGUiPgogICAgICAgIDxkaXYgY2xhc3M9InNlY3Rpb24taGVhZGluZyI+PGgyIGlkPSJwcm9jZXNzLXRpdGxlIj7ku47lj5HnjrDvvIzliLDmlLnlpb08L2gyPjxwPuaKiuWPjemmiOaUvuWbnuWug+WPkeeUn+eahOWcsOaWueOAgjwvcD48L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJjYXJkcyI+CiAgICAgICAgICA8YXJ0aWNsZSBjbGFzcz0iY2FyZCIgaWQ9ImNhcmQtcmVhZCI+PHNwYW4gY2xhc3M9Im51bWJlciI+MDEgLyBSRUFEPC9zcGFuPjxoMz7orqTnnJ/pmIXor7s8L2gzPjxwPuS7juecn+WunueahOa4suafk+e7k+aenOWHuuWPke+8jOeci+aWh+Wtl+aYr+WQpua4healmu+8jOS9k+mqjOaYr+WQpumhuuaJi+OAgjwvcD48YSBocmVmPSIjYWJvdXQiPuS6huino+ivpuaDhSDihpI8L2E+PC9hcnRpY2xlPgogICAgICAgICAgPGFydGljbGUgY2xhc3M9ImNhcmQiIGlkPSJjYXJkLW5vdGUiPjxzcGFuIGNsYXNzPSJudW1iZXIiPjAyIC8gQU5OT1RBVEU8L3NwYW4+PGgzPuWFt+S9k+ihqOi+vjwvaDM+PHA+5oqK5oSP6KeB5ZKM5Y6f5paH5pS+5Zyo5LiA6LW377yM6K6w5b2V5L2g5biM5pyb5pS55Y+Y55qE5YaF5a655LiO5Y6f5Zug44CCPC9wPjxhIGhyZWY9IiNhYm91dCI+5LqG6Kej6K+m5oOFIOKGkjwvYT48L2FydGljbGU+CiAgICAgICAgICA8YXJ0aWNsZSBjbGFzcz0iY2FyZCIgaWQ9ImNhcmQtY29sbGFib3JhdGUiPjxzcGFuIGNsYXNzPSJudW1iZXIiPjAzIC8gUkVGSU5FPC9zcGFuPjxoMz7ljY/kvZzkv67mlLk8L2gzPjxwPuaKiuW4puaJueazqOeahOWJr+acrOS6pOe7meS8meS8tO+8jOiuqeavj+S4gOWkhOS/ruaUuemDveacieaYjuehrueahOS+neaNruOAgjwvcD48YSBocmVmPSIjYWJvdXQiPuS6huino+ivpuaDhSDihpI8L2E+PC9hcnRpY2xlPgogICAgICAgIDwvZGl2PgogICAgICA8L3NlY3Rpb24+CiAgICAgIDxzZWN0aW9uIGNsYXNzPSJub3RlIiBpZD0iYWJvdXQiIGFyaWEtbGFiZWw9IuWFs+S6juekuuS+iyI+CiAgICAgICAgPHAgaWQ9ImNyb3NzLW5vZGUtdGV4dCI+5q+P5LiA5p2hPHNwYW4+5YW35L2T55qE5bu66K6uPC9zcGFuPu+8jOmDveiuqTxlbT7kuIvkuIDmrKHkv67mlLk8L2VtPuabtOa4healmuOAgjwvcD4KICAgICAgICA8c21hbGw+6L+Z5piv5LiA5Liq5a6M5YWo54us56uL55qE5ryU56S6IEhUTUzjgILkvaDlj6/ku6Xmibnms6jmlofmoYjjgIHmj5Llm77jgIHmjInpkq7lkozljaHniYfluIPlsYDvvJvngrnlh7vmjInpkq7ml7borqHmlbDkvJrmm7TmlrDjgII8L3NtYWxsPgogICAgICA8L3NlY3Rpb24+CiAgICA8L21haW4+CiAgICA8Zm9vdGVyPjxzcGFuPue6uOmXtCDCtyDorqnlj43ppojnlZnlnKjpobXpnaLkuIo8L3NwYW4+PHNwYW4+TE9DQUwgRklSU1QgLyBNQURFIEZPUiBDTEVBUkVSIEZFRURCQUNLPC9zcGFuPjwvZm9vdGVyPgogIDwvZGl2PgogIDxzY3JpcHQ+CiAgICAoKCkgPT4gewogICAgICBsZXQgY2xpY2tzID0gMDsKICAgICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2RlbW8tYnV0dG9uJykuYWRkRXZlbnRMaXN0ZW5lcignY2xpY2snLCAoKSA9PiB7CiAgICAgICAgY2xpY2tzICs9IDE7CiAgICAgICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2RlbW8tY291bnQnKS50ZXh0Q29udGVudCA9IGDlt7Lngrnlh7sgJHtjbGlja3N9IOasoWA7CiAgICAgIH0pOwogICAgfSkoKTsKICA8L3NjcmlwdD4KPC9ib2R5Pgo8L2h0bWw+Cg=="}</script>
+  <script id="hr-core">
+/* HTML Review: lossless source storage, portable resource previews, and schema checks. */
+(function (global) {
+  'use strict';
+
+  const FORMAT = 'html-review';
+  const VERSION = 1;
+  const MAX_SOURCE_BYTES = 20 * 1024 * 1024;
+  const MAX_RESOURCE_BYTES = 40 * 1024 * 1024;
+  const MAX_TOTAL_BYTES = 100 * 1024 * 1024;
+  const MAX_ANNOTATIONS = 10000;
+  const VIRTUAL_ORIGIN = 'https://html-review.invalid';
+  const MIME = {
+    css: 'text/css', js: 'text/javascript', mjs: 'text/javascript', json: 'application/json',
+    html: 'text/html', htm: 'text/html', svg: 'image/svg+xml', png: 'image/png',
+    jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp',
+    avif: 'image/avif', ico: 'image/x-icon', bmp: 'image/bmp', woff: 'font/woff',
+    woff2: 'font/woff2', ttf: 'font/ttf', otf: 'font/otf', eot: 'application/vnd.ms-fontobject',
+    mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg', mp4: 'video/mp4',
+    webm: 'video/webm', pdf: 'application/pdf', txt: 'text/plain', xml: 'application/xml'
+  };
+
+  function fail(message) { throw new Error(message); }
+  function isObject(value) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+  }
+  function bytesOf(value) {
+    if (value instanceof Uint8Array) return value;
+    if (Object.prototype.toString.call(value) === '[object ArrayBuffer]') return new Uint8Array(value);
+    if (ArrayBuffer.isView(value)) return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+    return fail('文件内容必须是 ArrayBuffer 或 Uint8Array。');
+  }
+  function bytesToBase64(value) {
+    const bytes = bytesOf(value);
+    let binary = '';
+    for (let offset = 0; offset < bytes.length; offset += 32768) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(offset, offset + 32768));
+    }
+    return global.btoa(binary);
+  }
+  function base64ToBytes(value, limit = MAX_TOTAL_BYTES) {
+    if (typeof value !== 'string' || value.length > Math.ceil(limit / 3) * 4 + 4 || value.length % 4 !== 0) {
+      return fail('文件数据不是有效的 Base64，或超过大小限制。');
+    }
+    const padding = value.endsWith('==') ? 2 : value.endsWith('=') ? 1 : 0;
+    if (/[^A-Za-z0-9+/]/.test(value.slice(0, value.length - padding))) return fail('文件数据不是有效的 Base64。');
+    let binary;
+    try { binary = global.atob(value); } catch (_) { return fail('无法解码文件数据。'); }
+    if (binary.length > limit || global.btoa(binary) !== value) return fail('文件数据不是规范 Base64，或超过大小限制。');
+    const result = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index++) result[index] = binary.charCodeAt(index);
+    return result;
+  }
+  async function sha256(value) {
+    if (!global.crypto || !global.crypto.subtle) return fail('浏览器不支持 SHA-256。请使用新版 Chrome、Edge 或 Firefox，在本地文件或 localhost 中打开。');
+    const result = await global.crypto.subtle.digest('SHA-256', bytesOf(value));
+    return Array.from(new Uint8Array(result), byte => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  function decodeBytes(value) {
+    const bytes = bytesOf(value);
+    let encoding = 'utf-8';
+    if (bytes[0] === 0xFF && bytes[1] === 0xFE) encoding = 'utf-16le';
+    else if (bytes[0] === 0xFE && bytes[1] === 0xFF) encoding = 'utf-16be';
+    else if (!(bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF)) {
+      const header = String.fromCharCode.apply(null, bytes.subarray(0, 4096));
+      const declaration = header.match(/<meta\b[^>]*\bcharset\s*=\s*["']?\s*([\w.-]+)/i) || header.match(/^@charset\s+["']([\w.-]+)["']/i);
+      if (declaration) encoding = declaration[1].toLowerCase();
+    }
+    let decoder;
+    try { decoder = new TextDecoder(encoding, {fatal: true}); }
+    catch (_) { return fail('不支持此 HTML 声明的字符编码：' + encoding); }
+    try { return {text: decoder.decode(bytes), encoding: decoder.encoding}; }
+    catch (_) { return fail('文件内容不符合声明的 ' + decoder.encoding + ' 编码；请先另存为 UTF-8 HTML。'); }
+  }
+
+  function normalizePath(value) {
+    if (typeof value !== 'string' || !value || value.length > 4096 || /[\u0000-\u001F\u007F]/.test(value)) {
+      return fail('文件路径无效。');
+    }
+    const path = value.replace(/\\/g, '/');
+    if (path.startsWith('/') || /^[a-zA-Z][\w+.-]*:/.test(path) ||
+        path.split('/').some(part => !part || part === '.' || part === '..')) {
+      return fail('请使用所选目录内的相对文件路径，不能包含绝对路径或 ..。');
+    }
+    return path;
+  }
+  function mimeFor(path, supplied) {
+    const extension = path.split('.').pop().toLowerCase();
+    return MIME[extension] || (typeof supplied === 'string' && /^[\w.+-]+\/[\w.+-]+$/.test(supplied) ? supplied : 'application/octet-stream');
+  }
+  function validTime(value) { return typeof value === 'string' && value.length < 80 && Number.isFinite(Date.parse(value)); }
+  function checkString(value, label, maximum, allowEmpty = false) {
+    if (typeof value !== 'string' || value.length > maximum || (!allowEmpty && !value.trim())) fail(label + '无效或过长。');
+  }
+  function checkJSONTree(value, depth = 0, budget = {nodes: 0}) {
+    if (++budget.nodes > 30000 || depth > 24) fail('批注定位数据过于复杂。');
+    if (value === null || typeof value === 'boolean') return;
+    if (typeof value === 'number') { if (!Number.isFinite(value)) fail('批注定位数据包含无效数字。'); return; }
+    if (typeof value === 'string') { if (value.length > 250000) fail('批注定位文字过长。'); return; }
+    if (typeof value !== 'object') fail('批注定位数据必须能够保存为 JSON。');
+    for (const key of Object.keys(value)) {
+      if (key === '__proto__' || key === 'prototype' || key === 'constructor') fail('批注定位数据包含不安全字段。');
+      checkJSONTree(value[key], depth + 1, budget);
+    }
+  }
+  function validateDimensions(value, label) {
+    if (!isObject(value)) fail(label + '必须是对象。');
+    for (const key of ['x', 'y', 'width', 'height', 'scrollX', 'scrollY', 'devicePixelRatio']) {
+      if (value[key] !== undefined && (!Number.isFinite(value[key]) ||
+          (['width', 'height', 'devicePixelRatio'].includes(key) && value[key] < 0))) fail(label + '包含无效的尺寸或坐标。');
+    }
+  }
+  function validateTarget(target, kind) {
+    if (!isObject(target)) return fail('批注缺少定位对象。');
+    const expected = kind || target.kind;
+    if (!['text', 'element', 'page'].includes(expected) || target.kind !== expected) return fail('批注目标类型不一致。');
+    checkJSONTree(target);
+    for (const key of ['text', 'selector', 'tag', 'id', 'scope', 'textFingerprint']) {
+      if (target[key] !== undefined) checkString(target[key], '定位字段 ' + key, key === 'text' ? 20000 : 4096, true);
+    }
+    if (expected !== 'page') checkString(target.selector, '目标选择器', 4096);
+    if (expected === 'element' && (typeof target.tag !== 'string' || !/^[a-zA-Z][\w:-]*$/.test(target.tag))) fail('元素类型无效。');
+    if (target.quote !== undefined) {
+      if (!isObject(target.quote)) fail('选中原文必须是对象。');
+      for (const key of ['exact', 'prefix', 'suffix']) {
+        if (target.quote[key] !== undefined) checkString(target.quote[key], '原文字段 ' + key, 20000, true);
+      }
+    }
+    if (expected === 'text') {
+      if (!isObject(target.quote)) fail('文字批注缺少选中原文。');
+      checkString(target.quote.exact, '选中原文', 20000);
+    }
+    if (target.attributes !== undefined) {
+      if (!isObject(target.attributes)) fail('元素属性必须是对象。');
+      for (const value of Object.values(target.attributes)) checkString(value, '元素属性', 16000, true);
+    }
+    if (target.classes !== undefined && (!Array.isArray(target.classes) || target.classes.length > 4000 ||
+        target.classes.some(value => typeof value !== 'string' || value.length > 4096))) fail('元素样式类无效。');
+    function integer(value) { return Number.isSafeInteger(value) && value >= 0; }
+    function path(value) {
+      if (!Array.isArray(value) || value.length > 150 || value.some(index => !integer(index))) fail('DOM 定位路径无效。');
+    }
+    if (target.domPath !== undefined) path(target.domPath);
+    if (target.range !== undefined) {
+      if (!isObject(target.range)) fail('文字范围无效。');
+      for (const key of ['start', 'end']) {
+        const endpoint = target.range[key];
+        if (!isObject(endpoint) || !integer(endpoint.offset)) fail('文字范围偏移无效。');
+        path(endpoint.path);
+      }
+    }
+    if (target.position !== undefined && (!isObject(target.position) || !integer(target.position.start) ||
+        !integer(target.position.end) || target.position.end <= target.position.start)) fail('文字位置偏移无效。');
+    if (target.textLength !== undefined && !integer(target.textLength)) fail('元素文字长度无效。');
+    if (target.textFingerprint !== undefined && !/^[a-f0-9]{8}$/.test(target.textFingerprint)) fail('元素文字指纹无效。');
+    if (target.attributeFingerprints !== undefined) {
+      if (!isObject(target.attributeFingerprints)) fail('元素属性指纹无效。');
+      for (const value of Object.values(target.attributeFingerprints)) {
+        if (!isObject(value) || !integer(value.length) || typeof value.hash !== 'string' || !/^[a-f0-9]{8}$/.test(value.hash)) fail('元素属性指纹无效。');
+      }
+    }
+    if (target.context !== undefined) {
+      if (!isObject(target.context)) fail('目标上下文无效。');
+      if (target.context.sourcePath !== undefined) checkString(target.context.sourcePath, '上下文源文件路径', 4096);
+      for (const key of ['ancestor', 'siblingBefore', 'siblingAfter']) {
+        const neighbor = target.context[key];
+        if (neighbor === undefined || neighbor === null) continue;
+        if (!isObject(neighbor)) fail('相邻元素上下文无效。');
+        for (const field of ['tag', 'id', 'text']) if (neighbor[field] !== undefined) checkString(neighbor[field], '相邻元素上下文', 4096, true);
+      }
+    }
+    if (target.rect !== undefined) validateDimensions(target.rect, '目标边界');
+    if (target.viewport !== undefined) validateDimensions(target.viewport, '目标视口');
+    return target;
+  }
+
+  async function importSource(input, resources = []) {
+    if (!isObject(input)) return fail('缺少源文件。');
+    checkString(input.name, '文件名', 1024);
+    const bytes = bytesOf(input.bytes);
+    if (bytes.length > MAX_SOURCE_BYTES) return fail('HTML 文件超过 20 MiB 限制。');
+    const decoded = decodeBytes(bytes);
+    const path = normalizePath(input.path || input.name);
+    const now = new Date().toISOString();
+    const data = {
+      format: FORMAT, schemaVersion: VERSION, createdAt: now, updatedAt: now,
+      source: {
+        name: input.name, path, byteLength: bytes.length,
+        lastModified: Number.isFinite(input.lastModified) && input.lastModified >= 0 ? input.lastModified : null,
+        sha256: await sha256(bytes), encoding: decoded.encoding, base64: bytesToBase64(bytes)
+      },
+      resources: [], annotations: []
+    };
+    if (!Array.isArray(resources) || resources.length > 3000) return fail('资源列表无效，最多支持 3000 个文件。');
+    const seen = new Set();
+    let total = bytes.length;
+    for (const resource of resources) {
+      if (!isObject(resource)) return fail('资源文件无效。');
+      const resourcePath = normalizePath(resource.path);
+      if (resourcePath === path) continue;
+      if (seen.has(resourcePath)) return fail('资源路径重复：' + resourcePath);
+      seen.add(resourcePath);
+      const resourceBytes = bytesOf(resource.bytes);
+      total += resourceBytes.length;
+      if (resourceBytes.length > MAX_RESOURCE_BYTES || total > MAX_TOTAL_BYTES) return fail('单个资源最多 40 MiB，全部文件合计最多 100 MiB。');
+      data.resources.push({path: resourcePath, mime: mimeFor(resourcePath, resource.mime),
+        base64: bytesToBase64(resourceBytes), sha256: await sha256(resourceBytes)});
+    }
+    data.resources.sort((a, b) => a.path.localeCompare(b.path));
+    return data;
+  }
+
+  async function validateData(data) {
+    if (!isObject(data) || data.format !== FORMAT || data.schemaVersion !== VERSION) return fail('不是受支持的 HTML Review 批注副本（需要格式版本 1）。');
+    if (!validTime(data.createdAt) || !validTime(data.updatedAt)) return fail('批注副本的创建或更新时间无效。');
+    const source = data.source;
+    if (!isObject(source)) return fail('批注副本缺少原文件信息。');
+    checkString(source.name, '原文件名', 1024);
+    if (normalizePath(source.path) !== source.path) return fail('原文件路径必须使用 / 分隔。');
+    if (!Number.isSafeInteger(source.byteLength) || source.byteLength < 0 || source.byteLength > MAX_SOURCE_BYTES) return fail('原文件大小无效。');
+    if (source.lastModified !== null && (!Number.isFinite(source.lastModified) || source.lastModified < 0)) return fail('原文件修改时间无效。');
+    if (typeof source.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(source.sha256)) return fail('原文件 SHA-256 无效。');
+    const sourceBytes = base64ToBytes(source.base64, MAX_SOURCE_BYTES);
+    if (sourceBytes.length !== source.byteLength || await sha256(sourceBytes) !== source.sha256) return fail('原文件完整性校验失败：字节长度或 SHA-256 不匹配。');
+    if (decodeBytes(sourceBytes).encoding !== source.encoding) return fail('原文件编码信息不一致。');
+    if (!Array.isArray(data.resources) || data.resources.length > 3000) return fail('资源列表无效。');
+    let total = sourceBytes.length;
+    const paths = new Set([source.path]);
+    for (const resource of data.resources) {
+      if (!isObject(resource)) return fail('资源记录无效。');
+      const path = normalizePath(resource.path);
+      if (path !== resource.path || paths.has(path)) return fail('资源路径重复或不规范：' + path);
+      paths.add(path);
+      if (typeof resource.mime !== 'string' || !/^[\w.+-]+\/[\w.+-]+$/.test(resource.mime)) return fail('资源类型无效：' + path);
+      if (typeof resource.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(resource.sha256)) return fail('资源 SHA-256 无效：' + path);
+      const bytes = base64ToBytes(resource.base64, MAX_RESOURCE_BYTES);
+      total += bytes.length;
+      if (total > MAX_TOTAL_BYTES) return fail('批注副本内的文件合计超过 100 MiB。');
+      if (await sha256(bytes) !== resource.sha256) return fail('资源完整性校验失败：' + path);
+    }
+    if (!Array.isArray(data.annotations) || data.annotations.length > MAX_ANNOTATIONS) return fail('批注列表无效或超过 10000 条限制。');
+    const ids = new Set();
+    for (const annotation of data.annotations) {
+      if (!isObject(annotation)) return fail('批注记录无效。');
+      checkString(annotation.id, '批注 ID', 200);
+      if (ids.has(annotation.id)) return fail('批注 ID 重复。');
+      ids.add(annotation.id);
+      if (!['text', 'element', 'page'].includes(annotation.kind)) return fail('批注类型无效。');
+      checkString(annotation.comment, '修改意见', 50000);
+      if (!validTime(annotation.createdAt) || !validTime(annotation.updatedAt)) return fail('批注时间无效。');
+      validateTarget(annotation.target, annotation.kind);
+      if (annotation.view !== undefined) validateDimensions(annotation.view, '批注视口');
+      checkJSONTree(annotation);
+    }
+    return data;
+  }
+
+  function serialize(data) {
+    return JSON.stringify(data, null, 2).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+  }
+
+  function getSourceText(data) { return decodeBytes(base64ToBytes(data.source.base64, MAX_SOURCE_BYTES)).text; }
+  function getSourceURL(path) {
+    return new URL('/' + path.split('/').map(encodeURIComponent).join('/'), VIRTUAL_ORIGIN);
+  }
+  function fingerprint(text) {
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index++) hash = Math.imul(hash ^ text.charCodeAt(index), 16777619);
+    return (hash >>> 0).toString(16).padStart(8, '0');
+  }
+  function parseSrcset(input) {
+    const candidates = [];
+    let position = 0;
+    while (position < input.length) {
+      while (position < input.length && /[\s,]/.test(input[position])) position++;
+      if (position === input.length) break;
+      let url = '';
+      while (position < input.length && !/\s/.test(input[position])) url += input[position++];
+      if (url.endsWith(',')) { candidates.push({url: url.replace(/,+$/, ''), descriptor: ''}); continue; }
+      let descriptor = '';
+      let parentheses = 0;
+      while (position < input.length) {
+        const char = input[position++];
+        if (char === ',' && parentheses === 0) break;
+        if (char === '(') parentheses++;
+        if (char === ')') parentheses--;
+        descriptor += char;
+      }
+      candidates.push({url, descriptor: descriptor.trim()});
+    }
+    return candidates;
+  }
+
+  async function createPreview(data, bridgeScriptString) {
+    if (typeof global.DOMParser !== 'function') return fail('HTML 预览需要在浏览器中运行。');
+    checkString(bridgeScriptString, '预览定位脚本', 1024 * 1024, true);
+    const doc = new global.DOMParser().parseFromString(getSourceText(data), 'text/html');
+    const warnings = [];
+    const warningSet = new Set();
+    const warn = message => { if (!warningSet.has(message)) { warningSet.add(message); warnings.push(message); } };
+    const resourceMap = new Map(data.resources.map(resource => [resource.path, resource]));
+    const cache = new Map();
+    const originals = new Map();
+    function previewAttribute(node, attribute, value) {
+      const before = node.getAttribute(attribute);
+      if (before === value) return;
+      if (!originals.has(node)) originals.set(node, {});
+      originals.get(node)[attribute] = {value: before, renderedLength: value.length, renderedFingerprint: fingerprint(value)};
+      node.setAttribute(attribute, value);
+    }
+    const sourceURL = getSourceURL(data.source.path);
+    const existingBase = doc.querySelector('base[href]');
+    let pageBase = sourceURL;
+    if (existingBase) {
+      try { pageBase = new URL(existingBase.getAttribute('href'), sourceURL); }
+      catch (_) { warn('原页面的 base 地址无效；已按原文件目录解析资源。'); }
+    }
+
+    async function replaceAsync(text, expression, replacer) {
+      const matches = Array.from(text.matchAll(expression));
+      let result = '';
+      let offset = 0;
+      for (const match of matches) {
+        result += text.slice(offset, match.index) + await replacer(match);
+        offset = match.index + match[0].length;
+      }
+      return result + text.slice(offset);
+    }
+    function unescapeCSS(value) {
+      return value.replace(/\\([0-9a-fA-F]{1,6})\s?|\\([^\r\n\f])/g, (_, hex, char) => hex ? String.fromCodePoint(Math.min(parseInt(hex, 16) || 0xFFFD, 0x10FFFF)) : char);
+    }
+    async function rewriteCSS(css, base, stack) {
+      // Skip comments and ordinary quoted strings: content:"url(example)" is not a resource.
+      return replaceAsync(css, /\/\*[\s\S]*?\*\/|url\(\s*(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)'|((?:\\.|[^)\\])*?))\s*\)|@import\s+(["'])((?:\\.|[^\\])*?)\4|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/gi, async match => {
+        if (match[0].startsWith('/*') || match[0][0] === '"' || match[0][0] === "'") return match[0];
+        const isImport = Boolean(match[4]);
+        const raw = isImport ? match[5] : (match[1] !== undefined ? match[1] : match[2] !== undefined ? match[2] : match[3].trim());
+        const resolved = await resourceURL(unescapeCSS(raw), base, stack);
+        const escaped = resolved.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n\f]/g, '');
+        return isImport ? '@import "' + escaped + '"' : 'url("' + escaped + '")';
+      });
+    }
+    async function resourceURL(value, base, stack = []) {
+      const raw = value.trim();
+      if (!raw || raw.startsWith('#') || /^(?:[a-z][\w+.-]*:|\/\/)/i.test(raw)) return value;
+      let resolved;
+      try { resolved = new URL(raw, base); } catch (_) { warn('无法解析资源地址：' + raw); return value; }
+      if (resolved.origin !== VIRTUAL_ORIGIN) return resolved.href;
+      let path;
+      try { path = decodeURIComponent(resolved.pathname.slice(1)); }
+      catch (_) { warn('资源地址包含无效编码：' + raw); return value; }
+      const resource = resourceMap.get(path);
+      if (!resource) { warn('未附带本地资源：' + path + '。请使用“导入文件夹”包含相关文件。'); return value; }
+      if (stack.includes(path)) {
+        warn('检测到 CSS 循环引用，已跳过重复导入：' + path);
+        return 'data:text/css;charset=utf-8,';
+      }
+      if (!cache.has(path)) {
+        let url;
+        if (resource.mime === 'text/css' || /\.css$/i.test(path)) {
+          const bytes = base64ToBytes(resource.base64, MAX_RESOURCE_BYTES);
+          let css;
+          try { css = decodeBytes(bytes).text; }
+          catch (_) { warn('样式表编码无法读取：' + path); return value; }
+          const rewritten = await rewriteCSS(css, getSourceURL(path), stack.concat(path));
+          url = 'data:text/css;charset=utf-8;base64,' + bytesToBase64(new TextEncoder().encode(rewritten));
+        } else {
+          url = 'data:' + resource.mime + ';base64,' + resource.base64;
+        }
+        cache.set(path, url);
+      }
+      return cache.get(path) + resolved.hash;
+    }
+
+    for (const meta of Array.from(doc.querySelectorAll('meta[http-equiv]'))) {
+      const directive = meta.getAttribute('http-equiv').toLowerCase();
+      if (directive === 'content-security-policy' || directive === 'content-security-policy-report-only') {
+        meta.remove(); warn('预览中已移除原页面的 CSP meta，以便定位脚本工作；原文件字节保持不变。');
+      } else if (directive === 'refresh') {
+        meta.remove(); warn('预览中已禁用页面自动跳转，防止批注位置丢失。');
+      }
+    }
+    for (const node of Array.from(doc.querySelectorAll('[src], [poster], object[data], link[href], image[href], image[xlink\\:href], use[href], use[xlink\\:href]'))) {
+      const attributes = ['src', 'poster'];
+      if (node.localName === 'object') attributes.push('data');
+      if (['link', 'image', 'use'].includes(node.localName)) attributes.push('href', 'xlink:href');
+      for (const attribute of attributes) {
+        if (!node.hasAttribute(attribute)) continue;
+        const before = node.getAttribute(attribute);
+        const after = await resourceURL(before, pageBase);
+        if (after !== before) {
+          previewAttribute(node, attribute, after);
+          if (node.hasAttribute('integrity')) {
+            node.removeAttribute('integrity');
+            warn('已打包的脚本/样式使用内嵌资源，预览中移除了原 integrity 属性；原文件保持不变。');
+          }
+        }
+      }
+    }
+    for (const node of Array.from(doc.querySelectorAll('[srcset], [imagesrcset]'))) {
+      for (const attribute of ['srcset', 'imagesrcset']) {
+        if (!node.hasAttribute(attribute)) continue;
+        const parts = [];
+        for (const candidate of parseSrcset(node.getAttribute(attribute))) {
+          parts.push(await resourceURL(candidate.url, pageBase) + (candidate.descriptor ? ' ' + candidate.descriptor : ''));
+        }
+        previewAttribute(node, attribute, parts.join(', '));
+      }
+    }
+    for (const style of Array.from(doc.querySelectorAll('style'))) {
+      style.textContent = await rewriteCSS(style.textContent, pageBase, []);
+    }
+    for (const node of Array.from(doc.querySelectorAll('[style]'))) {
+      node.setAttribute('style', await rewriteCSS(node.getAttribute('style'), pageBase, []));
+    }
+    if (doc.querySelector('script[type="module"],link[rel="modulepreload"]')) {
+      warn('模块脚本中的相对 import 不会自动打包；需要构建工具或服务器的页面可能无法完整运行。');
+    }
+    if (doc.querySelector('script[src]')) {
+      warn('已保留页面脚本；脚本内的动态 fetch、Worker 或相对资源路径不会自动改写。');
+    }
+    if (doc.querySelector('iframe,object,embed')) {
+      warn('内嵌框架/插件内容不支持内部定位，且其独立资源可能无法完整打包。');
+    }
+    if (pageBase.origin === VIRTUAL_ORIGIN) {
+      // Prevent unresolved relative resources from accidentally loading from the review application's directory.
+      const base = existingBase || doc.createElement('base');
+      base.setAttribute('href', 'about:srcdoc');
+      if (!existingBase) {
+        base.setAttribute('data-html-review-owned', 'true');
+        doc.head.prepend(base);
+      }
+    } else if (existingBase) {
+      existingBase.setAttribute('href', pageBase.href);
+    }
+    const bridge = doc.createElement('script');
+    bridge.setAttribute('data-html-review-owned', 'true');
+    bridge.textContent = bridgeScriptString;
+    doc.head.prepend(bridge);
+    for (const [node, attributes] of originals) node.setAttribute('data-html-review-original-attrs', JSON.stringify(attributes));
+    const doctype = doc.doctype ? '<!DOCTYPE ' + doc.doctype.name + (doc.doctype.publicId ? ' PUBLIC "' + doc.doctype.publicId.replace(/"/g, '') + '"' : '') + (doc.doctype.systemId ? (doc.doctype.publicId ? ' "' : ' SYSTEM "') + doc.doctype.systemId.replace(/"/g, '') + '"' : '') + '>\n' : '';
+    return {html: doctype + doc.documentElement.outerHTML, warnings};
+  }
+
+  global.HRCore = Object.freeze({FORMAT, VERSION, importSource, validateData, validateTarget, sha256, decodeBytes,
+    serialize, createPreview, bytesToBase64, base64ToBytes, getSourceText, normalizePath,
+    limits: Object.freeze({source: MAX_SOURCE_BYTES, resource: MAX_RESOURCE_BYTES, total: MAX_TOTAL_BYTES, annotations: MAX_ANNOTATIONS})});
+})(typeof window === 'undefined' ? globalThis : window);
+
+</script>
+<script id="hr-bridge">
+/* Runs inside the opaque-origin preview iframe. Keep this function self-contained. */
+window.HRBridge = function HRBridge(channel) {
+  'use strict';
+  const OWNED = 'data-html-review-owned';
+  const EXCLUDED = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'HEAD']);
+  const CONTEXT_LENGTH = 72;
+  let mode = 'browse';
+  let overlay = null;
+  let overlayRoot = null;
+  let focused = null;
+  let scheduled = false;
+  let lastHover = null;
+  let lastSelectedElement = null;
+
+  function send(event, data) {
+    parent.postMessage(Object.assign({ hr: true, channel: channel, event: event }, data || {}), '*');
+  }
+  function warn(error) {
+    send('warning', { message: '无法读取此处的页面内容：' + (error && error.message || String(error)) });
+  }
+  function own(node) {
+    const element = node && (node.nodeType === 1 ? node : node.parentElement);
+    return !!(element && element.closest('[' + OWNED + ']'));
+  }
+  function children(node, elementsOnly) {
+    return Array.from(elementsOnly ? node.children || [] : node.childNodes || []).filter(n => !own(n));
+  }
+  function nodePath(node, elementsOnly) {
+    const result = [];
+    while (node && node !== document.documentElement) {
+      const p = node.parentNode;
+      if (!p) return null;
+      const index = children(p, elementsOnly).indexOf(node);
+      if (index < 0) return null;
+      result.unshift(index);
+      node = p;
+    }
+    return node === document.documentElement ? result : null;
+  }
+  function fromPath(path, elementsOnly) {
+    if (!Array.isArray(path) || path.length > 150) return null;
+    let node = document.documentElement;
+    for (const index of path) {
+      if (!Number.isInteger(index) || index < 0 || !node) return null;
+      node = children(node, elementsOnly)[index];
+    }
+    return node || null;
+  }
+  function eligible(node) {
+    if (!node || own(node)) return false;
+    for (let e = node.parentElement; e; e = e.parentElement) {
+      if (EXCLUDED.has(e.tagName)) return false;
+    }
+    return true;
+  }
+  function textNodes(root) {
+    const nodes = [];
+    if (!root) return nodes;
+    if (root.nodeType === 3) return eligible(root) ? [root] : [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) if (eligible(node)) nodes.push(node);
+    return nodes;
+  }
+  function stream() {
+    let text = '';
+    const records = textNodes(document.body || document.documentElement).map(node => {
+      const item = { node: node, start: text.length, end: text.length + node.length };
+      text += node.data;
+      return item;
+    });
+    return { text: text, records: records };
+  }
+  function clean(text) { return String(text || '').replace(/\s+/g, ' ').trim(); }
+  function elementText(element) { return clean(textNodes(element).map(n => n.data).join('')); }
+  function fingerprint(text) {
+    let hash = 2166136261;
+    for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 16777619);
+    return (hash >>> 0).toString(16).padStart(8, '0');
+  }
+  function cssEscape(value) {
+    if (window.CSS && CSS.escape) return CSS.escape(value);
+    return Array.from(value).map(c => '\\' + c.codePointAt(0).toString(16) + ' ').join('');
+  }
+  function query(selector) {
+    try { return Array.from(document.querySelectorAll(selector)).filter(e => !own(e)); }
+    catch (_) { return []; }
+  }
+  function selector(element) {
+    const parts = [];
+    for (let e = element; e && e.nodeType === 1; e = e.parentElement) {
+      if (e.id && query('#' + cssEscape(e.id)).length === 1) {
+        parts.unshift('#' + cssEscape(e.id));
+        break;
+      }
+      let part = e.localName;
+      if (e.parentElement) {
+        const siblings = children(e.parentElement, true).filter(n => n.localName === e.localName);
+        if (siblings.length > 1) part += ':nth-of-type(' + (siblings.indexOf(e) + 1) + ')';
+      }
+      parts.unshift(part);
+      if (e === document.documentElement) break;
+    }
+    return parts.join(' > ');
+  }
+  function originalAttribute(element, key) {
+    const current = element.getAttribute(key);
+    const saved = element.getAttribute('data-html-review-original-attrs');
+    if (saved) {
+      try {
+        const values = JSON.parse(saved);
+        if (values && typeof values === 'object' && Object.prototype.hasOwnProperty.call(values, key)) {
+          const entry = values[key];
+          if (entry && typeof entry.value === 'string' && typeof current === 'string' && current.length === entry.renderedLength && fingerprint(current) === entry.renderedFingerprint) return entry.value;
+        }
+      } catch (_) { /* A malformed optional preview mapping is not a locator. */ }
+    }
+    return current;
+  }
+  function attributes(element) {
+    const result = {};
+    for (const key of ['alt', 'title', 'href', 'src', 'role', 'aria-label', 'name', 'type']) {
+      if (element.hasAttribute(key)) {
+        const value = originalAttribute(element, key);
+        result[key] = value.length > 4000 ? value.slice(0, 4000) + '…' : value;
+      }
+    }
+    return result;
+  }
+  function attributeFingerprints(element) {
+    const result = {};
+    for (const key of ['alt', 'title', 'href', 'src', 'role', 'aria-label', 'name', 'type']) {
+      const value = originalAttribute(element, key);
+      if (value && value.length > 4000) result[key] = { length: value.length, hash: fingerprint(value) };
+    }
+    return result;
+  }
+  function summary(element) {
+    if (!element || own(element)) return null;
+    return { tag: element.localName, id: element.id || '', text: elementText(element).slice(0, 240) };
+  }
+  function context(element) {
+    return {
+      ancestor: summary(element.parentElement),
+      siblingBefore: summary(element.previousElementSibling),
+      siblingAfter: summary(element.nextElementSibling)
+    };
+  }
+  function box(rect) {
+    return { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height), scrollX: Math.round(window.scrollX), scrollY: Math.round(window.scrollY) };
+  }
+  function baseTarget(element) {
+    const text = elementText(element);
+    return {
+      selector: selector(element), domPath: nodePath(element, true),
+      tag: element.localName, id: element.id || '', classes: Array.from(element.classList),
+      attributes: attributes(element), attributeFingerprints: attributeFingerprints(element), text: text.slice(0, 1600),
+      textLength: text.length, textFingerprint: fingerprint(text),
+      context: context(element), rect: box(element.getBoundingClientRect())
+    };
+  }
+  function rangePosition(range, data) {
+    let start = null;
+    let end = null;
+    let text = '';
+    for (const item of data.records) {
+      if (!range.intersectsNode(item.node)) continue;
+      const a = range.startContainer === item.node ? range.startOffset : 0;
+      const b = range.endContainer === item.node ? range.endOffset : item.node.length;
+      if (b <= a) continue;
+      if (start === null) start = item.start + a;
+      end = item.start + b;
+      text += item.node.data.slice(a, b);
+    }
+    return start === null ? null : { start: start, end: end, text: text };
+  }
+  function rangeAt(start, end, data) {
+    if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end <= start || end > data.text.length) return null;
+    const first = data.records.find(r => r.start <= start && r.end > start);
+    const last = data.records.find(r => r.start < end && r.end >= end);
+    if (!first || !last) return null;
+    const range = document.createRange();
+    range.setStart(first.node, start - first.start);
+    range.setEnd(last.node, end - last.start);
+    return range;
+  }
+  function quoteAt(position, data) {
+    return {
+      exact: position.text,
+      prefix: data.text.slice(Math.max(0, position.start - CONTEXT_LENGTH), position.start),
+      suffix: data.text.slice(position.end, position.end + CONTEXT_LENGTH)
+    };
+  }
+  function captureText() {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !selection.rangeCount) return;
+    const range = selection.getRangeAt(0).cloneRange();
+    if (own(range.startContainer) || own(range.endContainer)) return;
+    const data = stream();
+    const pos = rangePosition(range, data);
+    if (!pos || !pos.text.trim()) return;
+    if (pos.text.length > 20000) {
+      send('warning', { message: '选择文字过长，请缩小至 20,000 字符以内；整页意见可使用“整页批注”。' });
+      return;
+    }
+    const element = range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
+    const target = Object.assign(baseTarget(element), {
+      kind: 'text', text: pos.text, quote: quoteAt(pos, data),
+      position: { start: pos.start, end: pos.end },
+      range: {
+        start: { path: nodePath(range.startContainer, false), offset: range.startOffset },
+        end: { path: nodePath(range.endContainer, false), offset: range.endOffset }
+      }, rect: box(range.getBoundingClientRect())
+    });
+    focus(range, false);
+    send('target', { target: target });
+  }
+  function createOverlay() {
+    if (overlay && overlay.isConnected) return;
+    overlay = document.createElement('div');
+    overlay.setAttribute(OWNED, 'overlay');
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.style.cssText = 'all:initial!important;position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;pointer-events:none!important;z-index:2147483647!important;display:block!important;contain:strict!important;';
+    overlayRoot = overlay.attachShadow({ mode: 'closed' });
+    document.documentElement.appendChild(overlay);
+  }
+  function renderFocus() {
+    scheduled = false;
+    if (!focused) {
+      if (overlayRoot) overlayRoot.replaceChildren();
+      return;
+    }
+    const element = focused.nodeType === 1 ? focused : focused.commonAncestorContainer;
+    if (!element || !element.isConnected) { clearFocus(); return; }
+    createOverlay();
+    overlayRoot.replaceChildren();
+    const rects = focused.nodeType === 1 ? [focused.getBoundingClientRect()] : Array.from(focused.getClientRects());
+    for (const rect of rects.slice(0, 250)) {
+      if (!rect.width || !rect.height || rect.bottom < 0 || rect.top > innerHeight) continue;
+      const marker = document.createElement('div');
+      marker.style.cssText = 'position:absolute;box-sizing:border-box;border:2px solid #4f46e5;background:rgba(99,102,241,.10);border-radius:3px;pointer-events:none;left:' + rect.x + 'px;top:' + rect.y + 'px;width:' + rect.width + 'px;height:' + rect.height + 'px;';
+      overlayRoot.appendChild(marker);
+    }
+  }
+  function scheduleFocus() {
+    if (!scheduled) { scheduled = true; requestAnimationFrame(renderFocus); }
+  }
+  function clearFocus() {
+    focused = null;
+    if (overlayRoot) overlayRoot.replaceChildren();
+  }
+  function focus(value, scroll) {
+    focused = value;
+    if (scroll) {
+      let element = value.nodeType === 1 ? value : value.startContainer;
+      if (element.nodeType !== 1) element = element.parentElement;
+      element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+      const rect = value.getBoundingClientRect();
+      if (rect.top < 0 || rect.bottom > innerHeight) window.scrollBy(0, rect.top - innerHeight / 3);
+    }
+    scheduleFocus();
+  }
+  function validQuote(range, quote, data, requireContext) {
+    if (!range || !quote || !quote.exact) return false;
+    const pos = rangePosition(range, data);
+    if (!pos || pos.text !== quote.exact) return false;
+    return !requireContext || contextMatches(pos.start, pos.end, quote, data.text);
+  }
+  function contextMatches(start, end, quote, text) {
+    return (typeof quote.prefix !== 'string' || text.slice(Math.max(0, start - quote.prefix.length), start) === quote.prefix) &&
+      (typeof quote.suffix !== 'string' || text.slice(end, end + quote.suffix.length) === quote.suffix);
+  }
+  function restoreRange(target) {
+    if (!target.range || !target.range.start || !target.range.end) return null;
+    const a = fromPath(target.range.start.path, false);
+    const b = fromPath(target.range.end.path, false);
+    if (!a || !b || own(a) || own(b)) return null;
+    try {
+      const range = document.createRange();
+      range.setStart(a, target.range.start.offset);
+      range.setEnd(b, target.range.end.offset);
+      return range.collapsed ? null : range;
+    } catch (_) { return null; }
+  }
+  function locateText(target) {
+    const data = stream();
+    const quote = target.quote || { exact: target.text };
+    let range = restoreRange(target);
+    if (validQuote(range, quote, data, true)) return { value: range, status: 'exact', reason: 'DOM 范围、原文及上下文均匹配。' };
+    if (target.position) {
+      range = rangeAt(target.position.start, target.position.end, data);
+      if (validQuote(range, quote, data, true)) return { value: range, status: 'fallback', reason: 'DOM 路径已变化，使用原文和上下文验证了文字偏移位置。' };
+    }
+    if (!quote.exact) return { status: 'missing', reason: '批注缺少选中原文。' };
+    const hits = [];
+    let offset = 0;
+    while (offset <= data.text.length) {
+      const start = data.text.indexOf(quote.exact, offset);
+      if (start < 0) break;
+      hits.push({ start: start, end: start + quote.exact.length });
+      offset = start + 1;
+      if (hits.length > 10000) return { status: 'ambiguous', reason: '原文重复过多，无法可靠定位。' };
+    }
+    let candidates = hits;
+    if (hits.length > 1) candidates = hits.filter(p => contextMatches(p.start, p.end, quote, data.text));
+    if (candidates.length === 1) {
+      range = rangeAt(candidates[0].start, candidates[0].end, data);
+      return { value: range, status: 'fallback', reason: '原定位已变化，按唯一匹配的原文' + (hits.length > 1 ? '及上下文' : '') + '找到位置；请核对。' };
+    }
+    if (hits.length > 1) return { status: 'ambiguous', reason: '存在多处相同原文，现有上下文不足以确定原位置。' };
+    return { status: 'missing', reason: '页面中已找不到批注选中的原文。' };
+  }
+  function matchesElement(element, target) {
+    if (!element || element.nodeType !== 1 || own(element) || element.localName !== target.tag) return false;
+    if ((element.id || '') !== (target.id || '')) return false;
+    if (Array.isArray(target.classes) && target.classes.slice().sort().join(' ') !== Array.from(element.classList).sort().join(' ')) return false;
+    for (const key of Object.keys(target.attributes || {})) {
+      const value = originalAttribute(element, key);
+      const evidence = target.attributeFingerprints && target.attributeFingerprints[key];
+      if (evidence) {
+        if (typeof value !== 'string' || value.length !== evidence.length || fingerprint(value) !== evidence.hash) return false;
+      } else if (value !== target.attributes[key]) return false;
+    }
+    const text = elementText(element);
+    if (target.textFingerprint) return fingerprint(text) === target.textFingerprint && text.length === target.textLength;
+    return text === clean(target.text);
+  }
+  function contextEqual(element, target) {
+    if (!target.context) return false;
+    return JSON.stringify(context(element)) === JSON.stringify(target.context);
+  }
+  function locateElement(target) {
+    const selected = target.selector ? query(target.selector) : [];
+    if (selected.length === 1 && matchesElement(selected[0], target)) return { value: selected[0], status: 'exact', reason: '选择器、元素属性和原内容均匹配。' };
+    const byPath = fromPath(target.domPath, true);
+    if (matchesElement(byPath, target) && contextEqual(byPath, target)) return { value: byPath, status: 'fallback', reason: '选择器失效，DOM 路径、元素内容及相邻上下文匹配。' };
+    if (!target.tag || !/^[a-zA-Z][\w:-]*$/.test(target.tag)) return { status: 'missing', reason: '批注缺少有效的元素类型。' };
+    const hits = Array.from(document.getElementsByTagName(target.tag)).filter(e => matchesElement(e, target));
+    let candidates = hits;
+    if (hits.length > 1) candidates = hits.filter(e => contextEqual(e, target));
+    if (candidates.length === 1) return { value: candidates[0], status: 'fallback', reason: '原路径已变化，按唯一匹配的元素内容及属性定位；请核对。' };
+    if (hits.length > 1) return { status: 'ambiguous', reason: '存在多个相同元素，无法可靠确定批注对应哪一个。' };
+    return { status: 'missing', reason: '原元素内容或属性已变化，无法可靠定位；请根据记录的原文及上下文人工核对。' };
+  }
+  window.addEventListener('message', function (event) {
+    const message = event.data;
+    if (event.source !== parent || !message || message.hr !== true || message.channel !== channel) return;
+    try {
+      if (message.command === 'set-mode' && ['browse', 'text', 'element'].includes(message.mode)) {
+        mode = message.mode;
+        lastHover = null;
+        clearFocus();
+      } else if (message.command === 'clear-focus') {
+        clearFocus();
+      } else if (message.command === 'parent-target') {
+        const element = lastSelectedElement && lastSelectedElement.parentElement;
+        if (!element || !element.isConnected || element === document.body || element === document.documentElement) {
+          send('warning', { message: '已到达页面容器边界；针对整个页面的布局意见请使用“整页批注”。' });
+        } else {
+          lastSelectedElement = element;
+          focus(element, false);
+          send('target', { target: Object.assign(baseTarget(element), { kind: 'element' }) });
+        }
+      } else if (message.command === 'locate') {
+        const target = message.target || {};
+        clearFocus();
+        const result = target.kind === 'page' ? { status: 'exact', reason: '这是针对整页的批注。' } : target.kind === 'text' ? locateText(target) : target.kind === 'element' ? locateElement(target) : { status: 'missing', reason: '未知的批注定位类型。' };
+        if (result.value) focus(result.value, true);
+        else if (target.kind === 'page') window.scrollTo({ top: 0, behavior: 'instant' });
+        send('located', { requestId: message.requestId, status: result.status, reason: result.reason });
+      }
+    } catch (error) {
+      if (message.command === 'locate') send('located', { requestId: message.requestId, status: 'missing', reason: '定位失败：' + error.message });
+      else warn(error);
+    }
+  });
+  document.addEventListener('mouseup', function () {
+    if (mode !== 'text') return;
+    setTimeout(function () { if (mode === 'text') { try { captureText(); } catch (error) { warn(error); } } }, 0);
+  }, true);
+  document.addEventListener('keyup', function (event) {
+    if (mode === 'text' && event.key === 'Shift') { try { captureText(); } catch (error) { warn(error); } }
+  }, true);
+  document.addEventListener('click', function (event) {
+    const element = event.target && (event.target.nodeType === 1 ? event.target : event.target.parentElement);
+    if (!element || own(element)) return;
+    if (mode !== 'element') {
+      const link = element.closest('a[href],area[href]');
+      if (link) {
+        const href = (link.getAttribute('href') || '').trim();
+        if (href.startsWith('#')) {
+          // A base URL may otherwise make even fragment links leave srcdoc.
+          event.preventDefault();
+          let id = href.slice(1);
+          try { id = decodeURIComponent(id); } catch (_) { /* Invalid percent encoding stays literal. */ }
+          const anchor = document.getElementById(id) || document.getElementsByName(id)[0];
+          if (anchor) anchor.scrollIntoView();
+          else if (!id) window.scrollTo(0, 0);
+        } else if (!/^javascript:/i.test(href)) {
+          event.preventDefault();
+          send('warning', { message: '预览中已阻止跳转链接，以保留当前批注环境。需要访问链接时，请在外部浏览器打开原 HTML。' });
+        }
+      }
+      return;
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    try {
+      const target = Object.assign(baseTarget(element), { kind: 'element' });
+      lastSelectedElement = element;
+      focus(element, false);
+      send('target', { target: target });
+    } catch (error) { warn(error); }
+  }, true);
+  document.addEventListener('pointermove', function (event) {
+    if (mode !== 'element' || !event.target || own(event.target) || event.target === lastHover) return;
+    lastHover = event.target;
+    focused = event.target;
+    scheduleFocus();
+  }, true);
+  window.addEventListener('scroll', scheduleFocus, true);
+  window.addEventListener('resize', scheduleFocus);
+  send('ready', { version: 1 });
+};
+
+</script>
+<script id="hr-app">
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const core = window.HRCore;
+  const frame = $('preview-frame');
+  const labels = {text: '文字', element: '元素', page: '整页'};
+  const hints = {
+    browse: '可以正常阅读和点击页面。切换到文字或元素模式开始批注。',
+    text: '在右侧拖选文字，再填写修改意见。可跨越相邻的行内标签。',
+    element: '点击右侧元素；使用「选父级容器」可指定卡片、区块等布局区域。',
+    page: '描述页面整体布局、间距或视觉风格。批注会记录当前视口宽度。'
+  };
+  let data = null;
+  let mode = 'browse';
+  let channel = '';
+  let previewReady = false;
+  let pendingTarget = null;
+  let editingId = null;
+  let draftBaseline = '';
+  let draftTargetChanged = false;
+  let dirty = false;
+  let busy = false;
+  let folderFiles = null;
+  let folderEntries = [];
+  let currentEntryPath = '';
+  let renderGeneration = 0;
+  const locations = new Map();
+
+  function id() { return crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint32Array(4)), n => n.toString(16)).join('-'); }
+  function note(message, error = false) {
+    $('status').textContent = message;
+    $('status').classList.toggle('error', error);
+    $('status').hidden = !message;
+  }
+  function showWarnings(warnings) {
+    const box = $('warnings');
+    box.replaceChildren();
+    box.hidden = !warnings.length;
+    if (!warnings.length) return;
+    const title = document.createElement('strong');
+    title.textContent = '预览提示';
+    box.append(title);
+    const list = document.createElement('ul');
+    const unique = Array.from(new Set(warnings));
+    for (const warning of unique.slice(0, 8)) { const item = document.createElement('li'); item.textContent = warning; list.append(item); }
+    if (unique.length > 8) { const item = document.createElement('li'); item.textContent = `还有 ${unique.length - 8} 项类似资源提示。`; list.append(item); }
+    box.append(list);
+  }
+  function setBusy(value) {
+    busy = value;
+    $('open-button').disabled = value;
+    $('folder-button').disabled = value;
+    $('example-button').disabled = value;
+    $('entry-select').disabled = value;
+    $('download-button').disabled = value || !data;
+    $('reload-preview').disabled = value || !data;
+    $('data-button').disabled = value || !data;
+    updateEditor();
+  }
+  function draftDirty() { return $('comment-input').value !== draftBaseline || (draftTargetChanged && Boolean($('comment-input').value.trim())); }
+  function confirmDiscard() {
+    return !(dirty || draftDirty()) || confirm('当前修改还未下载保存。确定打开其他页面并放弃这些修改吗？');
+  }
+  function markDirty() { dirty = true; data.updatedAt = new Date().toISOString(); updateSaveState(); }
+  function updateSaveState() { $('save-state').textContent = dirty ? '● 有未下载的修改，请下载副本保存' : (data ? '副本可直接重新打开并继续编辑' : '批注保存在下载的副本中'); }
+  function view() {
+    return {width: Math.round(frame.clientWidth), height: Math.round(frame.clientHeight), devicePixelRatio: window.devicePixelRatio || 1};
+  }
+  function pageTarget() {
+    let title = data.source.name;
+    try { title = new DOMParser().parseFromString(core.getSourceText(data), 'text/html').title || title; } catch (_) { /* Filename remains a useful fallback. */ }
+    return {kind: 'page', text: title, scope: 'whole-document', context: {sourcePath: data.source.path}, viewport: view()};
+  }
+  function send(command, extra = {}) {
+    if (frame.contentWindow && channel) frame.contentWindow.postMessage({hr: true, channel, command, ...extra}, '*');
+  }
+  function setMode(next) {
+    if (!['browse', 'text', 'element', 'page'].includes(next)) return;
+    mode = next;
+    for (const button of document.querySelectorAll('[data-mode]')) button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
+    $('mode-hint').textContent = data ? hints[mode] : '先打开 HTML，或体验下方示例。';
+    send('set-mode', {mode: mode === 'page' ? 'browse' : mode});
+    if (mode === 'page' && data) setTarget(pageTarget());
+  }
+  function targetText(target) {
+    if (target.kind === 'page') return `整页 · ${target.text || data.source.name}`;
+    return target.quote?.exact || target.text || target.attributes?.alt || `<${target.tag || '元素'}> ${target.selector || ''}`;
+  }
+  function setTarget(target) {
+    pendingTarget = target;
+    draftTargetChanged = true;
+    $('target-preview').hidden = false;
+    $('target-kind').textContent = labels[target.kind] || '目标';
+    const text = targetText(target);
+    $('target-text').textContent = text.length > 600 ? text.slice(0, 600) + '…' : text;
+    $('target-selector').textContent = target.selector || `视口 ${target.viewport?.width || view().width} × ${target.viewport?.height || view().height}px`;
+    $('parent-target').hidden = target.kind !== 'element';
+    updateEditor();
+  }
+  function updateEditor() {
+    $('comment-input').disabled = !data || busy;
+    $('save-button').disabled = !data || busy || !pendingTarget || !$('comment-input').value.trim();
+    $('draft-status').textContent = draftDirty() ? '尚未保存' : '';
+    $('save-button').textContent = editingId ? '更新批注' : '保存批注';
+    $('editor-title').textContent = editingId ? '编辑批注' : '添加批注';
+    $('cancel-edit').hidden = !editingId && !pendingTarget && !$('comment-input').value;
+  }
+  function clearEditor() {
+    pendingTarget = null;
+    editingId = null;
+    draftBaseline = '';
+    draftTargetChanged = false;
+    $('comment-input').value = '';
+    $('target-preview').hidden = true;
+    send('clear-focus');
+    updateEditor();
+  }
+  function resetFolder() {
+    folderFiles = null;
+    folderEntries = [];
+    currentEntryPath = '';
+    $('entry-label').hidden = true;
+    $('entry-select').replaceChildren();
+  }
+  function renderSource() {
+    $('source-name').textContent = data.source.name;
+    $('source-meta').textContent = `${(data.source.byteLength / 1024).toFixed(1)} KiB · ${data.source.encoding} · ${data.resources.length} 个内嵌资源`;
+    $('source-version').hidden = false;
+    $('source-version').textContent = `SHA-256 ${data.source.sha256.slice(0, 16)}…`;
+    $('source-version').title = data.source.sha256;
+    $('preview-label').textContent = data.source.path;
+    document.title = `${data.source.name} · HTML 批注`;
+    $('welcome').hidden = true;
+    frame.hidden = false;
+    $('mode-hint').textContent = hints[mode];
+    updateSaveState();
+  }
+  function textNode(tag, className, content) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    element.textContent = content;
+    return element;
+  }
+  function renderAnnotations() {
+    const list = $('annotation-list');
+    list.replaceChildren();
+    const annotations = data?.annotations || [];
+    $('annotation-count').textContent = annotations.length;
+    if (!annotations.length) { list.append(textNode('p', 'empty-list', '还没有批注。选择内容后，说明希望怎么修改。')); return; }
+    annotations.forEach((annotation, index) => {
+      const card = document.createElement('article');
+      card.className = 'annotation-card' + (editingId === annotation.id ? ' active' : '');
+      card.dataset.annotationId = annotation.id;
+      const top = document.createElement('div'); top.className = 'annotation-top';
+      top.append(textNode('span', 'tag', labels[annotation.kind]), textNode('span', 'annotation-number', String(index + 1).padStart(2, '0')));
+      card.append(top, textNode('p', 'annotation-comment', annotation.comment));
+      card.append(textNode('div', 'annotation-quote', targetText(annotation.target).slice(0, 180)));
+      const location = locations.get(annotation.id);
+      if (location) { const line = textNode('div', 'location-status ' + location.status, location.message); card.append(line); }
+      const actions = document.createElement('div'); actions.className = 'annotation-actions';
+      for (const [action, label] of [['locate', '定位'], ['edit', '编辑'], ['delete', '删除']]) {
+        const button = textNode('button', 'text-button' + (action === 'delete' ? ' delete-button' : ''), label);
+        button.type = 'button'; button.dataset.action = action; button.dataset.id = annotation.id;
+        actions.append(button);
+      }
+      card.append(actions); list.append(card);
+    });
+  }
+  async function preparePreview(nextData) {
+    const nextChannel = id();
+    const bridge = `(${window.HRBridge.toString()})(${JSON.stringify(nextChannel)});`;
+    const result = await core.createPreview(nextData, bridge);
+    return {...result, channel: nextChannel};
+  }
+  function installPreview(result) {
+    previewReady = false;
+    channel = result.channel;
+    const localChannel = result.channel;
+    locations.clear();
+    showWarnings(result.warnings);
+    frame.srcdoc = result.html;
+    renderAnnotations();
+    setTimeout(() => {
+      if (channel === localChannel && !previewReady) note('页面已载入，但批注定位脚本未响应。原页面可能存在脚本错误、跳转或不支持的结构；可重载或改用普通静态 HTML。', true);
+    }, 8000);
+  }
+  async function renderPreview() {
+    const generation = ++renderGeneration;
+    const localData = data;
+    const prepared = await preparePreview(localData);
+    if (generation !== renderGeneration || data !== localData) return;
+    installPreview(prepared);
+  }
+  async function activate(nextData) {
+    await core.validateData(nextData);
+    const prepared = await preparePreview(nextData);
+    data = nextData;
+    dirty = false;
+    clearEditor();
+    setMode('browse');
+    renderSource();
+    renderAnnotations();
+    ++renderGeneration;
+    installPreview(prepared);
+    note(`已打开 ${data.source.name}，载入 ${data.annotations.length} 条批注。`);
+  }
+  async function readFile(file, path = file.name, resources = []) {
+    if (file.size > 100 * 1024 * 1024) throw new Error('待导入文件超过 100 MiB。');
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const decoded = core.decodeBytes(bytes);
+    const parsed = new DOMParser().parseFromString(decoded.text, 'text/html');
+    const nodes = parsed.querySelectorAll('script#html-review-data[type="application/json"]');
+    if (nodes.length) {
+      if (nodes.length !== 1) throw new Error('副本中包含多个批注数据块，无法确定应读取哪一份。');
+      let imported;
+      try { imported = JSON.parse(nodes[0].textContent); } catch (_) { throw new Error('批注 JSON 数据损坏，无法打开。'); }
+      if (!imported) throw new Error('这是尚未载入页面的工具文件，请选择原始 HTML 或已保存的批注副本。');
+      await core.validateData(imported);
+      return imported;
+    }
+    return core.importSource({bytes, name: file.name, path, lastModified: file.lastModified}, resources);
+  }
+  async function run(task) {
+    if (busy) return;
+    setBusy(true);
+    note('正在处理本地文件…');
+    try { await task(); } catch (error) { note(error.message || String(error), true); }
+    finally { setBusy(false); }
+  }
+  function folderPath(file) {
+    const path = (file.webkitRelativePath || file.name).replace(/\\/g, '/');
+    return file.webkitRelativePath ? path.split('/').slice(1).join('/') : path;
+  }
+  async function readFolderEntry(path, files) {
+    const entry = files.find(file => folderPath(file) === path);
+    if (!entry) throw new Error('找不到所选 HTML 文件。');
+    const resources = [];
+    for (const file of files) {
+      if (file === entry) continue;
+      resources.push({path: folderPath(file), bytes: new Uint8Array(await file.arrayBuffer()), mime: file.type});
+    }
+    return readFile(entry, path, resources);
+  }
+  async function openFolderEntry(path) {
+    const nextData = await readFolderEntry(path, folderFiles);
+    await activate(nextData);
+    currentEntryPath = path;
+    $('entry-select').value = path;
+    $('entry-label').hidden = false;
+  }
+  function saveAnnotation() {
+    const comment = $('comment-input').value.trim();
+    if (!data || !pendingTarget || !comment) { note('请先选择批注目标并填写修改意见。', true); return; }
+    if (data.annotations.length >= 10000 && !editingId) { note('单个副本最多支持 10000 条批注。', true); return; }
+    const now = new Date().toISOString();
+    const existing = editingId && data.annotations.find(annotation => annotation.id === editingId);
+    if (pendingTarget.kind === 'page') pendingTarget.viewport = view();
+    const annotation = {id: existing?.id || id(), kind: pendingTarget.kind, comment, createdAt: existing?.createdAt || now, updatedAt: now, target: structuredClone(pendingTarget), view: view()};
+    if (existing) data.annotations[data.annotations.indexOf(existing)] = annotation;
+    else data.annotations.push(annotation);
+    markDirty(); clearEditor(); renderAnnotations();
+    note(existing ? '批注已更新，下载副本即可保存到磁盘。' : '批注已添加，下载副本即可保存到磁盘。');
+  }
+  function locate(annotation) {
+    if (annotation.kind === 'page') {
+      const width = annotation.view?.width || annotation.target.viewport?.width;
+      const available = ['390', '768', '1280'];
+      note(`整页批注：${annotation.target.text || data.source.name}。记录视口 ${width || '未知'} × ${annotation.view?.height || annotation.target.viewport?.height || '未知'}px；请结合当前布局查看。`);
+      if (available.includes(String(width))) { $('preview-width').value = String(width); applyWidth(); }
+      locations.set(annotation.id, {status: 'exact', message: '整页反馈 · 结合记录视口查看'});
+      renderAnnotations(); return;
+    }
+    if (!previewReady) { note('页面还在载入，请稍后定位。', true); return; }
+    send('locate', {target: annotation.target, requestId: annotation.id});
+  }
+  function edit(annotation) {
+    if (draftDirty() && !confirm('编辑框中有未保存的修改。确定切换到这条批注吗？')) return;
+    editingId = annotation.id;
+    $('comment-input').value = annotation.comment;
+    draftBaseline = annotation.comment;
+    setMode(annotation.kind);
+    setTarget(structuredClone(annotation.target));
+    draftTargetChanged = false;
+    updateEditor(); renderAnnotations(); locate(annotation);
+    $('comment-input').focus();
+  }
+  async function download() {
+    if (draftDirty()) { note('编辑框中还有未保存的修改，请先点击「保存批注」或「更新批注」，再下载副本。', true); return; }
+    await core.validateData(data);
+    const copy = document.documentElement.cloneNode(true);
+    copy.querySelector('#html-review-data').textContent = core.serialize(data);
+    const copiedFrame = copy.querySelector('#preview-frame');
+    copiedFrame.removeAttribute('srcdoc'); copiedFrame.removeAttribute('src'); copiedFrame.hidden = true;
+    for (const dialog of copy.querySelectorAll('dialog[open]')) dialog.removeAttribute('open');
+    // Rebuilt on startup. Do not serialize transient editor/list state or duplicate page bytes.
+    copy.querySelector('#annotation-list').replaceChildren();
+    copy.querySelector('#comment-input').textContent = '';
+    copy.querySelector('#target-preview').hidden = true;
+    copy.querySelector('#data-preview').textContent = '';
+    copy.querySelector('#entry-select').replaceChildren();
+    copy.querySelector('#entry-label').hidden = true;
+    copy.querySelector('#status').hidden = true;
+    copy.querySelector('#warnings').replaceChildren(); copy.querySelector('#warnings').hidden = true;
+    const html = '<!doctype html>\n' + copy.outerHTML;
+    const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = data.source.name.replace(/\.(html?|xhtml)$/i, '').replace(/[\\/:*?"<>|]/g, '_') + '.review.html';
+    document.body.append(anchor); anchor.click(); anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    dirty = false; updateSaveState();
+    note('已生成下载副本。请确认浏览器完成下载；以后直接打开该副本即可继续编辑。');
+  }
+  function applyWidth() {
+    const value = $('preview-width').value;
+    frame.style.width = value === 'fluid' ? '100%' : `${Number(value)}px`;
+    frame.style.minWidth = value === 'fluid' ? '0' : `${Number(value)}px`;
+    if (pendingTarget?.kind === 'page') setTarget({...pendingTarget, viewport: view()});
+  }
+
+  window.addEventListener('message', event => {
+    const message = event.data;
+    if (event.source !== frame.contentWindow || !message || message.hr !== true || message.channel !== channel || !data) return;
+    if (message.event === 'ready') { previewReady = true; send('set-mode', {mode: mode === 'page' ? 'browse' : mode}); }
+    else if (message.event === 'target') {
+      if (!['text', 'element'].includes(mode)) return;
+      try {
+        const serialized = JSON.stringify(message.target);
+        if (!serialized || serialized.length > 250000) throw new Error('选中范围过大，请缩小范围。');
+        const target = JSON.parse(serialized);
+        if (!target || target.kind !== mode || typeof target.selector !== 'string' || target.selector.length > 4096) return;
+        core.validateTarget(target, target.kind);
+        setTarget(target); note('目标已选中，请填写修改意见。');
+      } catch (error) { note(error.message, true); }
+    } else if (message.event === 'located') {
+      if (!data.annotations.some(annotation => annotation.id === message.requestId) || !['exact', 'fallback', 'ambiguous', 'missing'].includes(message.status)) return;
+      const description = {exact: '已定位并核对内容', fallback: '通过上下文重新定位', ambiguous: '存在多个候选，需人工确认', missing: '目标无法确认，原页面可能已变化'}[message.status];
+      const reason = typeof message.reason === 'string' ? message.reason.slice(0, 500) : '';
+      locations.set(message.requestId, {status: message.status, message: description + (reason ? ' · ' + reason : '')});
+      renderAnnotations(); note(description, ['missing', 'ambiguous'].includes(message.status));
+    } else if (message.event === 'warning' && typeof message.message === 'string') note(message.message.slice(0, 1500), true);
+  });
+  $('open-button').addEventListener('click', () => $('file-input').click());
+  $('folder-button').addEventListener('click', () => $('folder-input').click());
+  $('file-input').addEventListener('change', async event => {
+    const file = event.target.files[0]; event.target.value = '';
+    if (!file || !confirmDiscard()) return;
+    await run(async () => { const nextData = await readFile(file); await activate(nextData); resetFolder(); });
+  });
+  $('folder-input').addEventListener('change', async event => {
+    const files = Array.from(event.target.files); event.target.value = '';
+    if (!files.length || !confirmDiscard()) return;
+    await run(async () => {
+      if (files.length > 500 || files.reduce((size, file) => size + file.size, 0) > 50 * 1024 * 1024) throw new Error('文件夹最多 500 个文件、合计最多 50 MiB。请选择只包含页面所需资源的目录。');
+      const entries = files.filter(file => /\.html?$/i.test(file.name)).sort((a, b) => folderPath(a).localeCompare(folderPath(b)));
+      if (!entries.length) throw new Error('所选文件夹没有 HTML 文件。');
+      const preferred = entries.find(file => /^index\.html?$/i.test(folderPath(file))) || entries[0];
+      const preferredPath = folderPath(preferred);
+      const nextData = await readFolderEntry(preferredPath, files);
+      await activate(nextData);
+      folderFiles = files; folderEntries = entries; currentEntryPath = preferredPath;
+      $('entry-select').replaceChildren();
+      for (const file of entries) { const option = document.createElement('option'); option.value = folderPath(file); option.textContent = folderPath(file); $('entry-select').append(option); }
+      $('entry-select').value = preferredPath;
+      $('entry-label').hidden = false;
+    });
+  });
+  $('entry-select').addEventListener('change', async event => {
+    const path = event.target.value;
+    if (!confirmDiscard()) { event.target.value = currentEntryPath; return; }
+    await run(async () => { try { await openFolderEntry(path); } catch (error) { $('entry-select').value = currentEntryPath; throw error; } });
+  });
+  $('example-button').addEventListener('click', () => run(async () => {
+    if (!confirmDiscard()) return;
+    const example = JSON.parse($('html-review-example').textContent);
+    const nextData = await core.importSource({bytes: core.base64ToBytes(example.base64), name: example.name});
+    await activate(nextData); resetFolder();
+  }));
+  for (const button of document.querySelectorAll('[data-mode]')) button.addEventListener('click', () => { if (data) setMode(button.dataset.mode); });
+  $('comment-input').addEventListener('input', updateEditor);
+  $('comment-input').addEventListener('keydown', event => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); saveAnnotation(); } });
+  $('save-button').addEventListener('click', saveAnnotation);
+  $('cancel-edit').addEventListener('click', () => { if (!draftDirty() || confirm('确定放弃编辑框中尚未保存的修改吗？')) { clearEditor(); setMode('browse'); renderAnnotations(); } });
+  $('parent-target').addEventListener('click', () => send('parent-target'));
+  $('download-button').addEventListener('click', () => run(download));
+  $('reload-preview').addEventListener('click', () => run(async () => { await renderPreview(); note('预览已重新载入。页面脚本运行状态已重置，已有批注保留。'); }));
+  $('preview-width').addEventListener('change', applyWidth);
+  $('annotation-list').addEventListener('click', event => {
+    const button = event.target.closest('button[data-action]');
+    if (!button || !data) return;
+    const annotation = data.annotations.find(item => item.id === button.dataset.id);
+    if (!annotation) return;
+    if (button.dataset.action === 'locate') locate(annotation);
+    else if (button.dataset.action === 'edit') edit(annotation);
+    else if (button.dataset.action === 'delete' && confirm('确定删除这条批注吗？')) {
+      data.annotations = data.annotations.filter(item => item.id !== annotation.id);
+      if (editingId === annotation.id) clearEditor();
+      locations.delete(annotation.id); markDirty(); renderAnnotations(); note('批注已删除，下载新副本即可保存。');
+    }
+  });
+  $('help-button').addEventListener('click', () => $('help-dialog').showModal());
+  $('data-button').addEventListener('click', () => {
+    const summary = { ...data, source: {...data.source, base64: `[已省略 ${data.source.byteLength} 个原始字节]`}, resources: data.resources.map(resource => ({...resource, base64: '[已省略资源字节]'})) };
+    $('data-preview').textContent = JSON.stringify(summary, null, 2); $('data-dialog').showModal();
+  });
+  for (const button of document.querySelectorAll('[data-close]')) button.addEventListener('click', () => $(button.dataset.close).close());
+  window.addEventListener('beforeunload', event => { if (dirty || draftDirty()) { event.preventDefault(); event.returnValue = ''; } });
+  window.addEventListener('keydown', event => { if (event.key === 'Escape' && !document.querySelector('dialog[open]')) setMode('browse'); });
+  // Exports carry the runtime, not a session snapshot. Always rehydrate from verified JSON.
+  resetFolder(); clearEditor(); setMode('browse'); applyWidth();
+  for (const dialog of document.querySelectorAll('dialog[open]')) dialog.removeAttribute('open');
+  let initial;
+  try { initial = JSON.parse($('html-review-data').textContent); }
+  catch (_) { note('批注数据不是有效 JSON，无法恢复。', true); }
+  if (initial) run(() => activate(initial));
+  else { setBusy(false); $('welcome').hidden = false; frame.hidden = true; }
+})();
+
+</script>
+
+
+</body></html>

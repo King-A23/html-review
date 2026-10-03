@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>HTML 批注 · 本地页面审阅</title>
+  <!-- HR_STYLES -->
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand"><span class="brand-icon" aria-hidden="true">✎</span><div><strong>HTML 批注</strong><span class="brand-subtitle">把修改意见留在页面上</span></div></div>
+    <div class="header-actions">
+      <button id="help-button" class="quiet" type="button">使用说明</button>
+      <button id="open-button" type="button">打开 HTML</button>
+      <button id="folder-button" type="button">导入文件夹</button>
+      <button id="download-button" class="primary" type="button" disabled>↓ 下载批注副本</button>
+    </div>
+    <input id="file-input" type="file" accept=".html,.htm,text/html" hidden>
+    <input id="folder-input" type="file" webkitdirectory multiple hidden>
+  </header>
+  <main class="workspace">
+    <aside class="sidebar" aria-label="批注工作区">
+      <section class="source-info">
+        <span class="eyebrow">当前文件</span>
+        <h1 id="source-name">尚未打开页面</h1>
+        <div id="source-meta" class="muted">本地处理 · 无需注册 · 原文件保持不变</div>
+        <div id="source-version" class="version" hidden></div>
+        <label id="entry-label" class="field-label" hidden>文件夹中的页面<select id="entry-select"></select></label>
+      </section>
+      <section class="editor-section">
+        <div class="section-heading"><h2 id="editor-title">添加批注</h2><button id="cancel-edit" class="text-button" type="button" hidden>取消编辑</button></div>
+        <div class="mode-tabs" role="group" aria-label="批注模式">
+          <button type="button" data-mode="browse" aria-pressed="true">浏览</button>
+          <button type="button" data-mode="text" aria-pressed="false">文字</button>
+          <button type="button" data-mode="element" aria-pressed="false">元素</button>
+          <button type="button" data-mode="page" aria-pressed="false">整页</button>
+        </div>
+        <p id="mode-hint" class="mode-hint">先打开 HTML，或体验下方示例。</p>
+        <div id="target-preview" class="target-preview" hidden><span id="target-kind" class="tag"></span><p id="target-text"></p><code id="target-selector"></code><button id="parent-target" class="text-button" type="button" hidden>↑ 选父级容器</button></div>
+        <label class="field-label" for="comment-input">修改意见</label>
+        <textarea id="comment-input" rows="4" maxlength="20000" placeholder="例如：将这段介绍缩短为两句话，并保留核心结论。" disabled></textarea>
+        <div class="editor-actions"><button id="save-button" class="primary" type="button" disabled>保存批注</button><span id="draft-status" class="muted"></span></div>
+      </section>
+      <section class="annotations-section">
+        <div class="section-heading"><h2>批注 <span id="annotation-count" class="count">0</span></h2><button id="data-button" class="text-button" type="button" disabled>查看数据</button></div>
+        <div id="annotation-list" class="annotation-list"><p class="empty-list">批注会显示在这里。<br>选择内容后，说明希望怎么修改。</p></div>
+      </section>
+      <footer class="sidebar-footer"><span id="save-state">批注保存在下载的副本中</span><span class="privacy-dot">● 仅在本地处理</span></footer>
+    </aside>
+    <section class="preview-section" aria-label="HTML 页面预览">
+      <div class="preview-toolbar"><span id="preview-label">页面预览</span><div class="preview-controls"><label for="preview-width">视口</label><select id="preview-width"><option value="fluid">自适应</option><option value="390">手机 390px</option><option value="768">平板 768px</option><option value="1280">桌面 1280px</option></select><button id="reload-preview" class="text-button" type="button" disabled>重载页面</button></div></div>
+      <div id="warnings" class="warnings" hidden></div>
+      <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+      <div id="preview-stage" class="preview-stage">
+        <div id="welcome" class="welcome">
+          <div class="welcome-mark" aria-hidden="true">⟦ <span>✎</span> ⟧</div>
+          <span class="eyebrow">本地 HTML 审阅工具</span>
+          <h2>打开页面，<br>说明想怎么改。</h2>
+          <p>选择文字、点选元素，或描述整页布局。<br>下载带批注的副本，交给任何 coding agent。</p>
+          <button id="example-button" class="primary" type="button">体验示例 →</button>
+          <div class="welcome-steps"><span><b>01</b> 打开 HTML</span><span><b>02</b> 留下批注</span><span><b>03</b> 下载副本</span></div>
+          <p class="welcome-note">支持直接双击打开 · 无需服务器<br>带相对图片或样式的页面，请使用「导入文件夹」。</p>
+        </div>
+        <iframe id="preview-frame" title="原始 HTML 页面" sandbox="allow-scripts" referrerpolicy="no-referrer" hidden></iframe>
+      </div>
+    </section>
+  </main>
+  <dialog id="help-dialog"><div class="dialog-heading"><h2>让修改意见有明确的落点</h2><button type="button" data-close="help-dialog" aria-label="关闭使用说明">×</button></div><div class="dialog-body"><ol><li><b>打开 HTML：</b>页面在右侧沙箱中渲染；带相对资源时导入整个文件夹。</li><li><b>留下批注：</b>文字模式拖选原文，元素模式点击目标。布局问题可选父级容器，或使用整页模式并记录当前视口。</li><li><b>保存与下载：</b>先保存批注，再下载副本。关闭页面前请下载；修改不会自动写回磁盘。</li><li><b>继续编辑：</b>直接打开下载的 .review.html，或者再次导入本工具，即可编辑、删除和追加批注。</li><li><b>交给 agent：</b>提供批注副本和原 HTML。让 agent 读取 html-review-data JSON，校验 source.sha256，再结合原文、选择器和上下文修改原文件。</li></ol><p>预览允许原页面脚本运行，请只打开可信的 HTML。沙箱限制登录、存储、表单提交和页面跳转；动态资源请求、ES 模块、嵌套 iframe 等可能无法完全重现。原始文件字节始终单独保存。</p><p>目录导入会把该目录中的文件嵌入副本，请选只包含本页面所需资源的目录。单文件上限 20 MiB，文件夹总大小上限 50 MiB、最多 500 个文件。</p></div></dialog>
+  <dialog id="data-dialog"><div class="dialog-heading"><h2>结构化批注数据</h2><button type="button" data-close="data-dialog" aria-label="关闭批注数据">×</button></div><div class="dialog-body"><p>下载副本包含完整 JSON 和原始文件字节。下方为便于阅读的摘要，省略了 base64 内容。</p><pre id="data-preview"></pre></div></dialog>
+  <script id="html-review-data" type="application/json">null</script>
+  <!-- HR_EXAMPLE -->
+  <!-- HR_SCRIPTS -->
+</body>
+</html>

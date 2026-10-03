@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-labelledby="title description">
+  <title id="title">缓慢的山谷</title><desc id="description">淡黄色太阳照着青绿色远山，河流穿过谷地，前景有两棵松树。</desc>
+  <rect width="640" height="480" fill="#e5eadb"/>
+  <circle cx="480" cy="108" r="51" fill="#edcb88"/>
+  <path d="M0 284L112 146L216 257L320 94L463 268L559 174L640 267V480H0Z" fill="#c0cfb7"/>
+  <path d="M0 352L120 251L230 331L392 201L526 319L640 261V480H0Z" fill="#8da992"/>
+  <path d="M0 399Q113 308 248 379T640 340V480H0Z" fill="#577d66"/>
+  <path d="M411 328Q297 366 360 399T388 480H510Q389 418 426 394T461 343Z" fill="#bdd4c4"/>
+  <path d="M105 302L67 375H88L54 425H150L121 375H142Z" fill="#355944"/>
+  <path d="M163 336L136 391H151L126 433H201L180 391H194Z" fill="#3c624b"/>
+  <path d="M104 417V455M164 427V459" stroke="#3d5740" stroke-width="7"/>
+  <path d="M42 455H592" stroke="#466e54" stroke-width="2" opacity=".5"/>
+</svg>

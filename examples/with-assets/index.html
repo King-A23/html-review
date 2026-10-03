@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>山野手记 · 相对资源示例</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <script src="scripts/interactions.js" defer></script>
+</head>
+<body>
+  <main class="page">
+    <header class="masthead"><span class="brand">山野手记</span><span>FIELD NOTES / 001</span></header>
+    <section class="story" aria-labelledby="story-title">
+      <div class="story-copy">
+        <p class="eyebrow">相对资源导入示例</p>
+        <h1 id="story-title">走慢一点，<br>看看远处的山。</h1>
+        <p id="story-description">有时，最好的路线是一条允许停下来的路。带上好奇心，去收集风、光和新的想法。🌿</p>
+        <button type="button" id="save-note">记下这段旅程</button>
+        <p id="save-status" role="status">还没有记录，点击按钮试试看。</p>
+      </div>
+      <figure><img id="landscape" src="images/landscape.svg" alt="浅绿色山谷、松树与远山的插图" width="640" height="480"><figcaption>插图通过相对路径加载，背景点阵来自 CSS url()。</figcaption></figure>
+    </section>
+    <section class="resource-note"><h2>这个页面用到了哪些文件？</h2><p>外部样式表导入了一份配色文件，图片和交互脚本也分别保存。请导入整个 <code>with-assets</code> 文件夹，再选择入口 <code>index.html</code>。</p></section>
+    <footer>中文、emoji 和相对资源，应当在再次打开批注副本后依然可用。</footer>
+  </main>
+</body>
+</html>
