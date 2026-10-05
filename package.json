@@ -10,5 +10,10 @@
     "test:e2e": "node tests/e2e.mjs",
     "test:bridge": "node tests/bridge.browser.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "html-review": "bin/html-review.mjs"
+  }
 }

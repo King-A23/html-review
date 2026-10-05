@@ -6,6 +6,22 @@
 
 ![带批注的 HTML 页面](docs/preview.png)
 
+## 命令行打开
+
+需要 Node.js 20+。在仓库根目录运行 `npm link` 注册命令：
+
+```sh
+html-review                  # 打开空白批注工具
+html-review "./报告.html"     # 生成同目录的批注副本并打开
+html-review "./报告.review.html" # 继续编辑已有批注
+html-review "./报告.html" --no-open # 仅生成副本并输出路径
+```
+
+macOS 默认使用 Google Chrome；Windows/Linux 使用系统默认浏览器。
+命令不会覆盖已有文件：同名副本已存在时生成 `.review.1.html` 等新文件。
+生成的副本包含原文件快照；批注后仍需点击“下载批注副本”保存。
+外部 CSS、图片、JS 不会由命令自动收录，请运行无参数命令后使用“导入文件夹”。
+
 ## 开始使用
 
 1. 下载或克隆本仓库，双击根目录 `index.html`，用现代桌面浏览器打开。推荐先用 Chrome 或 Edge 验证完整流程。
