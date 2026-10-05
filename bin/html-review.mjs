@@ -37,7 +37,9 @@ async function prepare() {
     return filename;
   }
   const data = await core.importSource({bytes: new Uint8Array(bytes), name: path.basename(filename), lastModified: info.mtimeMs});
-  const template = await readFile(path.join(root, 'index.html'), 'utf8');
+  const template = (await readFile(path.join(root, 'index.html'), 'utf8'))
+    .replace(/(<script type="application\/json" id="html-review-example">)[\s\S]*?(<\/script>)/, '$1null$2')
+    .replace('<button id="example-button"', '<button hidden id="example-button"');
   const marker = '<script id="html-review-data" type="application/json">null</script>';
   if (template.split(marker).length !== 2) throw new Error('工具模板无效，请重新构建 index.html。');
   const output = template.replace(marker, () => '<script id="html-review-data" type="application/json">' + core.serialize(data) + '</script>');

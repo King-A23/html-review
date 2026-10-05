@@ -1,5 +1,5 @@
 /* Runs inside the opaque-origin preview iframe. Keep this function self-contained. */
-window.HRBridge = function HRBridge(channel) {
+window.HRBridge = function HRBridge(channel, shortcutFor) {
   'use strict';
   const OWNED = 'data-html-review-owned';
   const EXCLUDED = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'HEAD']);
@@ -159,6 +159,29 @@ window.HRBridge = function HRBridge(channel) {
       context: context(element), rect: box(element.getBoundingClientRect())
     };
   }
+  let pages = [];
+  let pageSignature = '';
+  function discoverPages() {
+    const explicit = query('[data-page],[data-page-number],[data-slide],[role="doc-page"],.print-page,.pdf-page,.slide,.slides > section');
+    const generic = query('.page');
+    const printBreaks = query('section,article,main,div').slice(0, 5000).filter(element => { const style = getComputedStyle(element); return ['page', 'always', 'left', 'right'].includes(style.breakAfter) || ['page', 'always', 'left', 'right'].includes(style.breakBefore); });
+    const candidates = Array.from(new Set(explicit.concat(printBreaks, generic.length > 1 ? generic : []))).filter(element => !element.matches('button,a,input,select,option') && element !== document.body && element !== document.documentElement);
+    // Nested slide decks use sections as groups. Only their actual leaf pages are targets.
+    pages = candidates.filter(element => !candidates.some(other => other !== element && element.contains(other))).sort((a, b) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1).slice(0, 1000);
+    const inventory = pages.map((element, index) => ({index: index + 1, title: clean(element.getAttribute('aria-label') || element.getAttribute('data-page-title') || element.querySelector('h1,h2,h3')?.textContent || '页面 ' + (index + 1)).slice(0, 100)}));
+    const signature = JSON.stringify(inventory.map((item, index) => ({...item, selector: selector(pages[index])})));
+    if (signature !== pageSignature) { pageSignature = signature; send('pages', {pages: inventory}); }
+    return pages;
+  }
+  function capturePage(element) {
+    discoverPages();
+    const index = pages.indexOf(element);
+    if (index < 0) { send('warning', {message: '请选择 HTML 已有的幻灯片或打印页区块；连续页面可使用整体或元素批注。'}); return; }
+    const title = clean(element.getAttribute('aria-label') || element.getAttribute('data-page-title') || element.querySelector('h1,h2,h3')?.textContent || '页面 ' + (index + 1)).slice(0, 100);
+    focus(element, true);
+    send('target', {target: Object.assign(baseTarget(element), {kind: 'page', scope: 'page', pageIndex: index + 1, pageCount: pages.length, pageTitle: title, viewport: {width: innerWidth, height: innerHeight, devicePixelRatio: devicePixelRatio || 1}})});
+    if (!element.getClientRects().length) send('warning', {message: '已选中该页，但它当前不可见。可先在浏览模式切换到对应幻灯片，再继续审阅。'});
+  }
   function rangePosition(range, data) {
     let start = null;
     let end = null;
@@ -193,14 +216,18 @@ window.HRBridge = function HRBridge(channel) {
   }
   function captureText() {
     const selection = window.getSelection();
-    if (!selection || selection.isCollapsed || !selection.rangeCount) return;
+    if (!selection || selection.isCollapsed || !selection.rangeCount) {
+      clearFocus();
+      send('target-cleared', {kind: 'text'});
+      return;
+    }
     const range = selection.getRangeAt(0).cloneRange();
     if (own(range.startContainer) || own(range.endContainer)) return;
     const data = stream();
     const pos = rangePosition(range, data);
     if (!pos || !pos.text.trim()) return;
     if (pos.text.length > 20000) {
-      send('warning', { message: '选择文字过长，请缩小至 20,000 字符以内；整页意见可使用“整页批注”。' });
+      send('warning', { message: '选择文字过长，请缩小至 20,000 字符以内；整个文件的意见可使用“整体”模式。' });
       return;
     }
     const element = range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
@@ -238,7 +265,7 @@ window.HRBridge = function HRBridge(channel) {
     for (const rect of rects.slice(0, 250)) {
       if (!rect.width || !rect.height || rect.bottom < 0 || rect.top > innerHeight) continue;
       const marker = document.createElement('div');
-      marker.style.cssText = 'position:absolute;box-sizing:border-box;border:2px solid #4f46e5;background:rgba(99,102,241,.10);border-radius:3px;pointer-events:none;left:' + rect.x + 'px;top:' + rect.y + 'px;width:' + rect.width + 'px;height:' + rect.height + 'px;';
+      marker.style.cssText = 'position:absolute;box-sizing:border-box;border:2px solid #bd563d;background:rgba(189,86,61,.10);border-radius:3px;pointer-events:none;left:' + rect.x + 'px;top:' + rect.y + 'px;width:' + rect.width + 'px;height:' + rect.height + 'px;';
       overlayRoot.appendChild(marker);
     }
   }
@@ -313,7 +340,8 @@ window.HRBridge = function HRBridge(channel) {
   function matchesElement(element, target) {
     if (!element || element.nodeType !== 1 || own(element) || element.localName !== target.tag) return false;
     if ((element.id || '') !== (target.id || '')) return false;
-    if (Array.isArray(target.classes) && target.classes.slice().sort().join(' ') !== Array.from(element.classList).sort().join(' ')) return false;
+    const stableClasses = classes => classes.filter(value => target.scope !== 'page' || !['active', 'present', 'past', 'future', 'current', 'is-active'].includes(value)).sort().join(' ');
+    if (Array.isArray(target.classes) && stableClasses(target.classes) !== stableClasses(Array.from(element.classList))) return false;
     for (const key of Object.keys(target.attributes || {})) {
       const value = originalAttribute(element, key);
       const evidence = target.attributeFingerprints && target.attributeFingerprints[key];
@@ -346,16 +374,26 @@ window.HRBridge = function HRBridge(channel) {
     const message = event.data;
     if (event.source !== parent || !message || message.hr !== true || message.channel !== channel) return;
     try {
-      if (message.command === 'set-mode' && ['browse', 'text', 'element'].includes(message.mode)) {
+      if (message.command === 'set-mode' && ['browse', 'text', 'element', 'page'].includes(message.mode)) {
         mode = message.mode;
+        discoverPages();
         lastHover = null;
         clearFocus();
+      } else if (message.command === 'select-page' && mode === 'page') {
+        discoverPages();
+        if (Number.isInteger(message.index) && pages[message.index - 1]) capturePage(pages[message.index - 1]);
       } else if (message.command === 'clear-focus') {
         clearFocus();
+      } else if (message.command === 'clear-selection') {
+        clearFocus();
+        lastSelectedElement = null;
+        lastHover = null;
+        const selection = window.getSelection();
+        if (selection) selection.removeAllRanges();
       } else if (message.command === 'parent-target') {
         const element = lastSelectedElement && lastSelectedElement.parentElement;
         if (!element || !element.isConnected || element === document.body || element === document.documentElement) {
-          send('warning', { message: '已到达页面容器边界；针对整个页面的布局意见请使用“整页批注”。' });
+          send('warning', { message: '已到达页面容器边界；针对整个文件的意见请使用“整体”模式。' });
         } else {
           lastSelectedElement = element;
           focus(element, false);
@@ -364,7 +402,7 @@ window.HRBridge = function HRBridge(channel) {
       } else if (message.command === 'locate') {
         const target = message.target || {};
         clearFocus();
-        const result = target.kind === 'page' ? { status: 'exact', reason: '这是针对整页的批注。' } : target.kind === 'text' ? locateText(target) : target.kind === 'element' ? locateElement(target) : { status: 'missing', reason: '未知的批注定位类型。' };
+        const result = target.kind === 'page' ? ((target.scope === 'whole-document' || !target.selector) ? { status: 'exact', reason: '这是针对整个文件的批注。' } : locateElement(target)) : target.kind === 'text' ? locateText(target) : target.kind === 'element' ? locateElement(target) : { status: 'missing', reason: '未知的批注定位类型。' };
         if (result.value) focus(result.value, true);
         else if (target.kind === 'page') window.scrollTo({ top: 0, behavior: 'instant' });
         send('located', { requestId: message.requestId, status: result.status, reason: result.reason });
@@ -381,9 +419,34 @@ window.HRBridge = function HRBridge(channel) {
   document.addEventListener('keyup', function (event) {
     if (mode === 'text' && event.key === 'Shift') { try { captureText(); } catch (error) { warn(error); } }
   }, true);
+  document.addEventListener('keydown', function (event) {
+    if (typeof shortcutFor !== 'function') return;
+    const editable = event.composedPath().some(node => node.nodeType === 1 && (node.matches('input,textarea,select') || node.isContentEditable));
+    const action = shortcutFor(event, editable);
+    if (!action) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    send('shortcut', {action: action});
+  }, true);
+  document.addEventListener('dragover', function (event) {
+    if (!event.dataTransfer || !Array.from(event.dataTransfer.types).includes('Files')) return;
+    event.preventDefault();
+    send('file-drag');
+  }, true);
+  document.addEventListener('drop', function (event) {
+    if (!event.dataTransfer || !Array.from(event.dataTransfer.types).includes('Files')) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    send('dropped-files', {files: Array.from(event.dataTransfer.files)});
+  }, true);
   document.addEventListener('click', function (event) {
     const element = event.target && (event.target.nodeType === 1 ? event.target : event.target.parentElement);
     if (!element || own(element)) return;
+    if (mode === 'page') {
+      event.preventDefault(); event.stopImmediatePropagation();
+      try { discoverPages(); capturePage(pages.find(page => page.contains(element))); } catch (error) { warn(error); }
+      return;
+    }
     if (mode !== 'element') {
       const link = element.closest('a[href],area[href]');
       if (link) {
@@ -413,12 +476,21 @@ window.HRBridge = function HRBridge(channel) {
     } catch (error) { warn(error); }
   }, true);
   document.addEventListener('pointermove', function (event) {
-    if (mode !== 'element' || !event.target || own(event.target) || event.target === lastHover) return;
+    if (!['element', 'page'].includes(mode) || !event.target || own(event.target) || event.target === lastHover) return;
     lastHover = event.target;
-    focused = event.target;
+    focused = mode === 'page' ? pages.find(page => page.contains(event.target)) : event.target;
     scheduleFocus();
   }, true);
   window.addEventListener('scroll', scheduleFocus, true);
   window.addEventListener('resize', scheduleFocus);
+  function watchPages() {
+    discoverPages();
+    let timer;
+    new MutationObserver(records => {
+      if (!records.some(record => !own(record.target) && (record.type === 'attributes' || Array.from(record.addedNodes).concat(Array.from(record.removedNodes)).some(node => !own(node))))) return;
+      clearTimeout(timer); timer = setTimeout(discoverPages, 80);
+    }).observe(document.body, {subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'data-page', 'data-page-number', 'data-slide', 'data-page-title', 'aria-label']});
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchPages, {once: true}); else watchPages();
   send('ready', { version: 1 });
 };

@@ -3,12 +3,21 @@
   const $ = id => document.getElementById(id);
   const core = window.HRCore;
   const frame = $('preview-frame');
-  const labels = {text: '文字', element: '元素', page: '整页'};
+  const workspace = document.querySelector('.workspace');
+  const sidebarPreferenceKey = 'html-review.sidebar-position';
+  const recoveryKey = 'workspace:' + location.href.split('#')[0];
+  const resumeKey = 'html-review.resume:' + recoveryKey;
+  const guideKey = 'html-review.guide-dismissed';
+  const labels = {text: '文字', element: '元素', page: '单页'};
+  const targetLabel = target => target.kind === 'page' && (target.scope === 'whole-document' || !target.selector) ? '整体' : labels[target.kind];
+  let pageInventory = [];
+  let renderedIds = new Set();
   const hints = {
-    browse: '可以正常阅读和点击页面。切换到文字或元素模式开始批注。',
-    text: '在右侧拖选文字，再填写修改意见。可跨越相邻的行内标签。',
-    element: '点击右侧元素；使用「选父级容器」可指定卡片、区块等布局区域。',
-    page: '描述页面整体布局、间距或视觉风格。批注会记录当前视口宽度。'
+    browse: '可以正常阅读和点击页面。直接填写意见即可批注整个文件；也可切换到文字或元素模式。',
+    text: '在预览中拖选文字，再填写修改意见。可跨越相邻的行内标签。',
+    element: '点击预览中的元素；使用「选父级容器」可指定卡片、区块等布局区域。',
+    page: '选择 HTML 中已有的幻灯片或打印页：点击页面，或从下方列表选择。',
+    whole: '针对整个文件提出修改意见，无需选择文字或元素。适合整体内容、结构和视觉风格。'
   };
   let data = null;
   let mode = 'browse';
@@ -19,12 +28,44 @@
   let draftBaseline = '';
   let draftTargetChanged = false;
   let dirty = false;
+  let lastExportFormat = 'html';
   let busy = false;
   let folderFiles = null;
   let folderEntries = [];
   let currentEntryPath = '';
   let renderGeneration = 0;
   const locations = new Map();
+  const undoStack = [];
+  const redoStack = [];
+  let bootPromise = Promise.resolve();
+  let cachedSession = null;
+  let persistenceReady = false;
+  let restoringSession = false;
+  let autosaveTimer = null;
+  let autosaveRevision = 0;
+  let autosavePhase = 'idle';
+  let guideDismissed = false;
+  let delivered = false;
+  let autosavePaused = false;
+  let needsEpochRefresh = false;
+  let recoveryChannel = null;
+  const recoverySignalKey = 'html-review.recovery-cleared';
+  function pauseRecovery(completed = false) {
+    clearTimeout(autosaveTimer); autosaveTimer = null; ++autosaveRevision;
+    autosavePaused = true; cachedSession = null; autosavePhase = 'idle';
+    needsEpochRefresh = true;
+    try { sessionStorage.removeItem(resumeKey); } catch (_) {}
+    $('recovery-banner').hidden = true;
+    autosaveStatus(completed ? '本机恢复记录已清除；下次修改会重新保存' : '正在清除本机恢复记录…');
+  }
+  try {
+    recoveryChannel = new BroadcastChannel('html-review-recovery');
+    recoveryChannel.onmessage = event => { if (event.data?.key === recoveryKey && ['clear', 'cleared'].includes(event.data?.action)) pauseRecovery(event.data.action === 'cleared'); };
+  } catch (_) { /* Storage events also coordinate browsers without BroadcastChannel. */ }
+  window.addEventListener('storage', event => {
+    if (event.key !== recoverySignalKey || !event.newValue) return;
+    try { const signal = JSON.parse(event.newValue); if (signal.key === recoveryKey) pauseRecovery(signal.action === 'cleared'); } catch (_) {}
+  });
 
   function id() { return crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint32Array(4)), n => n.toString(16)).join('-'); }
   function note(message, error = false) {
@@ -53,67 +94,116 @@
     $('example-button').disabled = value;
     $('entry-select').disabled = value;
     $('download-button').disabled = value || !data;
+    $('export-format').disabled = value;
     $('reload-preview').disabled = value || !data;
     $('data-button').disabled = value || !data;
     updateEditor();
   }
   function draftDirty() { return $('comment-input').value !== draftBaseline || (draftTargetChanged && Boolean($('comment-input').value.trim())); }
   function confirmDiscard() {
-    return !(dirty || draftDirty()) || confirm('当前修改还未下载保存。确定打开其他页面并放弃这些修改吗？');
+    const pendingRecovery = !$('recovery-banner').hidden && cachedSession;
+    if (!(dirty || draftDirty() || pendingRecovery)) return true;
+    return confirm(pendingRecovery
+      ? `本机仍有 ${cachedSession.data.source.name} 的恢复记录。打开其他页面将替换该记录及其中的草稿。确定继续吗？`
+      : '当前修改还未下载保存。确定打开其他页面并放弃这些修改吗？');
   }
-  function markDirty() { dirty = true; data.updatedAt = new Date().toISOString(); updateSaveState(); }
-  function updateSaveState() { $('save-state').textContent = dirty ? '● 有未下载的修改，请下载副本保存' : (data ? '副本可直接重新打开并继续编辑' : '批注保存在下载的副本中'); }
+  function markDirty() { autosavePaused = false; dirty = true; data.updatedAt = new Date().toISOString(); updateSaveState(); }
+  function updateSaveState() {
+    const saved = {html: '当前无未下载的修改；HTML 副本可继续编辑', gzip: '已请求下载压缩副本，解压后可继续编辑', annotations: '已请求导出轻量批注，请连同原文件保留'};
+    $('save-state').textContent = dirty ? '● 有未下载的修改，请下载保存' : (data ? saved[lastExportFormat] : '批注保存在下载的副本中');
+  }
   function view() {
     return {width: Math.round(frame.clientWidth), height: Math.round(frame.clientHeight), devicePixelRatio: window.devicePixelRatio || 1};
   }
   function pageTarget() {
-    let title = data.source.name;
-    try { title = new DOMParser().parseFromString(core.getSourceText(data), 'text/html').title || title; } catch (_) { /* Filename remains a useful fallback. */ }
-    return {kind: 'page', text: title, scope: 'whole-document', context: {sourcePath: data.source.path}, viewport: view()};
+    return {kind: 'page', text: data.source.name, scope: 'whole-document', context: {sourcePath: data.source.path}, viewport: view()};
   }
   function send(command, extra = {}) {
     if (frame.contentWindow && channel) frame.contentWindow.postMessage({hr: true, channel, command, ...extra}, '*');
   }
   function setMode(next) {
-    if (!['browse', 'text', 'element', 'page'].includes(next)) return;
+    if (!['browse', 'text', 'element', 'page', 'whole'].includes(next)) return;
+    autosavePaused = false;
     mode = next;
     for (const button of document.querySelectorAll('[data-mode]')) button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
-    $('mode-hint').textContent = data ? hints[mode] : '先打开 HTML，或体验下方示例。';
-    send('set-mode', {mode: mode === 'page' ? 'browse' : mode});
-    if (mode === 'page' && data) setTarget(pageTarget());
+    send('set-mode', {mode: mode === 'whole' ? 'browse' : mode});
+    if (data && (mode === 'whole' || (mode === 'browse' && !editingId))) {
+      send('clear-focus');
+      setTarget(pageTarget());
+    } else if (mode !== 'browse' && pendingTarget && (pendingTarget.kind !== mode || (mode === 'page' && pendingTarget.scope === 'whole-document'))) {
+      pendingTarget = null;
+      draftTargetChanged = true;
+      $('target-preview').hidden = true;
+      send('clear-focus');
+    }
+    document.querySelector('.mode-tabs').style.setProperty('--mode-index', ['browse', 'text', 'element', 'page', 'whole'].indexOf(mode));
+    renderPageControls();
+    updateEditor();
+  }
+  function renderPageControls() {
+    $('page-controls').hidden = mode !== 'page';
+    $('page-select').disabled = busy || !pageInventory.length;
+    $('page-description').textContent = pageInventory.length ? `识别到 ${pageInventory.length} 个分页区块，也可直接点击预览选择。` : '未发现明确的分页区块。连续页面可使用整体或元素批注。';
   }
   function targetText(target) {
-    if (target.kind === 'page') return `整页 · ${target.text || data.source.name}`;
+    if (target.kind === 'page') return (target.scope === 'whole-document' || !target.selector) ? `整个文件 · ${data.source.name}` : `第 ${target.pageIndex || '?'} 页 · ${target.pageTitle || target.text || '分页区块'}`;
     return target.quote?.exact || target.text || target.attributes?.alt || `<${target.tag || '元素'}> ${target.selector || ''}`;
   }
   function setTarget(target) {
+    autosavePaused = false;
     pendingTarget = target;
     draftTargetChanged = true;
     $('target-preview').hidden = false;
-    $('target-kind').textContent = labels[target.kind] || '目标';
+    $('target-kind').textContent = targetLabel(target) || '目标';
     const text = targetText(target);
     $('target-text').textContent = text.length > 600 ? text.slice(0, 600) + '…' : text;
     $('target-selector').textContent = target.selector || `视口 ${target.viewport?.width || view().width} × ${target.viewport?.height || view().height}px`;
     $('parent-target').hidden = target.kind !== 'element';
+    if (target.kind === 'page' && target.scope === 'page') { $('page-select').value = String(target.pageIndex); window.HRUI.syncSelect('page-select'); }
     updateEditor();
   }
   function updateEditor() {
+    $('undo-button').disabled = busy || !undoStack.length;
+    $('redo-button').disabled = busy || !redoStack.length;
+    $('copy-agent-task').disabled = busy || !data || !data.annotations.length || draftDirty();
+    $('copy-agent-task').title = draftDirty() ? '先保存或取消编辑框中的意见，再复制任务' : '复制已保存批注和定位信息，连同原文件交给 agent';
+    $('retry-recovery').disabled = busy;
+    $('clear-target').hidden = !pendingTarget || pendingTarget.scope === 'whole-document';
+    $('clear-target').disabled = busy;
+    $('mode-hint').textContent = data ? (mode === 'browse' && editingId ? '可以正常阅读和点击页面。正在编辑已有批注，修改意见仍对应下方目标。' : hints[mode]) : '先打开 HTML，或体验下方示例。';
     $('comment-input').disabled = !data || busy;
     $('save-button').disabled = !data || busy || !pendingTarget || !$('comment-input').value.trim();
     $('draft-status').textContent = draftDirty() ? '尚未保存' : '';
     $('save-button').textContent = editingId ? '更新批注' : '保存批注';
     $('editor-title').textContent = editingId ? '编辑批注' : '添加批注';
-    $('cancel-edit').hidden = !editingId && !pendingTarget && !$('comment-input').value;
+    $('cancel-edit').hidden = !editingId && (!pendingTarget || pendingTarget.kind === 'page') && !$('comment-input').value;
+    renderPageControls();
+    updateGuide();
+    queueAutosave();
   }
   function clearEditor() {
     pendingTarget = null;
+    $('page-select').value = ''; window.HRUI.syncSelect('page-select');
     editingId = null;
     draftBaseline = '';
     draftTargetChanged = false;
     $('comment-input').value = '';
     $('target-preview').hidden = true;
-    send('clear-focus');
+    send('clear-selection');
+    if (data && ['browse', 'whole'].includes(mode)) setTarget(pageTarget());
+    draftTargetChanged = false;
     updateEditor();
+  }
+  function clearTarget() {
+    if (busy || !pendingTarget || pendingTarget.scope === 'whole-document') return;
+    autosavePaused = false;
+    pendingTarget = null;
+    $('page-select').value = ''; window.HRUI.syncSelect('page-select');
+    draftTargetChanged = true;
+    $('target-preview').hidden = true;
+    send('clear-selection');
+    updateEditor();
+    note('已取消选择，修改意见已保留。请重新选择目标，或切换到「整体」批注。');
   }
   function resetFolder() {
     folderFiles = null;
@@ -124,15 +214,10 @@
   }
   function renderSource() {
     $('source-name').textContent = data.source.name;
-    $('source-meta').textContent = `${(data.source.byteLength / 1024).toFixed(1)} KiB · ${data.source.encoding} · ${data.resources.length} 个内嵌资源`;
-    $('source-version').hidden = false;
-    $('source-version').textContent = `SHA-256 ${data.source.sha256.slice(0, 16)}…`;
-    $('source-version').title = data.source.sha256;
-    $('preview-label').textContent = data.source.path;
+    $('preview-label').textContent = data.source.name;
     document.title = `${data.source.name} · HTML 批注`;
     $('welcome').hidden = true;
     frame.hidden = false;
-    $('mode-hint').textContent = hints[mode];
     updateSaveState();
   }
   function textNode(tag, className, content) {
@@ -143,16 +228,17 @@
   }
   function renderAnnotations() {
     const list = $('annotation-list');
+    const previousIds = renderedIds; renderedIds = new Set(data?.annotations.map(item => item.id));
     list.replaceChildren();
     const annotations = data?.annotations || [];
     $('annotation-count').textContent = annotations.length;
-    if (!annotations.length) { list.append(textNode('p', 'empty-list', '还没有批注。选择内容后，说明希望怎么修改。')); return; }
+    if (!annotations.length) { list.append(textNode('p', 'empty-list', '还没有批注。直接填写整体意见，或选择具体内容后批注。')); return; }
     annotations.forEach((annotation, index) => {
       const card = document.createElement('article');
-      card.className = 'annotation-card' + (editingId === annotation.id ? ' active' : '');
+      card.className = 'annotation-card' + (!previousIds.has(annotation.id) ? ' is-new' : '') + (editingId === annotation.id ? ' active' : '');
       card.dataset.annotationId = annotation.id;
       const top = document.createElement('div'); top.className = 'annotation-top';
-      top.append(textNode('span', 'tag', labels[annotation.kind]), textNode('span', 'annotation-number', String(index + 1).padStart(2, '0')));
+      top.append(textNode('span', 'tag', targetLabel(annotation.target)), textNode('span', 'annotation-number', String(index + 1).padStart(2, '0')));
       card.append(top, textNode('p', 'annotation-comment', annotation.comment));
       card.append(textNode('div', 'annotation-quote', targetText(annotation.target).slice(0, 180)));
       const location = locations.get(annotation.id);
@@ -165,15 +251,17 @@
       }
       card.append(actions); list.append(card);
     });
+    window.HRUI.enterCards(list);
   }
   async function preparePreview(nextData) {
     const nextChannel = id();
-    const bridge = `(${window.HRBridge.toString()})(${JSON.stringify(nextChannel)});`;
+    const bridge = `(${window.HRBridge.toString()})(${JSON.stringify(nextChannel)}, ${window.HRShortcut.toString()});`;
     const result = await core.createPreview(nextData, bridge);
     return {...result, channel: nextChannel};
   }
   function installPreview(result) {
     previewReady = false;
+    pageInventory = []; $('page-select').replaceChildren(new Option('点击预览或选择页面', '')); renderPageControls();
     channel = result.channel;
     const localChannel = result.channel;
     locations.clear();
@@ -194,11 +282,16 @@
   async function activate(nextData) {
     await core.validateData(nextData);
     const prepared = await preparePreview(nextData);
+    autosavePaused = false;
     data = nextData;
+    undoStack.length = 0; redoStack.length = 0;
+    cachedSession = null; $('recovery-banner').hidden = true;
+    delivered = false;
     dirty = false;
+    lastExportFormat = 'html';
     clearEditor();
-    setMode('browse');
     renderSource();
+    setMode('browse');
     renderAnnotations();
     ++renderGeneration;
     installPreview(prepared);
@@ -221,6 +314,7 @@
     return core.importSource({bytes, name: file.name, path, lastModified: file.lastModified}, resources);
   }
   async function run(task) {
+    await bootPromise;
     if (busy) return;
     setBusy(true);
     note('正在处理本地文件…');
@@ -245,7 +339,7 @@
     const nextData = await readFolderEntry(path, folderFiles);
     await activate(nextData);
     currentEntryPath = path;
-    $('entry-select').value = path;
+    $('entry-select').value = path; window.HRUI.syncSelect('entry-select');
     $('entry-label').hidden = false;
   }
   function saveAnnotation() {
@@ -256,18 +350,40 @@
     const existing = editingId && data.annotations.find(annotation => annotation.id === editingId);
     if (pendingTarget.kind === 'page') pendingTarget.viewport = view();
     const annotation = {id: existing?.id || id(), kind: pendingTarget.kind, comment, createdAt: existing?.createdAt || now, updatedAt: now, target: structuredClone(pendingTarget), view: view()};
+    recordChange(existing || null, annotation, existing ? data.annotations.indexOf(existing) : data.annotations.length);
     if (existing) data.annotations[data.annotations.indexOf(existing)] = annotation;
     else data.annotations.push(annotation);
-    markDirty(); clearEditor(); renderAnnotations();
+    markDirty(); clearEditor(); renderAnnotations(); window.HRUI.saved($('save-button'));
     note(existing ? '批注已更新，下载副本即可保存到磁盘。' : '批注已添加，下载副本即可保存到磁盘。');
   }
+  function recordChange(before, after, index) {
+    undoStack.push({before: before ? structuredClone(before) : null, after: after ? structuredClone(after) : null, index});
+    if (undoStack.length > 50) undoStack.shift();
+    redoStack.length = 0;
+  }
+  function reverseChange(redo = false) {
+    if (!data || busy) return;
+    if (draftDirty()) { note('编辑框中有未保存的意见，请先保存或取消编辑，再撤销或重做。', true); return; }
+    const from = redo ? redoStack : undoStack;
+    const to = redo ? undoStack : redoStack;
+    const change = from.pop();
+    if (!change) return;
+    const target = redo ? change.after : change.before;
+    const changedId = (change.before || change.after).id;
+    data.annotations = data.annotations.filter(item => item.id !== changedId);
+    if (target) data.annotations.splice(Math.min(change.index, data.annotations.length), 0, structuredClone(target));
+    to.push(change);
+    locations.delete(changedId);
+    markDirty(); clearEditor(); setMode('browse'); renderAnnotations();
+    note(redo ? '已重做批注操作，下载可保存最新结果。' : '已撤销上次批注操作，原批注内容和位置已恢复。');
+  }
   function locate(annotation) {
-    if (annotation.kind === 'page') {
+    if (annotation.kind === 'page' && (annotation.target.scope === 'whole-document' || !annotation.target.selector)) {
       const width = annotation.view?.width || annotation.target.viewport?.width;
       const available = ['390', '768', '1280'];
-      note(`整页批注：${annotation.target.text || data.source.name}。记录视口 ${width || '未知'} × ${annotation.view?.height || annotation.target.viewport?.height || '未知'}px；请结合当前布局查看。`);
+      note(`整体批注：${data.source.name}。意见适用于整个文件；记录视口 ${width || '未知'} × ${annotation.view?.height || annotation.target.viewport?.height || '未知'}px。`);
       if (available.includes(String(width))) { $('preview-width').value = String(width); applyWidth(); }
-      locations.set(annotation.id, {status: 'exact', message: '整页反馈 · 结合记录视口查看'});
+      locations.set(annotation.id, {status: 'exact', message: '整体反馈 · 适用于整个文件'});
       renderAnnotations(); return;
     }
     if (!previewReady) { note('页面还在载入，请稍后定位。', true); return; }
@@ -278,53 +394,326 @@
     editingId = annotation.id;
     $('comment-input').value = annotation.comment;
     draftBaseline = annotation.comment;
-    setMode(annotation.kind);
-    setTarget(structuredClone(annotation.target));
+    setMode(annotation.kind === 'page' && (annotation.target.scope === 'whole-document' || !annotation.target.selector) ? 'whole' : annotation.kind);
+    const restoredTarget = structuredClone(annotation.target);
+    if (annotation.kind === 'page' && !restoredTarget.selector) restoredTarget.scope = 'whole-document';
+    setTarget(restoredTarget);
+    locate(annotation);
     draftTargetChanged = false;
-    updateEditor(); renderAnnotations(); locate(annotation);
+    updateEditor(); renderAnnotations();
     $('comment-input').focus();
   }
   async function download() {
     if (draftDirty()) { note('编辑框中还有未保存的修改，请先点击「保存批注」或「更新批注」，再下载副本。', true); return; }
     await core.validateData(data);
+    const format = $('export-format').value;
+    const basename = data.source.name.replace(/\.(html?|xhtml)$/i, '').replace(/[\\/:*?"<>|]/g, '_') + '.review';
+    if (format === 'annotations') {
+      const blob = new Blob([core.serialize(core.createAnnotationExport(data), true)], {type: 'application/json;charset=utf-8'});
+      downloadBlob(blob, basename + '.json');
+      finishDownload(format, '已导出轻量批注，不含原文件快照和编辑界面。请将 JSON 与原始 HTML、相关资源一起交给 agent；此 JSON 不能单独恢复编辑工作区。');
+      return;
+    }
     const copy = document.documentElement.cloneNode(true);
     copy.querySelector('#html-review-data').textContent = core.serialize(data);
     const copiedFrame = copy.querySelector('#preview-frame');
     copiedFrame.removeAttribute('srcdoc'); copiedFrame.removeAttribute('src'); copiedFrame.hidden = true;
-    for (const dialog of copy.querySelectorAll('dialog[open]')) dialog.removeAttribute('open');
+    for (const dialog of copy.querySelectorAll('dialog')) { dialog.removeAttribute('open'); dialog.removeAttribute('data-closing'); }
+    for (const node of copy.querySelectorAll('[data-ui-transient],.select-popover')) node.remove();
+    for (const node of copy.querySelectorAll('[data-motion],[inert]')) { node.removeAttribute('data-motion'); node.removeAttribute('inert'); }
+    for (const panel of copy.querySelectorAll('[data-settings-panel]')) panel.removeAttribute('aria-hidden');
+    copy.querySelector('#page-select').replaceChildren();
     // Rebuilt on startup. Do not serialize transient editor/list state or duplicate page bytes.
     copy.querySelector('#annotation-list').replaceChildren();
     copy.querySelector('#comment-input').textContent = '';
     copy.querySelector('#target-preview').hidden = true;
+    for (const selector of ['#target-text', '#target-selector', '#target-kind']) copy.querySelector(selector).textContent = '';
     copy.querySelector('#data-preview').textContent = '';
+    copy.querySelector('#agent-task-text').textContent = '';
+    copy.querySelector('#recovery-banner').hidden = true;
+    copy.querySelector('#onboarding-card').hidden = true;
+    copy.querySelector('#drop-overlay').hidden = true;
     copy.querySelector('#entry-select').replaceChildren();
     copy.querySelector('#entry-label').hidden = true;
     copy.querySelector('#status').hidden = true;
     copy.querySelector('#warnings').replaceChildren(); copy.querySelector('#warnings').hidden = true;
+    copy.querySelector('#html-review-example').textContent = 'null';
+    copy.querySelector('#example-button').hidden = true;
     const html = '<!doctype html>\n' + copy.outerHTML;
-    const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+    let blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+    if (format === 'gzip') {
+      if (typeof CompressionStream === 'undefined') throw new Error('当前浏览器不支持压缩副本，请选择 HTML 副本或轻量批注。');
+      blob = new Blob([await new Response(blob.stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()], {type: 'application/gzip'});
+    }
+    downloadBlob(blob, basename + (format === 'gzip' ? '.html.gz' : '.html'));
+    finishDownload(format, format === 'gzip' ? '已生成压缩副本。解压得到 .review.html 后可继续编辑；交给 agent 时请先用脚本提取批注。' : '已生成下载副本。请确认浏览器完成下载；以后直接打开该副本即可继续编辑。');
+  }
+  function downloadBlob(blob, filename) {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = data.source.name.replace(/\.(html?|xhtml)$/i, '').replace(/[\\/:*?"<>|]/g, '_') + '.review.html';
+    anchor.download = filename;
     document.body.append(anchor); anchor.click(); anchor.remove();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
-    dirty = false; updateSaveState();
-    note('已生成下载副本。请确认浏览器完成下载；以后直接打开该副本即可继续编辑。');
+  }
+  function finishDownload(format, message) {
+    dirty = false; lastExportFormat = format; updateSaveState(); note(message);
+    delivered = true; updateGuide(); queueAutosave();
+  }
+  function updateExportFormat() {
+    autosavePaused = false;
+    const format = $('export-format').value;
+    $('download-button').textContent = {html: '↓ 下载批注副本', gzip: '↓ 下载压缩副本', annotations: '↓ 导出轻量批注'}[format];
+    window.HRUI.syncSelect('export-format');
+    queueAutosave();
   }
   function applyWidth() {
+    autosavePaused = false;
     const value = $('preview-width').value;
+    window.HRUI.syncSelect('preview-width');
     frame.style.width = value === 'fluid' ? '100%' : `${Number(value)}px`;
     frame.style.minWidth = value === 'fluid' ? '0' : `${Number(value)}px`;
     if (pendingTarget?.kind === 'page') setTarget({...pendingTarget, viewport: view()});
+    queueAutosave();
+  }
+  function setSidebarPosition(position, remember = true) {
+    autosavePaused = false;
+    const value = position === 'right' ? 'right' : 'left';
+    workspace.dataset.sidebarPosition = value;
+    $('sidebar-position').value = value;
+    window.HRUI.syncSelect('sidebar-position');
+    if (remember) {
+      try { localStorage.setItem(sidebarPreferenceKey, value); } catch (_) { /* Layout still works when storage is unavailable. */ }
+    }
+    queueAutosave();
+  }
+  function restoreSidebarPosition() {
+    let position = workspace.dataset.sidebarPosition;
+    try {
+      const saved = localStorage.getItem(sidebarPreferenceKey);
+      if (saved === 'left' || saved === 'right') position = saved;
+    } catch (_) { /* Exported copies retain their layout without browser storage. */ }
+    setSidebarPosition(position, false);
+  }
+
+  function updateGuide() {
+    $('onboarding-card').hidden = guideDismissed;
+    const complete = {open: Boolean(data), annotate: Boolean(data?.annotations.length), deliver: delivered};
+    for (const item of document.querySelectorAll('[data-guide-step]')) item.dataset.complete = String(complete[item.dataset.guideStep]);
+  }
+  function autosaveStatus(message, error = false) {
+    $('autosave-state').textContent = message;
+    $('autosave-state').classList.toggle('error', error);
+    $('clear-recovery').disabled = !persistenceReady || busy || (!data && !cachedSession);
+    $('retry-recovery').hidden = !error;
+  }
+  function sessionSnapshot() {
+    return structuredClone({version: 1, data, draft: {comment: $('comment-input').value, pendingTarget, editingId, baseline: draftBaseline, targetChanged: draftTargetChanged, mode}, dirty, lastExportFormat,
+      preferences: {width: $('preview-width').value, sidebar: $('sidebar-position').value, exportFormat: $('export-format').value}});
+  }
+  function queueAutosave() {
+    if (!data || !persistenceReady || restoringSession || autosavePaused || !$('recovery-banner').hidden) return;
+    ++autosaveRevision;
+    autosavePhase = 'saving';
+    autosaveStatus('正在保存到本机…');
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(saveSessionNow, 250);
+  }
+  async function saveSessionNow() {
+    clearTimeout(autosaveTimer); autosaveTimer = null;
+    if (!data || !persistenceReady || restoringSession || autosavePaused || !$('recovery-banner').hidden) return;
+    const revision = autosaveRevision;
+    const snapshot = sessionSnapshot();
+    try {
+      if (needsEpochRefresh) {
+        await window.HRSession.load(recoveryKey);
+        if (revision !== autosaveRevision || autosavePaused) return;
+        needsEpochRefresh = false;
+      }
+      const saved = await window.HRSession.save(recoveryKey, snapshot);
+      if (revision !== autosaveRevision) return;
+      cachedSession = saved; autosavePhase = 'saved';
+      try { sessionStorage.setItem(resumeKey, saved.data.source.sha256); } catch (_) {}
+      autosaveStatus('本机已保存 · 刷新可恢复');
+    } catch (error) {
+      if (revision !== autosaveRevision) return;
+      if (error.name === 'StaleSessionError') needsEpochRefresh = true;
+      autosavePhase = 'error';
+      autosaveStatus('本机自动保存失败，请下载副本保留修改', true);
+    }
+  }
+  async function validateSession(record) {
+    if (!record || record.version !== 1 || !record.draft || !record.preferences || !Number.isFinite(Date.parse(record.savedAt))) throw new Error('恢复记录格式无效。');
+    await core.validateData(record.data);
+    const draft = record.draft;
+    if (typeof draft.comment !== 'string' || draft.comment.length > 20000 || typeof draft.baseline !== 'string' || draft.baseline.length > 20000 || !['browse', 'text', 'element', 'page', 'whole'].includes(draft.mode)) throw new Error('恢复草稿无效。');
+    if (draft.pendingTarget) core.validateTarget(draft.pendingTarget, draft.pendingTarget.kind);
+    if (draft.editingId && !record.data.annotations.some(item => item.id === draft.editingId)) throw new Error('恢复批注不存在。');
+    if (!['fluid', '390', '768', '1280'].includes(record.preferences.width) || !['left', 'right'].includes(record.preferences.sidebar) || !['html', 'gzip', 'annotations'].includes(record.preferences.exportFormat) || !['html', 'gzip', 'annotations'].includes(record.lastExportFormat)) throw new Error('恢复偏好无效。');
+    return record;
+  }
+  async function restoreSession(record) {
+    await validateSession(record);
+    restoringSession = true;
+    try {
+      await activate(structuredClone(record.data)); resetFolder();
+      const draft = record.draft;
+      mode = draft.mode === 'page' && draft.pendingTarget?.scope === 'whole-document' ? 'whole' : draft.mode; editingId = draft.editingId || null;
+      pendingTarget = draft.pendingTarget ? structuredClone(draft.pendingTarget) : null;
+      $('comment-input').value = draft.comment; draftBaseline = draft.baseline;
+      setSidebarPosition(record.preferences.sidebar);
+      $('preview-width').value = record.preferences.width; applyWidth();
+      $('export-format').value = record.preferences.exportFormat; updateExportFormat();
+      if (pendingTarget) setTarget(pendingTarget); else $('target-preview').hidden = true;
+      draftTargetChanged = Boolean(draft.targetChanged); dirty = Boolean(record.dirty); lastExportFormat = record.lastExportFormat;
+      for (const button of document.querySelectorAll('[data-mode]')) button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
+      document.querySelector('.mode-tabs').style.setProperty('--mode-index', ['browse', 'text', 'element', 'page', 'whole'].indexOf(mode));
+      renderPageControls(); updateEditor(); updateSaveState(); renderAnnotations();
+      cachedSession = record; autosavePhase = 'saved'; autosaveStatus('本机已保存 · 已恢复工作区与草稿');
+      try { sessionStorage.setItem(resumeKey, record.data.source.sha256); } catch (_) {}
+      note('已恢复上次的文件、批注和未保存的草稿。');
+    } finally { restoringSession = false; }
+  }
+  async function initialize() {
+    setBusy(true);
+    let initial = null;
+    let recovered = null;
+    let recoveryError = '';
+    try { initial = JSON.parse($('html-review-data').textContent); }
+    catch (_) { note('批注数据不是有效 JSON，无法恢复。', true); }
+    try { guideDismissed = Boolean(initial) || localStorage.getItem(guideKey) === 'true'; } catch (_) { guideDismissed = Boolean(initial); }
+    try {
+      recovered = await window.HRSession.load(recoveryKey);
+      persistenceReady = true;
+      if (recovered) {
+        try { await validateSession(recovered); }
+        catch (_) { recovered = null; recoveryError = '本机恢复记录损坏，未载入。请重新打开原文件或下载副本；之后可重新自动保存。'; autosaveStatus(recoveryError, true); }
+      }
+    } catch (_) { autosavePhase = 'error'; autosaveStatus('本机恢复不可用，请下载副本保留修改', true); }
+    let resume = null;
+    try { resume = sessionStorage.getItem(resumeKey); } catch (_) {}
+    try {
+      const sameSource = !initial || initial.source?.sha256 === recovered?.data.source.sha256;
+      const currentCopy = !initial || Date.parse(initial.updatedAt) <= Date.parse(recovered?.savedAt || '');
+      if (recovered && resume === recovered.data.source.sha256 && sameSource && currentCopy) await restoreSession(recovered);
+      else {
+        restoringSession = true;
+        if (initial) await activate(initial);
+        else { $('welcome').hidden = false; frame.hidden = true; }
+        restoringSession = false;
+        if (recovered && sameSource && currentCopy) {
+          cachedSession = recovered;
+          $('recovery-description').textContent = `本机有 ${recovered.data.source.name} 的恢复记录（${new Date(recovered.savedAt).toLocaleString()}）。`;
+          $('recovery-banner').hidden = false;
+          autosaveStatus('发现本机恢复记录，可选择继续');
+        } else if (persistenceReady) autosaveStatus(data ? '自动恢复已就绪' : '自动恢复：等待打开文件');
+      }
+    } catch (error) { note(error.message || '无法恢复工作区。', true); }
+    finally { restoringSession = false; setBusy(false); updateGuide(); }
+    if (recoveryError) note(recoveryError, true);
+    // A pending recovery choice must remain intact until the user acts or imports a file.
+    if (data && !cachedSession) queueAutosave();
+  }
+  async function clearRecovery() {
+    pauseRecovery();
+    recoveryChannel?.postMessage({key: recoveryKey, action: 'clear'});
+    try { localStorage.setItem(recoverySignalKey, JSON.stringify({key: recoveryKey, action: 'clear', nonce: id()})); } catch (_) {}
+    restoringSession = true;
+    try {
+      await window.HRSession.remove(recoveryKey); cachedSession = null; autosavePaused = true;
+      recoveryChannel?.postMessage({key: recoveryKey, action: 'cleared'});
+      try { localStorage.setItem(recoverySignalKey, JSON.stringify({key: recoveryKey, action: 'cleared', nonce: id()})); } catch (_) {}
+      try { sessionStorage.removeItem(resumeKey); } catch (_) {}
+      $('recovery-banner').hidden = true; autosavePhase = 'idle';
+      autosaveStatus('本机恢复记录已清除；下次修改会重新保存');
+    } catch (_) { autosaveStatus('无法清除本机恢复记录，请重试', true); }
+    finally { restoringSession = false; }
+  }
+  async function retryRecovery() {
+    try {
+      const recovered = await window.HRSession.load(recoveryKey);
+      persistenceReady = true; needsEpochRefresh = false;
+      if (data) { autosavePaused = false; queueAutosave(); }
+      else if (recovered) {
+        await validateSession(recovered); cachedSession = recovered;
+        $('recovery-description').textContent = `本机有 ${recovered.data.source.name} 的恢复记录（${new Date(recovered.savedAt).toLocaleString()}）。`;
+        $('recovery-banner').hidden = false; autosaveStatus('发现本机恢复记录，可选择继续');
+      } else autosaveStatus('自动恢复：等待打开文件');
+    } catch (_) { autosaveStatus('本机恢复仍不可用，请下载副本保留修改', true); }
+  }
+  async function copyAgentTask() {
+    if (!data || !data.annotations.length || busy) return;
+    if (draftDirty()) { note('编辑框中有未保存的意见，请先保存或取消编辑，再复制任务。', true); return; }
+    const task = core.createAgentTask(data);
+    try { await navigator.clipboard.writeText(task); note('修改任务已复制，请连同原 HTML 和资源交给 agent。'); }
+    catch (_) { $('agent-task-text').value = task; $('copy-agent-status').textContent = '可选中下方内容并复制。'; window.HRUI.openDialog($('agent-task-dialog')); $('agent-task-text').focus(); $('agent-task-text').select(); }
+    delivered = true; updateGuide();
+  }
+  function cancelEditor() {
+    if (!draftDirty() || confirm('确定放弃编辑框中尚未保存的修改吗？')) { clearEditor(); setMode('browse'); renderAnnotations(); }
+  }
+  function shortcut(action) {
+    if (action === 'escape' && window.HRUI.closeMenu(true)) return;
+    const dialog = document.querySelector('dialog[open]');
+    if (dialog) { if (action === 'escape') window.HRUI.closeDialog(dialog); return; }
+    if (busy) return;
+    if (action === 'help') { window.HRUI.openSettings('shortcuts'); return; }
+    if (action === 'open') { $('file-input').click(); return; }
+    if (action === 'download') { if (data) run(download); return; }
+    if (action === 'undo' || action === 'redo') { reverseChange(action === 'redo'); return; }
+    if (!data) return;
+    if (action === 'save') { saveAnnotation(); return; }
+    if (action === 'escape') {
+      if (pendingTarget && pendingTarget.scope !== 'whole-document') clearTarget();
+      else if (editingId || $('comment-input').value) cancelEditor();
+      else setMode('browse');
+    } else if (['browse', 'text', 'element', 'page', 'whole'].includes(action)) setMode(action);
+  }
+  async function droppedFiles(files) {
+    $('drop-overlay').hidden = true;
+    await bootPromise;
+    if (busy) return;
+    if (files.length !== 1 || !/\.(html?|xhtml)$/i.test(files[0]?.name || '')) { note('请一次拖入一个 HTML 文件；带资源的页面请使用「导入文件夹」。', true); return; }
+    if (!confirmDiscard()) return;
+    await run(async () => { const nextData = await readFile(files[0]); await activate(nextData); resetFolder(); });
+  }
+  function seedExample(nextData) {
+    const parsed = new DOMParser().parseFromString(core.getSourceText(nextData), 'text/html');
+    const element = parsed.querySelector('#card-collaborate');
+    const textElement = parsed.querySelector('#cross-node-text');
+    const textPath = [];
+    for (let node = textElement; node !== parsed.documentElement; node = node.parentNode) {
+      textPath.unshift(Array.from(node.parentNode.childNodes).indexOf(node));
+    }
+    const now = new Date().toISOString();
+    const viewport = {width: 1280, height: 800, devicePixelRatio: 1};
+    const targets = [
+      {kind: 'text', selector: '#cross-node-text', quote: {exact: textElement.textContent, prefix: '', suffix: ''},
+        range: {start: {path: textPath, offset: 0}, end: {path: textPath.slice(), offset: textElement.childNodes.length}}},
+      {kind: 'element', selector: '#card-collaborate', tag: 'article', id: element.id, classes: ['card'], text: element.textContent.replace(/\s+/g, ' ').trim()},
+      {kind: 'page', text: nextData.source.name, scope: 'whole-document', context: {sourcePath: nextData.source.path}, viewport}
+    ];
+    nextData.annotations = targets.map((target, index) => ({id: 'seeded-demo-' + target.kind, kind: target.kind, target, comment: ['这里演示跨标签文字批注：请把这句话改得更简洁。', '这里演示卡片批注：请增加协作流程的例子。', '这里演示整体批注：请统一全页的标题层级与留白。'][index], createdAt: now, updatedAt: now, view: viewport}));
+    return nextData;
   }
 
   window.addEventListener('message', event => {
     const message = event.data;
     if (event.source !== frame.contentWindow || !message || message.hr !== true || message.channel !== channel || !data) return;
-    if (message.event === 'ready') { previewReady = true; send('set-mode', {mode: mode === 'page' ? 'browse' : mode}); }
+    if (message.event === 'shortcut') { if (typeof message.action === 'string') shortcut(message.action); }
+    else if (message.event === 'file-drag') $('drop-overlay').hidden = false;
+    else if (message.event === 'dropped-files') { if (Array.isArray(message.files) && message.files.every(file => file instanceof File)) droppedFiles(message.files); }
+    else if (message.event === 'ready') { previewReady = true; send('set-mode', {mode: mode === 'whole' ? 'browse' : mode}); }
+    else if (message.event === 'pages') {
+      if (!Array.isArray(message.pages) || message.pages.length > 1000 || !message.pages.every((item, index) => item.index === index + 1 && typeof item.title === 'string' && item.title.length <= 100)) return;
+      pageInventory = message.pages;
+      const selected = pendingTarget?.scope === 'page' ? String(pendingTarget.pageIndex) : '';
+      $('page-select').replaceChildren(new Option('点击预览或选择页面', ''), ...pageInventory.map(item => new Option(`${String(item.index).padStart(2, '0')} · ${item.title}`, String(item.index))));
+      $('page-select').value = selected; window.HRUI.syncSelect('page-select'); renderPageControls();
+    }
+    else if (message.event === 'target-cleared' && message.kind === 'text' && mode === 'text' && pendingTarget?.kind === 'text') clearTarget();
     else if (message.event === 'target') {
-      if (!['text', 'element'].includes(mode)) return;
+      if (!['text', 'element', 'page'].includes(mode)) return;
       try {
         const serialized = JSON.stringify(message.target);
         if (!serialized || serialized.length > 250000) throw new Error('选中范围过大，请缩小范围。');
@@ -345,11 +734,13 @@
   $('folder-button').addEventListener('click', () => $('folder-input').click());
   $('file-input').addEventListener('change', async event => {
     const file = event.target.files[0]; event.target.value = '';
+    await bootPromise;
     if (!file || !confirmDiscard()) return;
     await run(async () => { const nextData = await readFile(file); await activate(nextData); resetFolder(); });
   });
   $('folder-input').addEventListener('change', async event => {
     const files = Array.from(event.target.files); event.target.value = '';
+    await bootPromise;
     if (!files.length || !confirmDiscard()) return;
     await run(async () => {
       if (files.length > 500 || files.reduce((size, file) => size + file.size, 0) > 50 * 1024 * 1024) throw new Error('文件夹最多 500 个文件、合计最多 50 MiB。请选择只包含页面所需资源的目录。');
@@ -375,17 +766,24 @@
     if (!confirmDiscard()) return;
     const example = JSON.parse($('html-review-example').textContent);
     const nextData = await core.importSource({bytes: core.base64ToBytes(example.base64), name: example.name});
-    await activate(nextData); resetFolder();
+    await activate(seedExample(nextData)); resetFolder();
   }));
   for (const button of document.querySelectorAll('[data-mode]')) button.addEventListener('click', () => { if (data) setMode(button.dataset.mode); });
-  $('comment-input').addEventListener('input', updateEditor);
-  $('comment-input').addEventListener('keydown', event => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); saveAnnotation(); } });
+  $('comment-input').addEventListener('input', () => { autosavePaused = false; updateEditor(); });
   $('save-button').addEventListener('click', saveAnnotation);
-  $('cancel-edit').addEventListener('click', () => { if (!draftDirty() || confirm('确定放弃编辑框中尚未保存的修改吗？')) { clearEditor(); setMode('browse'); renderAnnotations(); } });
+  $('cancel-edit').addEventListener('click', cancelEditor);
   $('parent-target').addEventListener('click', () => send('parent-target'));
+  $('clear-target').addEventListener('click', clearTarget);
+  $('export-format').addEventListener('change', () => {
+    updateExportFormat();
+    if ($('export-format').value === 'annotations') note('轻量批注不包含原文件快照或编辑界面，请与原始 HTML 和相关资源一起保留、交给 agent。');
+    else if ($('export-format').value === 'gzip') note('压缩副本保留完整快照和批注，解压后可继续编辑。');
+  });
   $('download-button').addEventListener('click', () => run(download));
   $('reload-preview').addEventListener('click', () => run(async () => { await renderPreview(); note('预览已重新载入。页面脚本运行状态已重置，已有批注保留。'); }));
+  $('page-select').addEventListener('change', event => { if (mode === 'page' && event.target.value) send('select-page', {index: Number(event.target.value)}); });
   $('preview-width').addEventListener('change', applyWidth);
+  $('sidebar-position').addEventListener('change', event => setSidebarPosition(event.target.value));
   $('annotation-list').addEventListener('click', event => {
     const button = event.target.closest('button[data-action]');
     if (!button || !data) return;
@@ -393,26 +791,48 @@
     if (!annotation) return;
     if (button.dataset.action === 'locate') locate(annotation);
     else if (button.dataset.action === 'edit') edit(annotation);
-    else if (button.dataset.action === 'delete' && confirm('确定删除这条批注吗？')) {
+    else if (button.dataset.action === 'delete') {
+      if (draftDirty()) { note('编辑框中有未保存的意见，请先保存或取消编辑，再删除批注。', true); return; }
+      if (!confirm('确定删除这条批注吗？可使用撤销恢复。')) return;
+      recordChange(annotation, null, data.annotations.indexOf(annotation));
       data.annotations = data.annotations.filter(item => item.id !== annotation.id);
       if (editingId === annotation.id) clearEditor();
-      locations.delete(annotation.id); markDirty(); renderAnnotations(); note('批注已删除，下载新副本即可保存。');
+      locations.delete(annotation.id); markDirty(); renderAnnotations(); updateEditor(); note('批注已删除，可撤销恢复；下载新副本即可保存。');
     }
   });
-  $('help-button').addEventListener('click', () => $('help-dialog').showModal());
   $('data-button').addEventListener('click', () => {
     const summary = { ...data, source: {...data.source, base64: `[已省略 ${data.source.byteLength} 个原始字节]`}, resources: data.resources.map(resource => ({...resource, base64: '[已省略资源字节]'})) };
-    $('data-preview').textContent = JSON.stringify(summary, null, 2); $('data-dialog').showModal();
+    $('data-preview').textContent = JSON.stringify(summary, null, 2); window.HRUI.openDialog($('data-dialog'));
   });
-  for (const button of document.querySelectorAll('[data-close]')) button.addEventListener('click', () => $(button.dataset.close).close());
-  window.addEventListener('beforeunload', event => { if (dirty || draftDirty()) { event.preventDefault(); event.returnValue = ''; } });
-  window.addEventListener('keydown', event => { if (event.key === 'Escape' && !document.querySelector('dialog[open]')) setMode('browse'); });
-  // Exports carry the runtime, not a session snapshot. Always rehydrate from verified JSON.
-  resetFolder(); clearEditor(); setMode('browse'); applyWidth();
+  $('undo-button').addEventListener('click', () => reverseChange());
+  $('redo-button').addEventListener('click', () => reverseChange(true));
+  $('copy-agent-task').addEventListener('click', copyAgentTask);
+  $('copy-agent-text').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('agent-task-text').value); $('copy-agent-status').textContent = '已复制。'; }
+    catch (_) { $('agent-task-text').focus(); $('agent-task-text').select(); $('copy-agent-status').textContent = '已选中，请按 Ctrl / ⌘ + C 复制。'; }
+  });
+  $('onboarding-dismiss').addEventListener('click', () => { guideDismissed = true; try { localStorage.setItem(guideKey, 'true'); } catch (_) {} updateGuide(); });
+  $('restart-guide').addEventListener('click', () => { guideDismissed = false; try { localStorage.removeItem(guideKey); } catch (_) {} window.HRUI.closeDialog($('settings-dialog')); updateGuide(); });
+  $('recover-session').addEventListener('click', () => run(async () => { const record = cachedSession; if (record && confirmDiscard()) await restoreSession(record); }));
+  $('discard-session').addEventListener('click', () => run(clearRecovery));
+  $('clear-recovery').addEventListener('click', () => run(clearRecovery));
+  $('retry-recovery').addEventListener('click', () => run(retryRecovery));
+  window.addEventListener('keydown', event => {
+    const editable = event.composedPath().some(node => node instanceof Element && (node.matches('input,textarea,select') || node.isContentEditable));
+    if (event.key !== 'Escape' && event.composedPath().some(node => node instanceof Element && node.matches('[role=combobox],[role=option]'))) return;
+    const action = window.HRShortcut(event, editable);
+    if (action) { event.preventDefault(); shortcut(action); }
+  }, true);
+  const hasFiles = event => Array.from(event.dataTransfer?.types || []).includes('Files');
+  document.addEventListener('dragenter', event => { if (hasFiles(event)) { event.preventDefault(); $('drop-overlay').hidden = false; } });
+  document.addEventListener('dragover', event => { if (hasFiles(event)) { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; $('drop-overlay').hidden = false; } });
+  document.addEventListener('dragleave', event => { if (!event.relatedTarget || (event.clientX <= 0 || event.clientY <= 0)) $('drop-overlay').hidden = true; });
+  document.addEventListener('drop', event => { if (hasFiles(event)) { event.preventDefault(); droppedFiles(Array.from(event.dataTransfer.files)); } });
+  window.addEventListener('blur', () => { $('drop-overlay').hidden = true; });
+  window.addEventListener('beforeunload', event => { if ((dirty || draftDirty()) && autosavePhase !== 'saved') { saveSessionNow(); event.preventDefault(); event.returnValue = ''; } });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && autosavePhase === 'saving') saveSessionNow(); });
+  // Exports carry the runtime, not transient DOM. Rehydrate only validated data.
+  restoreSidebarPosition(); updateExportFormat(); resetFolder(); clearEditor(); setMode('browse'); applyWidth();
   for (const dialog of document.querySelectorAll('dialog[open]')) dialog.removeAttribute('open');
-  let initial;
-  try { initial = JSON.parse($('html-review-data').textContent); }
-  catch (_) { note('批注数据不是有效 JSON，无法恢复。', true); }
-  if (initial) run(() => activate(initial));
-  else { setBusy(false); $('welcome').hidden = false; frame.hidden = true; }
+  bootPromise = initialize();
 })();

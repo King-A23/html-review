@@ -21,6 +21,7 @@ test('CLI preserves source bytes, Unicode names and literal template replacement
   const source=path.join(dir,'报告 $&.html'); const bytes=Buffer.from('\uFEFF<!doctype html>\r\n<meta charset="utf-8"><p>中文 😀</p>');
   await writeFile(source,bytes); const {stdout}=await command(source); const output=stdout.trim();
   const data=dataOf(await readFile(output,'utf8'));
+  assert.match(await readFile(output, 'utf8'), /id="html-review-example">null<\/script>/);
   assert.equal(data.source.name,'报告 $&.html'); assert.deepEqual(Buffer.from(data.source.base64,'base64'),bytes);
   assert.equal(data.source.sha256,createHash('sha256').update(bytes).digest('hex'));
   assert.deepEqual(await readFile(source),bytes);

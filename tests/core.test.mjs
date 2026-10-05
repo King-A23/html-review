@@ -77,10 +77,20 @@ test('valid annotations of all three kinds survive export and validation', async
   const reopened = JSON.parse(core.serialize(data));
   await core.validateData(reopened);
   assert.equal(reopened.annotations.length, 3);
+  const lightweight = JSON.parse(core.serialize(core.createAnnotationExport(data), true));
+  assert.equal(lightweight.format, 'html-review-annotations');
+  assert.equal(lightweight.source.base64, undefined);
+  assert.equal(lightweight.source.sha256, data.source.sha256);
+  assert.deepEqual(lightweight.annotations, clone(data.annotations));
+  assert.equal(data.source.base64, core.bytesToBase64(encode('<!doctype html>\r\n<title>中文 😀</title>\r\n<p>原文</p>')));
 });
 
 test('corrupt bytes, schema and resource integrity are rejected before preview', async () => {
   const data = await core.importSource({name: 'x.html', bytes: encode('<p>source</p>')}, [{path: 'x.png', bytes: new Uint8Array([1, 2, 3])}]);
+  const lightweight = core.createAnnotationExport(data);
+  assert.equal(lightweight.resources[0].base64, undefined);
+  assert.equal(lightweight.resources[0].sha256, data.resources[0].sha256);
+  assert.equal(data.resources[0].base64, 'AQID');
   const cases = [
     [value => value.schemaVersion = 2, /格式版本/],
     [value => value.source.base64 = core.bytesToBase64(encode('<p>edited</p>')), /完整性/],
@@ -156,4 +166,31 @@ test('target validation rejects malformed nested fields before UI rendering or l
   data.annotations.push({id: 'a', kind: 'page', comment: '布局反馈', createdAt: data.createdAt, updatedAt: data.updatedAt,
     target: {kind: 'page', text: '页'}, view: {width: {toString: null}}});
   await assert.rejects(core.validateData(data), /视口/);
+});
+
+test('agent task preserves complete annotation context while excluding file and resource snapshots', async () => {
+  const data = await source();
+  data.resources = [{path: 'img/a.svg', mime: 'image/svg+xml', byteLength: 6, sha256: 'a'.repeat(64), base64: 'PHN2Zy8+'}];
+  data.annotations = [{id: 'task-note', kind: 'text', comment: '替换句子；保留字面量 </script> 与 $&。', createdAt: data.createdAt, updatedAt: data.updatedAt,
+    target: {kind: 'text', selector: '#copy', quote: {exact: '原文', prefix: '前文', suffix: '后文'}, context: {ancestor: {tag: 'section', id: 'chapter', text: '章节'}}, range: {start: {path: [1, 0], offset: 0}, end: {path: [1, 0], offset: 2}}}, view: {width: 390, height: 800}}];
+  const task = core.createAgentTask(data);
+  const payload = JSON.parse(task.slice(task.indexOf('{')));
+  assert.deepEqual(payload.annotations, data.annotations);
+  assert.equal(payload.source.sha256, data.source.sha256);
+  assert.equal(payload.source.path, 'pages/page.html');
+  assert.equal(payload.resources[0].path, 'img/a.svg');
+  assert.equal('base64' in payload.source, false);
+  assert.equal('base64' in payload.resources[0], false);
+  assert(task.includes('校验原文件的 SHA-256'));
+});
+
+test('single-page scope requires bounded semantic page metadata and survives light export', async () => {
+  const data = await source();
+  const target = {kind:'page',scope:'page',pageIndex:2,pageCount:3,pageTitle:'第二页',selector:'#page-2',tag:'section',text:'第二页内容'};
+  data.annotations.push({id:'single-page',kind:'page',comment:'只修改第二页',target,createdAt:data.createdAt,updatedAt:data.updatedAt});
+  await core.validateData(data);
+  assert.deepEqual(clone(core.createAnnotationExport(data).annotations[0].target),target);
+  for (const invalid of [{pageIndex:0},{pageIndex:4},{pageCount:1001},{pageTitle:'x'.repeat(101)},{tag:''},{selector:undefined}]) {
+    assert.throws(()=>core.validateTarget({...target,...invalid},'page'),/单页|JSON/);
+  }
 });
