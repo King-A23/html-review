@@ -5,6 +5,7 @@ import hashlib
 import json
 import re
 import sys
+from datetime import datetime
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -113,9 +114,81 @@ def validate_lightweight_data(data):
         raise ValueError("轻量批注 JSON 不应包含原文件 Base64")
 
 
-def inspect(review_path, original_path):
+def valid_time(value):
+    if not isinstance(value, str) or not value or len(value) >= 80:
+        return False
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return True
+    except ValueError:
+        return False
+
+
+def string_length(value):
+    """Count UTF-16 code units like the browser's string-length limits."""
+    return len(value.encode("utf-16-le", errors="surrogatepass")) // 2
+
+
+def normalize_annotations(annotations):
+    ids = set()
+    for annotation in annotations:
+        if not isinstance(annotation, dict):
+            raise ValueError("批注记录无效")
+        annotation_id = annotation.get("id")
+        if not isinstance(annotation_id, str) or not annotation_id.strip() or string_length(annotation_id) > 200:
+            raise ValueError("批注 ID 无效")
+        if annotation_id in ids:
+            raise ValueError("批注 ID 重复：" + annotation_id)
+        ids.add(annotation_id)
+        if not valid_time(annotation.get("updatedAt")):
+            raise ValueError("批注更新时间无效：" + annotation_id)
+        revision = annotation.get("revision", 1)
+        if type(revision) is not int or revision < 1 or revision > 9007199254740991:
+            raise ValueError("批注 revision 必须是正整数：" + annotation_id)
+        status = annotation.get("status", "open")
+        if status not in ("open", "resolved"):
+            raise ValueError("批注状态无效：" + annotation_id)
+        history = annotation.get("history", [])
+        if not isinstance(history, list) or len(history) > 500:
+            raise ValueError("批注历史无效：" + annotation_id)
+        batches = set()
+        previous_revision = 0
+        for event in history:
+            if not isinstance(event, dict) or type(event.get("revision")) is not int or not 1 <= event["revision"] <= revision or event["revision"] < previous_revision:
+                raise ValueError("批注历史 revision 无效：" + annotation_id)
+            if not isinstance(event.get("batchId"), str) or not event["batchId"].strip() or string_length(event["batchId"]) > 200:
+                raise ValueError("批注历史 batchId 无效：" + annotation_id)
+            if event["batchId"] in batches:
+                raise ValueError("批注历史 batchId 重复：" + annotation_id)
+            batches.add(event["batchId"])
+            previous_revision = event["revision"]
+            if event.get("status") not in ("open", "resolved"):
+                raise ValueError("批注历史状态无效：" + annotation_id)
+            if not isinstance(event.get("summary"), str) or string_length(event["summary"]) > 4000:
+                raise ValueError("批注历史说明无效：" + annotation_id)
+            if not isinstance(event.get("by"), str) or not event["by"].strip() or string_length(event["by"]) > 200 or not valid_time(event.get("at")):
+                raise ValueError("批注历史作者或时间无效：" + annotation_id)
+            if "annotationUpdatedAt" in event and not valid_time(event["annotationUpdatedAt"]):
+                raise ValueError("批注历史对应的更新时间无效：" + annotation_id)
+        annotation.update(revision=revision, status=status, history=history)
+    return annotations
+
+
+def task_state(annotation):
+    if annotation.get("status", "open") == "resolved":
+        return "completed"
+    history = annotation.get("history", [])
+    if not history:
+        return "new"
+    if history[-1]["revision"] < annotation.get("revision", 1):
+        return "updated"
+    return "pending"
+
+
+def read_review(review_path):
+    """Read and validate a review independently of the current source file."""
     data, input_kind = read_review_data(review_path)
-    if not isinstance(data, dict) or data.get("schemaVersion") != SCHEMA_VERSION:
+    if not isinstance(data, dict) or type(data.get("schemaVersion")) is not int or data["schemaVersion"] != SCHEMA_VERSION:
         raise ValueError("不支持的数据格式或版本")
     source, expected = require_source(data)
 
@@ -127,6 +200,13 @@ def inspect(review_path, original_path):
         validate_lightweight_data(data)
     else:
         raise ValueError("不支持的数据格式或版本")
+    normalize_annotations(data["annotations"])
+    return data, input_kind
+
+
+def inspect(review_path, original_path):
+    data, input_kind = read_review(review_path)
+    source, expected = require_source(data)
 
     actual_bytes = Path(original_path).read_bytes()
     actual = sha256(actual_bytes)
@@ -137,7 +217,7 @@ def inspect(review_path, original_path):
     print("当前原文件 SHA-256：", actual)
     print("文本编码：", source.get("encoding", "未注明"))
     print("批注数量：", len(data["annotations"]))
-    print(json.dumps(data["annotations"], ensure_ascii=False, indent=2))
+    print(json.dumps([{**annotation, "taskState": task_state(annotation)} for annotation in data["annotations"]], ensure_ascii=False, indent=2))
     if actual != expected or len(actual_bytes) != source["byteLength"]:
         print(
             "版本不一致：请先比较原文件版本并核实每个目标；不要直接套用定位或覆盖文件。",

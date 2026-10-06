@@ -2,6 +2,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const core = window.HRCore;
+  const local = window.HRLocalFiles;
   const frame = $('preview-frame');
   const workspace = document.querySelector('.workspace');
   const sidebarPreferenceKey = 'html-review.sidebar-position';
@@ -33,6 +34,10 @@
   let folderFiles = null;
   let folderEntries = [];
   let currentEntryPath = '';
+  let localAccess = null;
+  let reloadSelection = null;
+  let exampleWorkspace = false;
+  const reviewFiles = new WeakSet();
   let renderGeneration = 0;
   const locations = new Map();
   const undoStack = [];
@@ -78,14 +83,25 @@
     box.replaceChildren();
     box.hidden = !warnings.length;
     if (!warnings.length) return;
-    const title = document.createElement('strong');
-    title.textContent = '预览提示';
-    box.append(title);
-    const list = document.createElement('ul');
     const unique = Array.from(new Set(warnings));
-    for (const warning of unique.slice(0, 8)) { const item = document.createElement('li'); item.textContent = warning; list.append(item); }
-    if (unique.length > 8) { const item = document.createElement('li'); item.textContent = `还有 ${unique.length - 8} 项类似资源提示。`; list.append(item); }
-    box.append(list);
+    const missing = unique.filter(warning => warning.startsWith('未附带本地资源：')).length;
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = missing ? `缺少 ${missing} 项本地资源 · 导入文件夹可补全 · 查看详情` : `预览提示 ${unique.length} 项 · 查看详情`;
+    details.append(summary);
+    if (missing) {
+      const help = document.createElement('p');
+      help.textContent = '只打开 HTML 不会读取旁边的图片、样式等文件。请选择包含当前 HTML 和资源的文件夹，再选择对应入口。';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = '导入资源文件夹';
+      button.addEventListener('click', () => openDirectory());
+      details.append(help, button);
+    }
+    const list = document.createElement('ul');
+    for (const warning of unique) { const item = document.createElement('li'); item.textContent = warning; list.append(item); }
+    details.append(list);
+    box.append(details);
   }
   function setBusy(value) {
     busy = value;
@@ -168,6 +184,7 @@
     $('copy-agent-task').disabled = busy || !data || !data.annotations.length || draftDirty();
     $('copy-agent-task').title = draftDirty() ? '先保存或取消编辑框中的意见，再复制任务' : '复制已保存批注和定位信息，连同原文件交给 agent';
     $('retry-recovery').disabled = busy;
+    $('import-results').disabled = busy || !data;
     $('clear-target').hidden = !pendingTarget || pendingTarget.scope === 'whole-document';
     $('clear-target').disabled = busy;
     $('mode-hint').textContent = data ? (mode === 'browse' && editingId ? '可以正常阅读和点击页面。正在编辑已有批注，修改意见仍对应下方目标。' : hints[mode]) : '先打开 HTML，或体验下方示例。';
@@ -209,6 +226,8 @@
     folderFiles = null;
     folderEntries = [];
     currentEntryPath = '';
+    localAccess = null;
+    exampleWorkspace = false;
     $('entry-label').hidden = true;
     $('entry-select').replaceChildren();
   }
@@ -232,25 +251,46 @@
     list.replaceChildren();
     const annotations = data?.annotations || [];
     $('annotation-count').textContent = annotations.length;
+    const pendingCount = annotations.filter(annotation => core.annotationStatus(annotation) === 'open').length;
+    $('review-progress').textContent = `待处理 ${pendingCount} · 已完成 ${annotations.length - pendingCount}`;
+    const filter = $('annotation-filter').value;
     if (!annotations.length) { list.append(textNode('p', 'empty-list', '还没有批注。直接填写整体意见，或选择具体内容后批注。')); return; }
     annotations.forEach((annotation, index) => {
+      const resolved = core.annotationStatus(annotation) === 'resolved';
+      if (filter !== 'all' && (resolved ? 'resolved' : 'open') !== filter) return;
+      const state = core.taskState(annotation);
+      const stateLabels = {new: '新增意见', updated: '已更新', pending: '待处理', completed: '已完成'};
       const card = document.createElement('article');
-      card.className = 'annotation-card' + (!previousIds.has(annotation.id) ? ' is-new' : '') + (editingId === annotation.id ? ' active' : '');
-      card.dataset.annotationId = annotation.id;
+      card.className = 'annotation-card' + (resolved ? ' is-resolved' : '') + (!previousIds.has(annotation.id) ? ' is-new' : '') + (editingId === annotation.id ? ' active' : '');
+      card.dataset.annotationId = annotation.id; card.dataset.reviewState = state;
       const top = document.createElement('div'); top.className = 'annotation-top';
-      top.append(textNode('span', 'tag', targetLabel(annotation.target)), textNode('span', 'annotation-number', String(index + 1).padStart(2, '0')));
+      const meta = document.createElement('div'); meta.className = 'annotation-top-meta';
+      meta.append(textNode('span', 'annotation-state ' + state, stateLabels[state]), textNode('span', 'annotation-number', String(index + 1).padStart(2, '0')));
+      top.append(textNode('span', 'tag', targetLabel(annotation.target)), meta);
       card.append(top, textNode('p', 'annotation-comment', annotation.comment));
       card.append(textNode('div', 'annotation-quote', targetText(annotation.target).slice(0, 180)));
       const location = locations.get(annotation.id);
-      if (location) { const line = textNode('div', 'location-status ' + location.status, location.message); card.append(line); }
+      if (location && !resolved) { const line = textNode('div', 'location-status ' + location.status, location.message); card.append(line); }
       const actions = document.createElement('div'); actions.className = 'annotation-actions';
-      for (const [action, label] of [['locate', '定位'], ['edit', '编辑'], ['delete', '删除']]) {
+      for (const [action, label] of [['locate', '定位'], ['edit', '编辑'], ['status', resolved ? '重新待处理' : '标记完成'], ['delete', '删除']]) {
         const button = textNode('button', 'text-button' + (action === 'delete' ? ' delete-button' : ''), label);
         button.type = 'button'; button.dataset.action = action; button.dataset.id = annotation.id;
+        if (action === 'locate' && resolved) { button.disabled = true; button.title = '已完成批注保留为记录，无需再次定位'; }
         actions.append(button);
       }
-      card.append(actions); list.append(card);
+      card.append(actions);
+      if (annotation.history?.length) {
+        const history = document.createElement('details'); history.className = 'annotation-history';
+        history.append(textNode('summary', '', `处理记录 · ${annotation.history.length}`));
+        for (const event of annotation.history.slice().reverse()) {
+          const by = event.by === 'user' ? '你' : event.by;
+          history.append(textNode('p', '', `${event.status === 'resolved' ? '已完成' : '待处理'} · 第 ${event.revision} 版 · ${by} · ${new Date(event.at).toLocaleString()}\n${event.summary || '未附说明'}`));
+        }
+        card.append(history);
+      }
+      list.append(card);
     });
+    if (!list.childElementCount) list.append(textNode('p', 'empty-list', filter === 'open' ? '目前没有待处理意见。' : '还没有已完成的处理记录。'));
     window.HRUI.enterCards(list);
   }
   async function preparePreview(nextData) {
@@ -284,6 +324,7 @@
     const prepared = await preparePreview(nextData);
     autosavePaused = false;
     data = nextData;
+    data.annotations = data.annotations.map(core.normalizeAnnotation);
     undoStack.length = 0; redoStack.length = 0;
     cachedSession = null; $('recovery-banner').hidden = true;
     delivered = false;
@@ -304,6 +345,7 @@
     const parsed = new DOMParser().parseFromString(decoded.text, 'text/html');
     const nodes = parsed.querySelectorAll('script#html-review-data[type="application/json"]');
     if (nodes.length) {
+      reviewFiles.add(file);
       if (nodes.length !== 1) throw new Error('副本中包含多个批注数据块，无法确定应读取哪一份。');
       let imported;
       try { imported = JSON.parse(nodes[0].textContent); } catch (_) { throw new Error('批注 JSON 数据损坏，无法打开。'); }
@@ -322,25 +364,237 @@
     finally { setBusy(false); }
   }
   function folderPath(file) {
-    const path = (file.webkitRelativePath || file.name).replace(/\\/g, '/');
-    return file.webkitRelativePath ? path.split('/').slice(1).join('/') : path;
+    return local.path(file);
   }
   async function readFolderEntry(path, files) {
     const entry = files.find(file => folderPath(file) === path);
     if (!entry) throw new Error('找不到所选 HTML 文件。');
     const resources = [];
     for (const file of files) {
-      if (file === entry) continue;
+      if (file === entry || folderPath(file) === core.resultPath(path)) continue;
       resources.push({path: folderPath(file), bytes: new Uint8Array(await file.arrayBuffer()), mime: file.type});
     }
     return readFile(entry, path, resources);
   }
   async function openFolderEntry(path) {
-    const nextData = await readFolderEntry(path, folderFiles);
+    let files = folderFiles;
+    if (localAccess?.directoryHandle) {
+      await local.permission(localAccess.directoryHandle);
+      files = await local.directoryFiles(localAccess.directoryHandle);
+    }
+    const nextData = await readFolderEntry(path, files);
     await activate(nextData);
-    currentEntryPath = path;
-    $('entry-select').value = path; window.HRUI.syncSelect('entry-select');
-    $('entry-label').hidden = false;
+    const directory = localAccess?.directoryHandle;
+    updateFolder(files, path);
+    localAccess = directory && !reviewFiles.has(files.find(file => folderPath(file) === path))
+      ? {directoryHandle: directory, entryPath: path, entries: folderEntries.map(folderPath)} : null;
+    queueAutosave();
+  }
+
+  function updateFolder(files, entryPath) {
+    folderFiles = files;
+    folderEntries = files.filter(file => /\.html?$/i.test(file.name)).sort((a, b) => folderPath(a).localeCompare(folderPath(b)));
+    currentEntryPath = entryPath;
+    showFolderEntries(folderEntries.map(folderPath), entryPath);
+  }
+  function showFolderEntries(entries, entryPath) {
+    currentEntryPath = entryPath;
+    $('entry-select').replaceChildren(...entries.map(path => new Option(path, path)));
+    $('entry-select').value = entryPath;
+    window.HRUI.syncSelect('entry-select');
+    $('entry-label').hidden = !entries.length;
+  }
+  async function replaceSource(nextData, access, files = null, entryPath = nextData.source.path) {
+    // Prepare everything before committing, so permission/read/parse errors cannot erase work.
+    nextData.annotations = structuredClone(data.annotations);
+    nextData.createdAt = data.createdAt;
+    const previousResources = new Map(data.resources.map(resource => [resource.path, resource]));
+    const changed = nextData.source.sha256 !== data.source.sha256 || nextData.resources.length !== data.resources.length ||
+      nextData.resources.some(resource => {
+        const previous = previousResources.get(resource.path);
+        return !previous || resource.sha256 !== previous.sha256 || resource.mime !== previous.mime;
+      });
+    nextData.updatedAt = changed ? new Date().toISOString() : data.updatedAt;
+    await core.validateData(nextData);
+    let resultCount = 0, resultError = '';
+    if (files) {
+      const resultsFile = files.find(file => folderPath(file) === core.resultPath(entryPath));
+      if (resultsFile) {
+        try {
+          const merged = core.applyAgentResults(nextData, await readResultFile(resultsFile));
+          nextData = merged.data; resultCount = merged.applied;
+        } catch (error) { resultError = error.message; }
+      }
+    }
+    await core.validateData(nextData);
+    const prepared = await preparePreview(nextData);
+    if (resultCount) recordResultsChange(data, nextData);
+    data = nextData;
+    localAccess = access;
+    exampleWorkspace = false;
+    if (files) updateFolder(files, entryPath);
+    if (pendingTarget?.scope === 'whole-document') pendingTarget = pageTarget();
+    if (changed || resultCount) markDirty();
+    renderSource();
+    ++renderGeneration;
+    installPreview(prepared);
+    updateEditor();
+    queueAutosave();
+    if (resultError) note('预览已更新；agent 处理结果未导入：' + resultError + '。原批注和草稿已保留。', true);
+    else note((changed ? `已读取最新 HTML 和资源，保留 ${data.annotations.length} 条批注及草稿。`
+      : '已从原文件重新载入，批注和草稿已保留。') + (resultCount ? ` 已更新 ${resultCount} 条处理记录。` : ''));
+  }
+  async function importSelectedFile(file, handle = null, reloading = false) {
+    if (reloading && file.name !== data.source.name) throw new Error(`请选择当前原文件 ${data.source.name}，批注和草稿已保留。`);
+    if (!reloading && handle && localAccess?.directoryHandle) {
+      const directory = localAccess.directoryHandle;
+      const relative = await directory.resolve(handle);
+      if (relative) {
+        await local.permission(directory);
+        const files = await local.directoryFiles(directory);
+        const path = relative.join('/');
+        const nextData = await readFolderEntry(path, files);
+        await activate(nextData);
+        updateFolder(files, path);
+        localAccess = !reviewFiles.has(files.find(file => folderPath(file) === path))
+          ? {directoryHandle: directory, entryPath: path, entries: folderEntries.map(folderPath)} : null;
+        queueAutosave(); return;
+      }
+    }
+    const nextData = await readFile(file, reloading ? data.source.path : file.name);
+    if (reloading && reviewFiles.has(file)) throw new Error('请选择 agent 修改后的原始 HTML，而不是旧批注副本。当前批注已保留。');
+    const access = handle && !reviewFiles.has(file) ? {fileHandle: handle} : null;
+    if (reloading) {
+      nextData.resources = structuredClone(data.resources);
+      await replaceSource(nextData, access);
+    } else {
+      await activate(nextData); resetFolder(); localAccess = access;
+      queueAutosave();
+    }
+  }
+  function pickerError(error) {
+    if (error.name === 'AbortError') { note('已取消选择，当前页面、批注和草稿已保留。'); return; }
+    throw error;
+  }
+  function openHTML(reloading = false) {
+    if (busy) return;
+    if (!local.canPickFile()) { reloadSelection = reloading ? 'file' : null; $('file-input').click(); return; }
+    if (!reloading && !confirmDiscard()) return;
+    // Invoke the picker in the click event, before any asynchronous file work.
+    const selected = local.pickFile();
+    return run(async () => {
+      try { const [handle] = await selected; await importSelectedFile(await handle.getFile(), handle, reloading); }
+      catch (error) { pickerError(error); }
+    });
+  }
+  async function importDirectory(files, directory = null, reloading = false) {
+    if (files.length > 500 || files.reduce((size, file) => size + file.size, 0) > 50 * 1024 * 1024) throw new Error('文件夹最多 500 个文件、合计最多 50 MiB。请选择只包含页面所需资源的目录。');
+    const entries = files.filter(file => /\.html?$/i.test(file.name)).sort((a, b) => folderPath(a).localeCompare(folderPath(b)));
+    if (!entries.length) throw new Error('所选文件夹没有 HTML 文件。');
+    let path = '';
+    let attach = reloading;
+    if (data && directory) {
+      if (localAccess?.fileHandle) {
+        const relative = await directory.resolve(localAccess.fileHandle);
+        if (relative) { path = relative.join('/'); attach = true; }
+      } else if (localAccess?.directoryHandle && await directory.isSameEntry(localAccess.directoryHandle)) {
+        path = localAccess.entryPath; attach = true;
+      }
+    }
+    if (data && !path) {
+      const matching = entries.filter(file => file.name === data.source.name);
+      const exactPath = matching.find(file => folderPath(file) === data.source.path);
+      if (reloading) {
+        if (!exactPath && matching.length !== 1) throw new Error(`文件夹中无法唯一找到 ${data.source.path}，当前工作区已保留。`);
+        path = folderPath(exactPath || matching[0]);
+      } else {
+        const candidates = exactPath ? [exactPath] : matching;
+        const identical = [];
+        for (const file of candidates) if (await core.sha256(new Uint8Array(await file.arrayBuffer())) === data.source.sha256) identical.push(file);
+        if (identical.length === 1) { path = folderPath(identical[0]); attach = true; }
+      }
+    }
+    if (!path) path = folderPath(entries.find(file => /^index\.html?$/i.test(folderPath(file))) || entries[0]);
+    if (!attach && !confirmDiscard()) return;
+    const nextData = await readFolderEntry(path, files);
+    const sourceFile = files.find(file => folderPath(file) === path);
+    if (attach && reviewFiles.has(sourceFile)) throw new Error('请选择包含原始 HTML 的文件夹，当前批注和草稿已保留。');
+    const access = directory && !reviewFiles.has(sourceFile)
+      ? {directoryHandle: directory, entryPath: path, entries: entries.map(folderPath)} : null;
+    if (attach) await replaceSource(nextData, access, files, path);
+    else { await activate(nextData); resetFolder(); updateFolder(files, path); localAccess = access; queueAutosave(); }
+  }
+  function openDirectory(reloading = false) {
+    if (busy) return;
+    if (!local.canPickDirectory()) { reloadSelection = reloading ? 'directory' : null; $('folder-input').click(); return; }
+    const selected = local.pickDirectory();
+    return run(async () => {
+      try { const directory = await selected; await importDirectory(await local.directoryFiles(directory), directory, reloading); }
+      catch (error) { pickerError(error); }
+    });
+  }
+  function reloadSource() {
+    if (busy || !data) return;
+    if (exampleWorkspace) return run(async () => { await renderPreview(); note('示例预览已重新载入，批注和草稿已保留。'); });
+    if (!localAccess) {
+      const folder = Boolean(folderFiles || data.resources.length);
+      const canAssociate = folder ? local.canPickDirectory() : local.canPickFile();
+      note(canAssociate ? '首次重载需选择原文件或资源文件夹以建立关联，批注和草稿会保留。'
+        : '此浏览器重载需重新选择原文件或资源文件夹，批注和草稿会保留。');
+      return folder ? openDirectory(true) : openHTML(true);
+    }
+    return run(async () => {
+      const access = localAccess;
+      const handle = access.directoryHandle || access.fileHandle;
+      await local.permission(handle);
+      if (access.directoryHandle) {
+        const files = await local.directoryFiles(access.directoryHandle);
+        const nextData = await readFolderEntry(access.entryPath, files);
+        if (reviewFiles.has(files.find(file => folderPath(file) === access.entryPath))) throw new Error('关联的原文件已变成批注副本，当前工作区已保留。');
+        const nextAccess = {...access, entries: files.filter(file => /\.html?$/i.test(file.name)).map(folderPath).sort()};
+        await replaceSource(nextData, nextAccess, files, access.entryPath);
+      } else {
+        const file = await access.fileHandle.getFile();
+        const nextData = await readFile(file, data.source.path);
+        if (reviewFiles.has(file)) throw new Error('关联的原文件已变成批注副本，当前工作区已保留。');
+        nextData.resources = structuredClone(data.resources);
+        await replaceSource(nextData, access);
+      }
+    });
+  }
+  async function readResultFile(file) {
+    if (file.size > 20 * 1024 * 1024) throw new Error('处理结果文件超过 20 MiB。');
+    try { return JSON.parse(await file.text()); }
+    catch (_) { throw new Error('处理结果不是有效 JSON。'); }
+  }
+  function recordResultsChange(before, after) {
+    const items = [];
+    before.annotations.forEach((annotation, index) => {
+      const updated = after.annotations[index];
+      if (core.annotationStatus(annotation) !== core.annotationStatus(updated) || (annotation.history?.length || 0) !== (updated.history?.length || 0)) items.push({before: structuredClone(annotation), after: structuredClone(updated), index});
+    });
+    if (!items.length) return;
+    undoStack.push({items}); if (undoStack.length > 50) undoStack.shift(); redoStack.length = 0;
+  }
+  async function importResults(file) {
+    const merged = core.applyAgentResults(data, await readResultFile(file));
+    await core.validateData(merged.data);
+    if (merged.applied) {
+      recordResultsChange(data, merged.data); data = merged.data;
+      markDirty(); renderAnnotations(); updateEditor(); queueAutosave();
+    }
+    note(merged.applied ? `已更新 ${merged.applied} 条处理记录；原批注和草稿已保留，可撤销。` : '该批处理结果已导入，无需重复更新。');
+  }
+  function toggleStatus(annotation) {
+    if (busy) return;
+    const status = core.annotationStatus(annotation) === 'resolved' ? 'open' : 'resolved';
+    const patch = {format: 'html-review-results', schemaVersion: 1, batchId: id(), results: [{id: annotation.id,
+      revision: core.annotationRevision(annotation), annotationUpdatedAt: annotation.updatedAt, status, by: 'user',
+      summary: status === 'resolved' ? '用户标记已完成' : '用户重新设为待处理', at: new Date().toISOString()}]};
+    const merged = core.applyAgentResults(data, patch);
+    recordResultsChange(data, merged.data); data = merged.data;
+    markDirty(); renderAnnotations(); updateEditor();
+    note(status === 'resolved' ? '已标记完成，批注原文作为记录保留，可撤销。' : '已重新设为待处理，下次交接会包含这条意见。');
   }
   function saveAnnotation() {
     const comment = $('comment-input').value.trim();
@@ -349,7 +603,7 @@
     const now = new Date().toISOString();
     const existing = editingId && data.annotations.find(annotation => annotation.id === editingId);
     if (pendingTarget.kind === 'page') pendingTarget.viewport = view();
-    const annotation = {id: existing?.id || id(), kind: pendingTarget.kind, comment, createdAt: existing?.createdAt || now, updatedAt: now, target: structuredClone(pendingTarget), view: view()};
+    const annotation = {revision: existing ? core.annotationRevision(existing) + 1 : 1, status: 'open', history: existing?.history || [], id: existing?.id || id(), kind: pendingTarget.kind, comment, createdAt: existing?.createdAt || now, updatedAt: now, target: structuredClone(pendingTarget), view: view()};
     recordChange(existing || null, annotation, existing ? data.annotations.indexOf(existing) : data.annotations.length);
     if (existing) data.annotations[data.annotations.indexOf(existing)] = annotation;
     else data.annotations.push(annotation);
@@ -368,16 +622,19 @@
     const to = redo ? undoStack : redoStack;
     const change = from.pop();
     if (!change) return;
-    const target = redo ? change.after : change.before;
-    const changedId = (change.before || change.after).id;
-    data.annotations = data.annotations.filter(item => item.id !== changedId);
-    if (target) data.annotations.splice(Math.min(change.index, data.annotations.length), 0, structuredClone(target));
+    for (const item of change.items || [change]) {
+      const target = redo ? item.after : item.before;
+      const changedId = (item.before || item.after).id;
+      data.annotations = data.annotations.filter(annotation => annotation.id !== changedId);
+      if (target) data.annotations.splice(Math.min(item.index, data.annotations.length), 0, structuredClone(target));
+      locations.delete(changedId);
+    }
     to.push(change);
-    locations.delete(changedId);
     markDirty(); clearEditor(); setMode('browse'); renderAnnotations();
     note(redo ? '已重做批注操作，下载可保存最新结果。' : '已撤销上次批注操作，原批注内容和位置已恢复。');
   }
   function locate(annotation) {
+    if (core.annotationStatus(annotation) === 'resolved') { note('这条批注已完成，原文与位置保留作处理记录。需要继续修改时可编辑意见或重新待处理。'); return; }
     if (annotation.kind === 'page' && (annotation.target.scope === 'whole-document' || !annotation.target.selector)) {
       const width = annotation.view?.width || annotation.target.viewport?.width;
       const available = ['390', '768', '1280'];
@@ -425,6 +682,7 @@
     copy.querySelector('#page-select').replaceChildren();
     // Rebuilt on startup. Do not serialize transient editor/list state or duplicate page bytes.
     copy.querySelector('#annotation-list').replaceChildren();
+    copy.querySelector('#review-progress').textContent = '意见与处理记录';
     copy.querySelector('#comment-input').textContent = '';
     copy.querySelector('#target-preview').hidden = true;
     for (const selector of ['#target-text', '#target-selector', '#target-kind']) copy.querySelector(selector).textContent = '';
@@ -508,7 +766,7 @@
     $('retry-recovery').hidden = !error;
   }
   function sessionSnapshot() {
-    return structuredClone({version: 1, data, draft: {comment: $('comment-input').value, pendingTarget, editingId, baseline: draftBaseline, targetChanged: draftTargetChanged, mode}, dirty, lastExportFormat,
+    return structuredClone({version: 1, data, localAccess, exampleWorkspace, draft: {comment: $('comment-input').value, pendingTarget, editingId, baseline: draftBaseline, targetChanged: draftTargetChanged, mode}, dirty, lastExportFormat,
       preferences: {width: $('preview-width').value, sidebar: $('sidebar-position').value, exportFormat: $('export-format').value}});
   }
   function queueAutosave() {
@@ -557,6 +815,13 @@
     restoringSession = true;
     try {
       await activate(structuredClone(record.data)); resetFolder();
+      localAccess = local.valid(record.localAccess);
+      exampleWorkspace = Boolean(record.exampleWorkspace);
+      if (localAccess?.directoryHandle) {
+        const entries = Array.isArray(localAccess.entries) ? localAccess.entries.filter(path => typeof path === 'string' && /\.html?$/i.test(path)) : [];
+        if (!entries.includes(localAccess.entryPath)) entries.push(localAccess.entryPath);
+        showFolderEntries(entries, localAccess.entryPath);
+      }
       const draft = record.draft;
       mode = draft.mode === 'page' && draft.pendingTarget?.scope === 'whole-document' ? 'whole' : draft.mode; editingId = draft.editingId || null;
       pendingTarget = draft.pendingTarget ? structuredClone(draft.pendingTarget) : null;
@@ -658,7 +923,7 @@
     if (dialog) { if (action === 'escape') window.HRUI.closeDialog(dialog); return; }
     if (busy) return;
     if (action === 'help') { window.HRUI.openSettings('shortcuts'); return; }
-    if (action === 'open') { $('file-input').click(); return; }
+    if (action === 'open') { openHTML(); return; }
     if (action === 'download') { if (data) run(download); return; }
     if (action === 'undo' || action === 'redo') { reverseChange(action === 'redo'); return; }
     if (!data) return;
@@ -730,32 +995,21 @@
       renderAnnotations(); note(description, ['missing', 'ambiguous'].includes(message.status));
     } else if (message.event === 'warning' && typeof message.message === 'string') note(message.message.slice(0, 1500), true);
   });
-  $('open-button').addEventListener('click', () => $('file-input').click());
-  $('folder-button').addEventListener('click', () => $('folder-input').click());
+  $('open-button').addEventListener('click', () => openHTML());
+  $('folder-button').addEventListener('click', () => openDirectory());
   $('file-input').addEventListener('change', async event => {
     const file = event.target.files[0]; event.target.value = '';
+    const reloading = reloadSelection === 'file'; reloadSelection = null;
     await bootPromise;
-    if (!file || !confirmDiscard()) return;
-    await run(async () => { const nextData = await readFile(file); await activate(nextData); resetFolder(); });
+    if (!file || (!reloading && !confirmDiscard())) return;
+    await run(() => importSelectedFile(file, null, reloading));
   });
   $('folder-input').addEventListener('change', async event => {
     const files = Array.from(event.target.files); event.target.value = '';
+    const reloading = reloadSelection === 'directory'; reloadSelection = null;
     await bootPromise;
-    if (!files.length || !confirmDiscard()) return;
-    await run(async () => {
-      if (files.length > 500 || files.reduce((size, file) => size + file.size, 0) > 50 * 1024 * 1024) throw new Error('文件夹最多 500 个文件、合计最多 50 MiB。请选择只包含页面所需资源的目录。');
-      const entries = files.filter(file => /\.html?$/i.test(file.name)).sort((a, b) => folderPath(a).localeCompare(folderPath(b)));
-      if (!entries.length) throw new Error('所选文件夹没有 HTML 文件。');
-      const preferred = entries.find(file => /^index\.html?$/i.test(folderPath(file))) || entries[0];
-      const preferredPath = folderPath(preferred);
-      const nextData = await readFolderEntry(preferredPath, files);
-      await activate(nextData);
-      folderFiles = files; folderEntries = entries; currentEntryPath = preferredPath;
-      $('entry-select').replaceChildren();
-      for (const file of entries) { const option = document.createElement('option'); option.value = folderPath(file); option.textContent = folderPath(file); $('entry-select').append(option); }
-      $('entry-select').value = preferredPath;
-      $('entry-label').hidden = false;
-    });
+    if (!files.length) return;
+    await run(() => importDirectory(files, null, reloading));
   });
   $('entry-select').addEventListener('change', async event => {
     const path = event.target.value;
@@ -766,7 +1020,7 @@
     if (!confirmDiscard()) return;
     const example = JSON.parse($('html-review-example').textContent);
     const nextData = await core.importSource({bytes: core.base64ToBytes(example.base64), name: example.name});
-    await activate(seedExample(nextData)); resetFolder();
+    await activate(seedExample(nextData)); resetFolder(); exampleWorkspace = true; queueAutosave();
   }));
   for (const button of document.querySelectorAll('[data-mode]')) button.addEventListener('click', () => { if (data) setMode(button.dataset.mode); });
   $('comment-input').addEventListener('input', () => { autosavePaused = false; updateEditor(); });
@@ -780,7 +1034,7 @@
     else if ($('export-format').value === 'gzip') note('压缩副本保留完整快照和批注，解压后可继续编辑。');
   });
   $('download-button').addEventListener('click', () => run(download));
-  $('reload-preview').addEventListener('click', () => run(async () => { await renderPreview(); note('预览已重新载入。页面脚本运行状态已重置，已有批注保留。'); }));
+  $('reload-preview').addEventListener('click', reloadSource);
   $('page-select').addEventListener('change', event => { if (mode === 'page' && event.target.value) send('select-page', {index: Number(event.target.value)}); });
   $('preview-width').addEventListener('change', applyWidth);
   $('sidebar-position').addEventListener('change', event => setSidebarPosition(event.target.value));
@@ -791,6 +1045,7 @@
     if (!annotation) return;
     if (button.dataset.action === 'locate') locate(annotation);
     else if (button.dataset.action === 'edit') edit(annotation);
+    else if (button.dataset.action === 'status') { try { toggleStatus(annotation); } catch (error) { note(error.message, true); } }
     else if (button.dataset.action === 'delete') {
       if (draftDirty()) { note('编辑框中有未保存的意见，请先保存或取消编辑，再删除批注。', true); return; }
       if (!confirm('确定删除这条批注吗？可使用撤销恢复。')) return;
@@ -807,6 +1062,12 @@
   $('undo-button').addEventListener('click', () => reverseChange());
   $('redo-button').addEventListener('click', () => reverseChange(true));
   $('copy-agent-task').addEventListener('click', copyAgentTask);
+  $('annotation-filter').addEventListener('change', renderAnnotations);
+  $('import-results').addEventListener('click', () => $('results-input').click());
+  $('results-input').addEventListener('change', async event => {
+    const file = event.target.files[0]; event.target.value = '';
+    if (file && data) await run(() => importResults(file));
+  });
   $('copy-agent-text').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText($('agent-task-text').value); $('copy-agent-status').textContent = '已复制。'; }
     catch (_) { $('agent-task-text').focus(); $('agent-task-text').select(); $('copy-agent-status').textContent = '已选中，请按 Ctrl / ⌘ + C 复制。'; }

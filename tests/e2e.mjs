@@ -273,7 +273,7 @@ try {
     assert.equal(light.format, 'html-review-annotations');
     assert.equal(light.source.base64, undefined);
     assert.equal(light.source.sha256, originalHash);
-    assert.deepEqual(light.annotations, stored.annotations);
+    assert.deepEqual(light.annotations, stored.annotations.map(annotation => ({...annotation, taskState: 'new'})));
     assert(!lightBytes.includes(Buffer.from(stored.source.base64)));
     assert((await formats.locator('#save-state').textContent()).includes('连同原文件保留'));
     assert(packed.length < fullBytes.length);
@@ -383,7 +383,12 @@ try {
     await waitCount(finalPage, 3);
     await finalPage.locator('#preview-width').selectOption('fluid');
     await finalPage.locator('[data-mode="browse"]').click();
+    // A portable review copy has no disk permission: first reload associates the original.
+    await finalPage.evaluate(() => { window.showOpenFilePicker = undefined; });
+    const reloadPicker = finalPage.waitForEvent('filechooser');
     await finalPage.locator('#reload-preview').click();
+    await (await reloadPicker).setFiles(path.join(root, 'examples/demo.html'));
+    await finalPage.waitForFunction(() => !document.querySelector('#reload-preview').disabled);
     await finalPage.locator('#preview-frame').contentFrame().locator('#hero-title').waitFor();
     finalArtifact = await download(finalPage, 'demo.review.html');
     const stored = await extract(finalArtifact);

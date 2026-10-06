@@ -81,7 +81,7 @@ test('valid annotations of all three kinds survive export and validation', async
   assert.equal(lightweight.format, 'html-review-annotations');
   assert.equal(lightweight.source.base64, undefined);
   assert.equal(lightweight.source.sha256, data.source.sha256);
-  assert.deepEqual(lightweight.annotations, clone(data.annotations));
+  assert.deepEqual(lightweight.annotations, clone(data.annotations).map(annotation => ({...annotation, revision: 1, status: 'open', history: [], taskState: 'new'})));
   assert.equal(data.source.base64, core.bytesToBase64(encode('<!doctype html>\r\n<title>中文 😀</title>\r\n<p>原文</p>')));
 });
 
@@ -175,7 +175,7 @@ test('agent task preserves complete annotation context while excluding file and 
     target: {kind: 'text', selector: '#copy', quote: {exact: '原文', prefix: '前文', suffix: '后文'}, context: {ancestor: {tag: 'section', id: 'chapter', text: '章节'}}, range: {start: {path: [1, 0], offset: 0}, end: {path: [1, 0], offset: 2}}}, view: {width: 390, height: 800}}];
   const task = core.createAgentTask(data);
   const payload = JSON.parse(task.slice(task.indexOf('{')));
-  assert.deepEqual(payload.annotations, data.annotations);
+  assert.deepEqual(payload.annotations, data.annotations.map(annotation => ({...annotation, revision: 1, status: 'open', history: [], taskState: 'new'})));
   assert.equal(payload.source.sha256, data.source.sha256);
   assert.equal(payload.source.path, 'pages/page.html');
   assert.equal(payload.resources[0].path, 'img/a.svg');

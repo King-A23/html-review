@@ -377,7 +377,8 @@ try {
   });
 
   await check('shortcuts work in the main page and iframe without hijacking real inputs or dialogs', async () => {
-    const {context, page} = await newPage();
+    // This suite exercises the input picker path; native file handles have a dedicated reload suite.
+    const {context, page} = await newPage(() => { window.showOpenFilePicker = undefined; });
     try {
       const frame = await openFinance(page);
       const mainChooser = page.waitForEvent('filechooser');

@@ -12,7 +12,9 @@
     "test:session": "node tests/session.browser.mjs",
     "test:usability": "node tests/usability.e2e.mjs",
     "test:ui": "node tests/ui.e2e.mjs",
-    "test:motion": "node tests/motion.e2e.mjs"
+    "test:motion": "node tests/motion.e2e.mjs",
+    "test:reload": "node tests/local-reload.browser.mjs",
+    "test:results": "node tests/results.browser.mjs"
   },
   "engines": {
     "node": ">=20"
