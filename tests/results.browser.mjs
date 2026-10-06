@@ -1,13 +1,12 @@
+import {runPython} from '../scripts/python.mjs';
 /* Full feedback loop: actual exports → Python agent interface → native directory reload → next handoff. */
 import assert from 'node:assert/strict';
 import {readFile, mkdtemp, rm, mkdir, stat} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {execFile} from 'node:child_process';
-import {promisify} from 'node:util';
 import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
-const run = promisify(execFile), root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../', import.meta.url));
 let modulePath = process.env.PLAYWRIGHT_MODULE_PATH;
 if (modulePath && (await stat(modulePath)).isDirectory()) modulePath = path.join(modulePath, 'index.mjs');
 const {chromium} = await import(modulePath ? pathToFileURL(modulePath).href : 'playwright');
@@ -32,7 +31,7 @@ async function exported(page, filename) {
 }
 async function result(review, filename, id, status, summary) {
   const output = path.join(workspace, filename);
-  await run('python3', [path.join(root, 'scripts/update_review.py'), review, '--id', id, '--status', status, '--summary', summary, '--output', output]);
+  await runPython([path.join(root, 'scripts/update_review.py'), review, '--id', id, '--status', status, '--summary', summary, '--output', output]);
   return {output, text: await readFile(output, 'utf8')};
 }
 let browser;

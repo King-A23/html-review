@@ -1,5 +1,7 @@
 # Agent 处理结果接口
 
+Windows 的 PowerShell 命令与解释器说明见 [Windows 使用](WINDOWS.md)。
+
 接口通过本地 JSON 文件交接，无需服务、账号或 API Key。agent 修改原 HTML 和资源后回传处理结果；工具按批注 ID 更新状态，原批注、目标与上下文保留作为记录。
 
 ## 意见与处理状态

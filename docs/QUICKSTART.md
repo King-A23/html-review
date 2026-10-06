@@ -1,6 +1,6 @@
 # HTML Review 快速开始
 
-[完整说明](../README.md) · [English](../README.en.md) · [agent 结果接口](AGENT_RESULTS.md)
+[完整说明](../README.md) · [English](../README.en.md) · [Windows / PowerShell](WINDOWS.md) · [agent 结果接口](AGENT_RESULTS.md)
 
 ## 1. 打开工具
 

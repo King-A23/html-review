@@ -14,12 +14,13 @@ concurrency:
 
 jobs:
   test:
-    name: Node ${{ matrix.node }} / Chromium
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os }} / Node ${{ matrix.node }} / Chromium
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
+        os: ['ubuntu-latest', 'windows-latest']
         node: ['20', '24']
     steps:
       - name: Check out source
@@ -37,6 +38,10 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.12'
+
+      - name: Use the configured Python interpreter
+        shell: bash
+        run: echo "PYTHON=$(python -c 'import sys; print(sys.executable)')" >> "$GITHUB_ENV"
 
       - name: Install locked development dependencies
         run: npm ci
@@ -74,6 +79,29 @@ jobs:
       - name: Test review results
         run: npm run test:results
 
+      - name: Locate Microsoft Edge on Windows
+        if: matrix.os == 'windows-latest' && matrix.node == '24'
+        shell: pwsh
+        run: |
+          $candidates = @("${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe", "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe")
+          $edge = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $edge) { throw "Microsoft Edge is required for Windows browser verification." }
+          "BROWSER_PATH=$edge" >> $env:GITHUB_ENV
+
+      - name: Test Windows workflows in Microsoft Edge
+        if: matrix.os == 'windows-latest' && matrix.node == '24'
+        run: |
+          npm run test:e2e
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run test:usability
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run test:ui
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run test:reload
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run test:results
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Build offline release package
         if: matrix.node == '24'
         run: npm run release:prepare
@@ -82,7 +110,7 @@ jobs:
         if: matrix.node == '24'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: release-downloads
+          name: release-downloads-${{ matrix.os }}
           path: dist/
           if-no-files-found: error
           retention-days: 7
@@ -91,7 +119,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: test-results-node-${{ matrix.node }}
+          name: test-results-${{ matrix.os }}-node-${{ matrix.node }}
           path: test-results/
           if-no-files-found: ignore
           retention-days: 7

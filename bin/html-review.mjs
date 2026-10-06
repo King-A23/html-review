@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import {readFile, writeFile, stat} from 'node:fs/promises';
+import {readFile, writeFile, stat, realpath} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {spawn} from 'node:child_process';
@@ -7,19 +7,11 @@ import vm from 'node:vm';
 import {webcrypto} from 'node:crypto';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const args = process.argv.slice(2);
-if (args.includes('--help') || args.includes('-h')) {
-  console.log('用法：html-review [文件.html] [--no-open]\n\n无参数打开工具；HTML 生成同目录批注副本；批注副本直接继续编辑。\n已有文件不会被覆盖。外部资源请在工具中使用“导入文件夹”。\n--no-open 仅准备文件并输出路径，不启动浏览器。');
-  process.exit(0);
-}
-const noOpen = args.includes('--no-open');
-const files = args.filter(a => a !== '--no-open');
-if (files.length > 1 || files.some(a => a.startsWith('-'))) {
-  console.error('参数无效。运行 html-review --help 查看用法。'); process.exit(1);
-}
-async function prepare() {
-  if (!files.length) return path.join(root, 'index.html');
-  const filename = path.resolve(files[0]);
+export async function prepareReview(input) {
+  if (!input) return path.join(root, 'index.html');
+  // Decode file URLs with Node's platform-aware converter, including Windows
+  // drive letters and UNC hosts. URL.pathname alone loses both kinds of paths.
+  const filename = /^file:/i.test(input) ? fileURLToPath(input) : path.resolve(input);
   if (!/\.html?$/i.test(filename)) throw new Error('请选择 .html 或 .htm 文件。');
   const info = await stat(filename);
   if (!info.isFile()) throw new Error('输入路径不是文件。');
@@ -51,18 +43,39 @@ async function prepare() {
   }
   throw new Error('批注副本文件名已全部占用。');
 }
-async function open(filename) {
-  const url = pathToFileURL(filename).href;
+export function browserLaunchPlan(filename, platform = process.platform) {
+  const url = (platform === process.platform ? pathToFileURL(filename)
+    : pathToFileURL(filename, {windows: platform === 'win32'})).href;
   // Explicit argument arrays keep filenames from being interpreted as shell commands.
-  const command = process.platform === 'darwin' ? ['open', ['-a', 'Google Chrome', filename]]
-    : process.platform === 'win32' ? ['rundll32', ['url.dll,FileProtocolHandler', url]] : ['xdg-open', [url]];
+  const [command, args] = platform === 'darwin' ? ['open', ['-a', 'Google Chrome', filename]]
+    : platform === 'win32' ? ['rundll32.exe', ['url.dll,FileProtocolHandler', url]] : ['xdg-open', [url]];
+  return {command, args, options: {stdio: 'ignore', shell: false, windowsHide: true}};
+}
+export async function openReview(filename, {platform = process.platform, spawnProcess = spawn} = {}) {
+  const plan = browserLaunchPlan(filename, platform);
   await new Promise((resolve, reject) => {
-    const child = spawn(command[0], command[1], {stdio: 'ignore'});
+    const child = spawnProcess(plan.command, plan.args, plan.options);
     child.once('error', reject);
-    child.once('exit', code => code === 0 ? resolve() : reject(new Error('无法启动浏览器，请手动打开上面的文件。macOS 默认使用 Google Chrome。')));
+    child.once('exit', code => code === 0 ? resolve() : reject(new Error('无法启动浏览器，请手动打开上面的文件。' + (platform === 'darwin' ? 'macOS 默认使用 Google Chrome。' : ''))));
   });
 }
-try {
-  const filename = await prepare(); console.log(filename);
-  if (!noOpen) await open(filename);
-} catch (error) {console.error('HTML Review：' + error.message); process.exitCode = 1;}
+export async function main(args = process.argv.slice(2), {openFile = openReview, log = console.log, errorLog = console.error} = {}) {
+  if (args.includes('--help') || args.includes('-h')) {
+    log('用法：html-review [文件.html 或 file: URL] [--no-open]\n\n无参数打开工具；HTML 生成同目录批注副本；批注副本直接继续编辑。\n已有文件不会被覆盖。外部资源请在工具中使用“导入文件夹”。\n--no-open 仅准备文件并输出路径，不启动浏览器。');
+    return 0;
+  }
+  const noOpen = args.includes('--no-open');
+  const files = args.filter(a => a !== '--no-open');
+  if (files.length > 1 || files.some(a => a.startsWith('-'))) {
+    errorLog('参数无效。运行 html-review --help 查看用法。');
+    return 1;
+  }
+  try {
+    const filename = await prepareReview(files[0]); log(filename);
+    if (!noOpen) await openFile(filename);
+    return 0;
+  } catch (error) {errorLog('HTML Review：' + error.message); return 1;}
+}
+if (process.argv[1] && await realpath(process.argv[1]).catch(() => '') === fileURLToPath(import.meta.url)) {
+  process.exitCode = await main();
+}

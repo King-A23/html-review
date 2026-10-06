@@ -1,6 +1,6 @@
 # HTML Review · 本地 HTML 批注
 
-[English](README.en.md) · [快速开始](docs/QUICKSTART.md) · [v0.1.0 发布说明](docs/releases/v0.1.0.md)
+[English](README.en.md) · [快速开始](docs/QUICKSTART.md) · [Windows 使用](docs/WINDOWS.md) · [v0.1.0 发布说明](docs/releases/v0.1.0.md)
 
 在 HTML 的渲染页面上写下“改哪里、改什么”，保存带原文和定位上下文的批注，交给人或 coding agent 修改。读取最新源文件、接收处理结果后，可继续下一轮审阅。
 
@@ -234,7 +234,7 @@ python scripts/inspect_review.py demo.review.json demo.html
 
 ## 开发与测试
 
-开发需 Node.js 20+；涉及静态检查器、agent 回报及发布打包时需 Python 3。使用成品 `html-review.html` 或 `index.html` 不需要这些运行环境。先在仓库根目录安装锁定的开发依赖：
+开发需 Node.js 20+；涉及静态检查器、agent 回报及发布打包时需 Python 3.8+。使用成品 `html-review.html` 或 `index.html` 不需要这些运行环境。先在仓库根目录安装锁定的开发依赖：
 
 ```sh
 npm ci
@@ -269,7 +269,7 @@ node tests/e2e.mjs
 
 将示例路径替换成实际安装位置；仅在使用已有测试依赖或浏览器时需要设置这些变量。
 
-GitHub Actions 在推送、PR 和手动运行时，用 Node.js 20 与 24 检查生成文件、单元测试和上述浏览器套件，并保存测试报告与截图。Linux 首次安装浏览器依赖可执行 `npx playwright install --with-deps chromium`。
+GitHub Actions 在推送、PR 和手动运行时，在 Windows 与 Linux 上用 Node.js 20 与 24 检查生成文件、单元测试和上述浏览器套件，并保存测试报告与截图。Linux 首次安装浏览器依赖可执行 `npx playwright install --with-deps chromium`。
 
 ## 可选：命令行打开
 

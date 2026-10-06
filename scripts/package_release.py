@@ -10,11 +10,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 FILES = (
     "index.html", "LICENSE", "README.md", "README.en.md", "CHANGELOG.md",
-    "AGENT_PROMPT.md", "VERIFICATION.md", "CONTRIBUTING.md", "docs/QUICKSTART.md", "docs/AGENT_RESULTS.md",
+    "AGENT_PROMPT.md", "VERIFICATION.md", "CONTRIBUTING.md", "docs/QUICKSTART.md", "docs/AGENT_RESULTS.md", "docs/WINDOWS.md",
     "docs/preview.png", "docs/agent-feedback.png",
     "scripts/inspect_review.py", "scripts/update_review.py",
     "scripts/build.mjs", "scripts/package_release.py", "scripts/capture_docs.mjs",
-    "package.json", "package-lock.json", "bin/html-review.mjs",
+    "package.json", "package-lock.json", "bin/html-review.mjs", ".gitattributes",
+    "scripts/test.mjs", "scripts/python.mjs",
 )
 
 
@@ -23,9 +24,9 @@ def package(output):
     if not re.fullmatch(r"\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?", version):
         raise ValueError("Invalid release version")
     paths = list(FILES) + [f"docs/releases/v{version}.md"]
-    paths += sorted(str(p.relative_to(ROOT)) for p in (ROOT / "examples").rglob("*")
+    paths += sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / "examples").rglob("*")
                     if p.is_file() and p.suffix in (".html", ".svg", ".css", ".js", ".md"))
-    paths += sorted(str(p.relative_to(ROOT)) for folder in ("src", "tests")
+    paths += sorted(p.relative_to(ROOT).as_posix() for folder in ("src", "tests")
                     for p in (ROOT / folder).iterdir()
                     if p.is_file() and p.suffix in (".mjs", ".js", ".css", ".html"))
     contents = {}
@@ -50,7 +51,7 @@ def package(output):
         if archive.testzip() is not None or any(archive.read(name) != data for name, data in contents.items()):
             raise ValueError("Release archive failed integrity validation")
     sums = output / "SHA256SUMS.txt"
-    sums.write_text("".join(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n" for path in (standalone, bundle)), encoding="utf-8")
+    sums.write_bytes("".join(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n" for path in (standalone, bundle)).encode("utf-8"))
     return standalone, bundle, sums
 
 

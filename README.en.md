@@ -1,6 +1,6 @@
 # HTML Review
 
-[中文](README.md) · [Quick start (中文)](docs/QUICKSTART.md) · [v0.1.0 release notes](docs/releases/v0.1.0.md)
+[中文](README.md) · [Quick start (中文)](docs/QUICKSTART.md) · [Windows guide (中文)](docs/WINDOWS.md) · [v0.1.0 release notes](docs/releases/v0.1.0.md)
 
 Review a rendered HTML page, attach specific feedback to text, elements, an existing page or the whole document, and hand it to a person or coding agent. Reload updated source files and import completion results to continue the review.
 
@@ -87,7 +87,7 @@ The [Chinese README](README.md) contains the full data schema, target semantics 
 
 ## Development
 
-Use Node.js 20+ and Python 3. The standalone tool needs neither. Install the locked development dependencies, then build and test:
+Use Node.js 20+ and Python 3.8+. The standalone tool needs neither. Install the locked development dependencies, then build and test:
 
 ```sh
 npm ci
@@ -105,7 +105,7 @@ npm run test:reload
 npm run test:results
 ```
 
-Commit `index.html` with source changes after rebuilding. GitHub Actions checks generated output and runs the Node and browser suites on Node 20 and 24. On Linux, install Chromium system dependencies with `npx playwright install --with-deps chromium`.
+Commit `index.html` with source changes after rebuilding. GitHub Actions checks generated output and runs the Node and browser suites on Windows and Linux with Node 20 and 24; Windows also runs workflow checks in Microsoft Edge. On Linux, install Chromium system dependencies with `npx playwright install --with-deps chromium`.
 
 Tests use installed Playwright and its Chromium by default. Override `BROWSER_PATH` with a browser executable, or `PLAYWRIGHT_MODULE_PATH` with an absolute Playwright directory or its `index.mjs`. The session suite also accepts `.js` entries and `file:` URLs. Most suites open local files; reload/results tests create and close a temporary local server.
 

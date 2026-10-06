@@ -15,6 +15,7 @@
 - 只读关联源文件/目录，重载最新 HTML 与资源并保留批注和草稿。
 - 复制修改任务、静态版本检查脚本，以及按批注 ID 与意见版本导入 agent 处理结果；支持状态筛选和处理历史。
 - 可选 Node.js 命令行入口、锁定开发依赖、自动化测试和 GitHub Actions CI。
+- Windows 使用说明、Control 快捷键、中文与特殊字符路径、PowerShell 脚本示例；跨平台 Python 发现与 UTF-8 输出，以及 Windows / Linux 的自动检查。
 - MIT 许可证。
 
 版本资产：`html-review.html`、`html-review-v0.1.0.zip`、`SHA256SUMS.txt`。下载与已知限制见 [v0.1.0 发布说明](docs/releases/v0.1.0.md)。

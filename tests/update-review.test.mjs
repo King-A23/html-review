@@ -1,26 +1,24 @@
+import {runPython} from '../scripts/python.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp, readFile, writeFile, rm, symlink, readdir, realpath} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {execFile} from 'node:child_process';
-import {promisify} from 'node:util';
 import {createHash, webcrypto} from 'node:crypto';
 import {gzipSync} from 'node:zlib';
 import vm from 'node:vm';
 
-const run = promisify(execFile);
 const root = fileURLToPath(new URL('../', import.meta.url));
 const updater = path.join(root, 'scripts/update_review.py');
 const inspector = path.join(root, 'scripts/inspect_review.py');
-const update = (...args) => run('python3', [updater, ...args], {encoding: 'utf8'});
+const update = (...args) => runPython([updater, ...args], {encoding: 'utf8'});
 const timestamp = '2026-01-01T00:00:00.000Z';
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 
 async function setup(t) {
-  try { await run('python3', ['--version']); }
-  catch (_) { t.skip('python3 is unavailable; update_review.py tests are skipped.'); return null; }
+  try { await runPython(['--version']); }
+  catch (_) { t.skip('Python 3.8+ is unavailable; update_review.py tests are skipped.'); return null; }
   const dir = await mkdtemp(path.join(tmpdir(), 'html-review-results-'));
   t.after(() => rm(dir, {recursive: true, force: true}));
   const sourceBytes = Buffer.from('<!doctype html><p>原始页面</p>');
@@ -164,7 +162,7 @@ test('lifecycle history rejects duplicate batches, backward/future revisions, in
   await writeFile(f.json, JSON.stringify(light));
   await assert.rejects(update(f.json, '--id', 'two', '--output', output), error => /已达 500 条/.test(error.stderr));
   // The valid 500-event review remains inspectable, though another event cannot fit.
-  await run('python3', [inspector, f.json, f.source], {encoding: 'utf8'});
+  await runPython([inspector, f.json, f.source], {encoding: 'utf8'});
 });
 
 test('pending on a fully completed review fails instead of writing an unimportable empty batch', async t => {
@@ -220,7 +218,7 @@ test('inspector displays normalized defaults and new, updated, pending and compl
   f.light.annotations[1].history = [event];
   f.light.annotations.push({...structuredClone(f.light.annotations[0]), id: 'pending', history: [event]});
   await writeFile(f.json, JSON.stringify(f.light));
-  const {stdout} = await run('python3', [inspector, f.json, f.source], {encoding: 'utf8'});
+  const {stdout} = await runPython([inspector, f.json, f.source], {encoding: 'utf8'});
   const annotations = JSON.parse(stdout.slice(stdout.indexOf('[\n'), stdout.lastIndexOf('\n]') + 2));
   assert.deepEqual(annotations.map(row => row.taskState), ['new', 'updated', 'completed', 'pending']);
   assert.deepEqual([annotations[0].revision, annotations[0].status, annotations[0].history], [1, 'open', []]);

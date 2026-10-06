@@ -1,15 +1,13 @@
+import {runPython} from './python.mjs';
 /* Capture real UI and a real agent-result round trip in an isolated browser. */
 import assert from 'node:assert/strict';
 import {readFile, mkdtemp, rm, mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {execFile} from 'node:child_process';
-import {promisify} from 'node:util';
 import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright';
 const root = fileURLToPath(new URL('../', import.meta.url));
-const run = promisify(execFile);
 const app = await readFile(path.join(root, 'index.html'));
 const server = createServer((_req, res) => {res.setHeader('Content-Type','text/html;charset=utf-8'); res.end(app);});
 const temp = await mkdtemp(path.join(os.tmpdir(), 'html-review-docs-'));
@@ -52,7 +50,7 @@ try {
   await page.locator('#folder-button').click(); await ready();
   assert.equal(await page.locator('#annotation-count').textContent(),'3');
   const result=path.join(temp,'demo.review-results.json');
-  await run('python3',[path.join(root,'scripts/update_review.py'),review,'--id',element.id,'--summary','已补充“审阅 → 修改 → 核对”的协作流程示例。','--output',result]);
+  await runPython([path.join(root,'scripts/update_review.py'),review,'--id',element.id,'--summary','已补充“审阅 → 修改 → 核对”的协作流程示例。','--output',result]);
   await nativeWrite(page,'demo.review-results.json',await readFile(result,'utf8'));
   const updated=original.replace('把带批注的副本交给伙伴，让每一处修改都有明确的依据。','将批注交给伙伴，按照“审阅 → 修改 → 核对”完成一次协作。');
   assert.notEqual(updated,original); await nativeWrite(page,'demo.html',updated);

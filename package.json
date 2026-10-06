@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "node scripts/build.mjs --check",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node scripts/test.mjs",
     "test:e2e": "node tests/e2e.mjs",
     "test:bridge": "node tests/bridge.browser.mjs",
     "test:session": "node tests/session.browser.mjs",
@@ -15,7 +15,7 @@
     "test:motion": "node tests/motion.e2e.mjs",
     "test:reload": "node tests/local-reload.browser.mjs",
     "test:results": "node tests/results.browser.mjs",
-    "release:prepare": "npm run check && python3 scripts/package_release.py"
+    "release:prepare": "npm run check && node scripts/python.mjs scripts/package_release.py"
   },
   "engines": {
     "node": ">=20"

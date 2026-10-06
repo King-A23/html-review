@@ -1,23 +1,21 @@
+import {runPython} from '../scripts/python.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp, rm, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {execFile} from 'node:child_process';
-import {promisify} from 'node:util';
 import {createHash} from 'node:crypto';
 import {gzipSync} from 'node:zlib';
 
-const run = promisify(execFile);
 const root = fileURLToPath(new URL('../', import.meta.url));
 const inspector = path.join(root, 'scripts/inspect_review.py');
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
-const inspect = (...args) => run('python3', [inspector, ...args], {encoding: 'utf8'});
+const inspect = (...args) => runPython([inspector, ...args], {encoding: 'utf8'});
 
 async function requirePython(t) {
-  try { await run('python3', ['--version']); }
-  catch (_) { t.skip('python3 is unavailable; inspect_review.py tests are skipped.'); return false; }
+  try { await runPython(['--version']); }
+  catch (_) { t.skip('Python 3.8+ is unavailable; inspect_review.py tests are skipped.'); return false; }
   return true;
 }
 

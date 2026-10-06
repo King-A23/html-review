@@ -1,0 +1,11 @@
+/* Expand test files in Node so npm test also works in Windows cmd/PowerShell. */
+import {readdir} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import {spawn} from 'node:child_process';
+const directory = new URL('../tests/', import.meta.url);
+const files = (await readdir(directory)).filter(name => name.endsWith('.test.mjs')).sort()
+  .map(name => fileURLToPath(new URL(name, directory)));
+if (!files.length) throw new Error('No unit test files found.');
+const child = spawn(process.execPath, ['--test', ...process.argv.slice(2), ...files], {stdio: 'inherit', windowsHide: true});
+child.once('error', error => {console.error(error.message); process.exitCode = 1;});
+child.once('exit', (code, signal) => {process.exitCode = signal ? 1 : code ?? 1;});

@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from inspect_review import read_review, string_length
+from inspect_review import configure_stdio, read_review, string_length
 
 
 RESULTS_FORMAT = "html-review-results"
@@ -101,4 +101,5 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    configure_stdio()
     raise SystemExit(main())

@@ -16,6 +16,13 @@ SCHEMA_VERSION = 1
 SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
+def configure_stdio():
+    """Keep Chinese/emoji readable when agents pipe output on Windows."""
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="backslashreplace")
+
+
 class ReviewDataParser(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=False)
@@ -232,6 +239,7 @@ def inspect(review_path, original_path):
 
 
 if __name__ == "__main__":
+    configure_stdio()
     if len(sys.argv) != 3:
         raise SystemExit("用法：python inspect_review.py 批注副本.review.html|.review.html.gz|.review.json 原始.html")
     try:

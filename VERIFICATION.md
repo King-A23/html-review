@@ -162,3 +162,13 @@ npm run test:usability
 GitHub Actions 已配置 Ubuntu、Node.js 20/24、Python 3.12、锁定 Chromium 的全套检查与下载包构建；远程执行结果以[对应提交的 Actions 记录](https://github.com/King-A23/html-review/actions)为准。当前验收未扩展为 Safari、Firefox 或真实移动设备支持承诺。
 
 本轮浏览器、临时 HTTP 服务和解压目录已清理；不保留录制、预览或渲染进程。`PROCESS_CLEANUP_COMPLETE`。
+
+## 2026-10-06 Windows 兼容与发布包
+
+开发测试入口由 Node 展开文件列表，避免 Windows 命令 shell 不展开通配符；测试与打包自动发现 Python 3.8+，支持 Windows 的 `py -3`、`python` 和指定可执行路径。两份 agent 脚本在管道中也输出 UTF-8，中文、emoji、空格及特殊字符参数不会被 shell 拆解。CLI 使用 Node 原生路径/文件 URL 转换，Windows 打开入口不经过 shell；盘符和 UNC 编码由独立检查覆盖。ZIP 内路径统一为 `/`，校验清单保留 LF。
+
+本机 45 项单元/CLI/发布包检查、3 组界面检查和 4 组结果回传通过。新增检查覆盖 Windows 打开参数、中文与特殊字符文件名、真实 Python 发现、旧输出编码环境，以及打包路径；Windows 不运行仅适用于 Unix 的 npm 符号链接入口检查。Windows 的实际浏览器按 Control 显示快捷键。
+
+CI 矩阵扩展为 Windows / Linux、Node.js 20/24、Python 3.12，运行完整单元与浏览器套件并在两个系统打包；Windows Node.js 24 额外用预装 Edge 运行完整流程、易用性、界面、重载与处理结果检查。实际执行状态见[对应提交的 Actions 记录](https://github.com/King-A23/html-review/actions)。浏览器检查为无界面的真实浏览器测试，文件选择器返回原生测试句柄，不代表已人工操作 Windows 系统文件选择窗口或所有系统版本。
+
+[Windows 使用说明](docs/WINDOWS.md)提供浏览器打开、PowerShell 交接、Python 配置、命令行入口及哈希校验示例；PowerShell 执行策略受限时可使用 `.cmd` 入口，无需更改系统策略。辅助脚本与使用说明随 ZIP 交付。测试浏览器与临时目录均已清理。`PROCESS_CLEANUP_COMPLETE`。
