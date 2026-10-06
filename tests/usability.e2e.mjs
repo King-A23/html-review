@@ -11,6 +11,7 @@ const resultDir = path.join(root, 'test-results');
 const appUrl = pathToFileURL(path.join(root, 'index.html')).href;
 const financePath = path.join(root, 'examples/finance/index.html');
 const financeBytes = await readFile(financePath);
+const nativeUndo = process.platform === 'darwin' ? 'Meta+z' : 'Control+z';
 await mkdir(resultDir, {recursive: true});
 
 let modulePath = process.env.PLAYWRIGHT_MODULE_PATH;
@@ -401,7 +402,7 @@ try {
       assert.equal((await frame.locator('#topic-input').inputValue()).length, before.length + 1);
       assert.match(await frame.locator('#topic-input').inputValue(), /现金流质量/);
       assert.equal(await page.locator('[data-mode="whole"]').getAttribute('aria-pressed'), 'true');
-      await frame.locator('#topic-input').press('Meta+z');
+      await frame.locator('#topic-input').press(nativeUndo);
       assert.equal(await frame.locator('#topic-input').inputValue(), before);
 
       await frame.locator('body').evaluate(body => {
@@ -418,7 +419,7 @@ try {
       assert.equal((await editor.textContent()).length, 5);
       assert.match(await editor.textContent(), /edit/);
       assert.equal(await page.locator('[data-mode="whole"]').getAttribute('aria-pressed'), 'true');
-      await editor.press('Meta+z');
+      await editor.press(nativeUndo);
       assert.equal(await editor.textContent(), 'edit');
 
       await page.locator('[data-mode="browse"]').click();

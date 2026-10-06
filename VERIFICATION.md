@@ -150,7 +150,7 @@ npm run test:usability
 
 ## 2026-10-06 v0.1.0 发布准备验证
 
-开发环境使用 Node.js 24.16.0、Python 3 和锁定的 Playwright 1.62.0 / Chromium 151.0.7922.34。`npm ci` 可从锁文件安装；会话检查移除本机绝对路径，默认使用项目依赖和对应 Chromium。易用性检查在选择父级后等待真正的定位结果，避免在 iframe 消息到达前检查上一个选区。
+开发环境使用 Node.js 24.16.0、Python 3 和锁定的 Playwright 1.62.0 / Chromium 151.0.7922.34。`npm ci` 可从锁文件安装；会话检查移除本机绝对路径，默认使用项目依赖和对应 Chromium。易用性检查在选择父级后等待真正的定位结果，避免在 iframe 消息到达前检查上一个选区；输入控件的原生撤销测试按系统使用 macOS 的 Command 或 Linux/Windows 的 Control。
 
 - 生成文件一致性、36 项单元/CLI/发布包检查全部通过。
 - 18 组完整流程、9 组定位桥接、7 组易用性、3 组界面、3 组动效、6 组原文件重载、4 组结果回传检查通过；IndexedDB 的 4 MiB 数据与并发恢复检查通过。
