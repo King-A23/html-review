@@ -4,7 +4,7 @@
 
 Open an HTML page and leave feedback on the rendered text, images or cards. HTML Review preserves **the original content, target and surrounding context** for a person or coding agent. Reload the updated source, check the result and continue the review.
 
-**[Try it now →](https://king-a23.github.io/html-review/app.html?demo=1)** · **[Download one HTML file ↓](https://king-a23.github.io/html-review/downloads/html-review.html)** · [Website](https://king-a23.github.io/html-review/)
+**[Try it now →](https://king-a23.github.io/html-review/app.html?demo=1)** · **[Download one HTML file ↓](https://github.com/King-A23/html-review/releases/download/v0.1.0/html-review.html)** · [Website](https://king-a23.github.io/html-review/)
 
 Download the file and open it in your browser. No installation, account, server or AI configuration is required. **The interface is currently in Chinese.** Modern desktop browsers on Windows, macOS and Linux are supported; Chrome or Edge is recommended.
 

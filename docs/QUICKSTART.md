@@ -4,7 +4,7 @@
 
 ## 1. 打开工具
 
-先[在线体验示例](https://king-a23.github.io/html-review/app.html?demo=1)，或[直接下载单文件 HTML](https://king-a23.github.io/html-review/downloads/html-review.html)。也可在 [v0.1.0 页面](https://github.com/King-A23/html-review/releases/tag/v0.1.0) 下载 `html-review.html`，用现代桌面浏览器直接打开。无需安装或配置 AI 服务，推荐 Chrome 或 Edge。也可以下载或克隆源码，直接打开根目录 `index.html`。
+先[在线体验示例](https://king-a23.github.io/html-review/app.html?demo=1)，或[直接下载单文件 HTML](https://github.com/King-A23/html-review/releases/download/v0.1.0/html-review.html)。也可在 [v0.1.0 页面](https://github.com/King-A23/html-review/releases/tag/v0.1.0) 下载 `html-review.html`，用现代桌面浏览器直接打开。无需安装或配置 AI 服务，推荐 Chrome 或 Edge。也可以下载或克隆源码，直接打开根目录 `index.html`。
 
 只想体验时，点击**体验一份审阅示例**。自己的页面是独立 HTML 时，点击**打开 HTML**，也可直接拖入文件。带本地 CSS、图片或脚本时，点击顶部的**导入文件夹**，选择包含入口 HTML 和资源的目录，再选择入口。
 

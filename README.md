@@ -4,7 +4,7 @@
 
 打开 HTML，在渲染后的文字、图片或卡片上写下修改意见。HTML Review 将**原文、目标位置和上下文**一起交给人或 coding agent；改完后重载页面，核对结果，继续下一轮。
 
-**[立即体验 →](https://king-a23.github.io/html-review/app.html?demo=1)** · **[下载单文件 HTML ↓](https://king-a23.github.io/html-review/downloads/html-review.html)** · [完整官网](https://king-a23.github.io/html-review/)
+**[立即体验 →](https://king-a23.github.io/html-review/app.html?demo=1)** · **[下载单文件 HTML ↓](https://github.com/King-A23/html-review/releases/download/v0.1.0/html-review.html)** · [完整官网](https://king-a23.github.io/html-review/)
 
 下载后用浏览器打开即可使用，无需安装、登录、启动服务器或配置 AI 服务。界面目前为中文，支持 Windows、macOS 和 Linux 的现代桌面浏览器；推荐 Chrome 或 Edge。
 

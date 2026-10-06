@@ -20,3 +20,13 @@
 HyperFrames 检查通过：无运行、布局、动画、静态结构错误或警告，25/25 文本对比度检查通过。检查了每段操作关键帧与交接菜单，确认文字和图表批注在录屏中保存；导出后再次抽帧检查，视频时长和画面比例一致。GIF 120 帧、时长 15.01 秒（GIF 10 毫秒精度舍入）、无限循环。MP4 使用 H.264、YUV 4:2:0 和 faststart，兼容网页播放。
 
 本次启动的 HyperFrames 预览、渲染 worker 和封面截图浏览器均已退出。`PROCESS_CLEANUP_COMPLETE`。
+
+## 第三方素材来源与授权
+
+工具代码采用项目 MIT 许可证；第三方音乐、音效与字体依照各自提供方的授权，不因嵌入宣传片而改为 MIT 素材。
+
+- 背景音乐来自原工程的 HeyGen 音乐库，provider `heygen.audio.sounds`，track ID `19500e2f72894242aa057259adc18d85`。HeyGen [官方音乐库说明](https://www.heygen.com/blog/add-music-ai-video-creations)将其介绍为 royalty-free 曲目库；这里只分发合成后的宣传片，不单独提供原音乐。
+- 点击音效为 HyperFrames `media-use` 的 `click-soft`。保留[包内来源原文](licenses/HyperFrames-SFX-CREDITS.md)，适用 [Pixabay Content License](https://pixabay.com/service/license-summary/)。包内音效、原工程收录与成片所用文件的 SHA-256 相同：`075e17bdac5c13662a1c9530050e0046f81d4138e00eb3bf30427a7b4404103d`。音效仅作为成片的一部分使用，不单独分发 MP3。
+- 字体使用 Noto Sans SC 与 JetBrains Mono；留存 [Noto OFL](licenses/OFL-NotoSansSC.txt) 和 [JetBrains Mono OFL](licenses/OFL-JetBrainsMono.txt)。此次公开素材只有渲染后的文字画面，不包含字体软件。
+
+来源说明与官方许可核对日期：2026-10-06。原配音、音乐与音效均保留，没有额外生成或付费调用。

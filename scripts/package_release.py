@@ -13,6 +13,7 @@ FILES = (
     "AGENT_PROMPT.md", "VERIFICATION.md", "CONTRIBUTING.md", "docs/QUICKSTART.md", "docs/AGENT_RESULTS.md", "docs/WINDOWS.md",
     "docs/preview.png", "docs/agent-feedback.png", "docs/REFERENCE.md",
     "docs/media/demo.gif", "docs/media/demo.mp4", "docs/media/social-preview.png", "docs/media/README.md",
+    "docs/media/licenses/HyperFrames-SFX-CREDITS.md", "docs/media/licenses/OFL-NotoSansSC.txt", "docs/media/licenses/OFL-JetBrainsMono.txt",
     "scripts/inspect_review.py", "scripts/update_review.py",
     "scripts/build.mjs", "scripts/package_release.py", "scripts/capture_docs.mjs", "scripts/build_site.mjs",
     "package.json", "package-lock.json", "bin/html-review.mjs", ".gitattributes",
