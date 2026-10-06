@@ -1,0 +1,23 @@
+name: Bug report / 问题反馈
+description: Report a reproducible issue / 帮助复现问题
+body:
+  - type: input
+    id: environment
+    attributes:
+      label: Browser, OS and version / 浏览器、系统与版本
+      placeholder: Chrome 153, macOS, HTML Review v0.1.0
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps and minimal example / 操作步骤与最小示例
+      description: Use a public fixture; do not attach private files or credentials. 请勿上传私人文件或密钥。
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior / 预期与实际结果
+    validations:
+      required: true

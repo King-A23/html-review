@@ -1,5 +1,8 @@
-/* IndexedDB session checks against Chrome over a real file:// page.
+/* IndexedDB session checks against Chromium over a real file:// page.
  * node tests/session.browser.mjs
+ * Optional: PLAYWRIGHT_MODULE_PATH=/path/to/playwright (or its index.mjs/index.js)
+ * Optional: BROWSER_PATH=/path/to/chromium-or-chrome
+ * With no overrides, install Playwright and its Chromium browser locally.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -7,15 +10,19 @@ import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 
-const bundledPlaywright = '/Users/anyuchen/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright';
-const configuredPlaywright = process.env.PLAYWRIGHT_MODULE_PATH || bundledPlaywright;
-let playwrightPath = configuredPlaywright.startsWith('file:') ? fileURLToPath(configuredPlaywright) : path.resolve(configuredPlaywright);
-if ((await fs.stat(playwrightPath)).isDirectory()) playwrightPath = path.join(playwrightPath, 'index.mjs');
-const {chromium} = await import(pathToFileURL(playwrightPath).href);
+async function loadPlaywright() {
+  const configured = process.env.PLAYWRIGHT_MODULE_PATH;
+  if (!configured) return import('playwright');
+  let modulePath = configured.startsWith('file:') ? fileURLToPath(configured) : path.resolve(configured);
+  if ((await fs.stat(modulePath)).isDirectory()) modulePath = path.join(modulePath, 'index.mjs');
+  const loaded = await import(pathToFileURL(modulePath).href);
+  return loaded.chromium ? loaded : loaded.default;
+}
+
+const {chromium} = await loadPlaywright();
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const sessionSource = await fs.readFile(path.join(root, 'src/session.js'), 'utf8');
-const chromePath = process.env.BROWSER_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'html-review-session-'));
 const pagePath = path.join(workspace, 'session.html');
 const pageHTML = '<!doctype html><meta charset="utf-8"><title>session fixture</title><script>' +
@@ -24,7 +31,10 @@ let browser;
 
 try {
   await fs.writeFile(pagePath, pageHTML, 'utf8');
-  browser = await chromium.launch({headless: true, executablePath: chromePath});
+  browser = await chromium.launch({
+    headless: true,
+    ...(process.env.BROWSER_PATH ? {executablePath: process.env.BROWSER_PATH} : {})
+  });
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto(pathToFileURL(pagePath).href);
@@ -128,6 +138,9 @@ try {
   console.log(`PASS: file:// IndexedDB stores and restores ${result.base64Bytes.toLocaleString()} bytes of base64 without loss`);
   console.log('PASS: same-key writes remain ordered; tombstones block stale cross-window saves; remove, close/reopen, unavailable storage, and failed transactions reject correctly');
 } finally {
-  await browser?.close();
-  await fs.rm(workspace, {recursive: true, force: true});
+  try {
+    await browser?.close();
+  } finally {
+    await fs.rm(workspace, {recursive: true, force: true});
+  }
 }

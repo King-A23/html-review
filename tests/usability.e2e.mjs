@@ -215,7 +215,9 @@ try {
 
       await page.locator('[data-mode="element"]').click();
       await frame.locator('#market-image').click();
+      await page.locator('#target-selector').filter({hasText: /^#market-image$/}).waitFor();
       await page.locator('#parent-target').click();
+      await page.locator('#target-selector').filter({hasText: /figure|hero-visual/i}).waitFor();
       assert.match(await page.locator('#target-selector').textContent(), /figure|hero-visual/i);
       await saveAnnotation(page, '图片和图注应提供更清楚的来源说明。');
 

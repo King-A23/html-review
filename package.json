@@ -1,6 +1,6 @@
 {
   "name": "html-review",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "轻量、离线可用的本地 HTML 批注工具",
   "scripts": {
@@ -14,12 +14,25 @@
     "test:ui": "node tests/ui.e2e.mjs",
     "test:motion": "node tests/motion.e2e.mjs",
     "test:reload": "node tests/local-reload.browser.mjs",
-    "test:results": "node tests/results.browser.mjs"
+    "test:results": "node tests/results.browser.mjs",
+    "release:prepare": "npm run check && python3 scripts/package_release.py"
   },
   "engines": {
     "node": ">=20"
   },
   "bin": {
     "html-review": "bin/html-review.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/King-A23/html-review.git"
+  },
+  "homepage": "https://github.com/King-A23/html-review",
+  "bugs": {
+    "url": "https://github.com/King-A23/html-review/issues"
   }
 }

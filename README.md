@@ -1,30 +1,33 @@
 # HTML Review · 本地 HTML 批注
 
-在 HTML 的渲染页面上写下“改哪里、改什么”，下载一个可以继续编辑、也方便 coding agent 读取的批注副本。
+[English](README.en.md) · [快速开始](docs/QUICKSTART.md) · [v0.1.0 发布说明](docs/releases/v0.1.0.md)
 
-工具独立运行，不绑定任何 agent、AI 服务或前端框架。打开根目录的 **`index.html`** 即可使用，无需安装依赖、启动服务器、登录或配置数据库。优先支持普通独立 HTML 页面。
+在 HTML 的渲染页面上写下“改哪里、改什么”，保存带原文和定位上下文的批注，交给人或 coding agent 修改。读取最新源文件、接收处理结果后，可继续下一轮审阅。
+
+**下载一个 HTML 文件，用浏览器打开即可使用。** 无需安装、启动服务器、登录或配置 AI 服务。界面目前为中文，优先支持普通独立 HTML 页面。
+
+## 下载与快速开始
+
+首个公开测试版 **v0.1.0**。从 [Releases](https://github.com/King-A23/html-review/releases) 选择版本；以下为该版本的下载文件。
+
+| 文件 | 用途 |
+| --- | --- |
+| [html-review.html](https://github.com/King-A23/html-review/releases/download/v0.1.0/html-review.html) | 单文件工具，下载后直接打开。日常使用选这个。 |
+| [html-review-v0.1.0.zip](https://github.com/King-A23/html-review/releases/download/v0.1.0/html-review-v0.1.0.zip) | 离线套件，包含工具、示例、agent 交接脚本和文档。使用脚本需要 Python 3。 |
+| [SHA256SUMS.txt](https://github.com/King-A23/html-review/releases/download/v0.1.0/SHA256SUMS.txt) | 用于核对上述文件的 SHA-256。 |
+
+1. 用现代桌面浏览器打开下载的 **`html-review.html`**，推荐 Chrome 或 Edge。也可下载或克隆源码，直接打开根目录 **`index.html`**。
+2. 点击**体验一份审阅示例**，或**打开 HTML**。页面带本地图片、样式或脚本时，选择**导入文件夹**。
+3. 切换到**文字、元素、单页或整体**，写下意见并点击**保存批注**。
+4. 点击**下载批注副本**保留审阅结果；点击**复制修改任务**，连同原始 HTML 与相关资源交给 agent。
+
+工具只读原文件，自动保存也不会写回原文件。下载的 `.review.html` 可直接打开继续编辑；本机恢复记录依赖浏览器存储，长期保留请下载副本。完整操作与 agent 回传流程见[快速开始](docs/QUICKSTART.md)。
 
 ![带批注的 HTML 页面](docs/preview.png)
 
-## 命令行打开
+## 完整使用流程
 
-需要 Node.js 20+。在仓库根目录运行 `npm link` 注册命令：
-
-```sh
-html-review                  # 打开空白批注工具
-html-review "./报告.html"     # 生成同目录的批注副本并打开
-html-review "./报告.review.html" # 继续编辑已有批注
-html-review "./报告.html" --no-open # 仅生成副本并输出路径
-```
-
-macOS 默认使用 Google Chrome；Windows/Linux 使用系统默认浏览器。
-命令不会覆盖已有文件：同名副本已存在时生成 `.review.1.html` 等新文件。
-生成的副本包含原文件快照；批注后仍需点击“下载批注副本”保存。
-外部 CSS、图片、JS 不会由命令自动收录，请运行无参数命令后使用“导入文件夹”。
-
-## 开始使用
-
-1. 下载或克隆本仓库，双击根目录 `index.html`，用现代桌面浏览器打开。推荐先用 Chrome 或 Edge 验证完整流程。
+1. 打开下载的 `html-review.html`，或源码根目录 `index.html`，用现代桌面浏览器使用。推荐先用 Chrome 或 Edge 验证完整流程。
 2. 首次打开会显示三步引导。点击**体验示例**查看三条可定位、编辑的示范批注，或点击**打开 HTML**、直接拖入一个本地 `.html` 文件，例如 `examples/demo.html`。文件只会被读取，工具不会覆盖它。
 3. 在渲染结果上添加批注：
    - **文字**：拖选文字，再填写修改意见。点击目标卡片的**取消选择**，或在预览中点击使文字选区取消，可清除目标并保留已填写的意见；重新选择后再保存。适合替换文案、修改句子或解释术语。
@@ -74,6 +77,8 @@ macOS 默认使用 Google Chrome；Windows/Linux 使用系统默认浏览器。
 新批注显示**新增意见**；收到未完成回报显示**待处理**；修改已有处理记录的意见显示**已更新**并重新进入待处理；完成后显示**已完成**。导出副本、轻量 JSON 与复制修改任务保留这些状态和历史，交接说明明确要求 agent 只处理未完成意见。没有回报的意见一直视为新增，不通过导出时间推测是否处理过。
 
 每条意见有版本号。旧回报不能覆盖新意见，同一批结果重复重载不会重复追加记录。状态也可手动标记完成、重新待处理、撤销或重做。已完成由回报者标记，仍需结合实际修改核对。详细的命令、JSON 协议和读取权限说明见 [`docs/AGENT_RESULTS.md`](docs/AGENT_RESULTS.md)。
+
+![导入 agent 处理结果后的批注状态与说明](docs/agent-feedback.png)
 
 ## 带相对资源的页面
 
@@ -227,33 +232,34 @@ python scripts/inspect_review.py demo.review.json demo.html
 6. 将副本重新导入根目录工具，核对批注；使用提示词中的提取脚本确认源文件字节哈希一致。
 7. 导入 `with-assets` 文件夹，确认样式、SVG、CSS 背景图片和按钮交互，下载并重新打开检查资源仍有效。
 
-构建和自动检查需安装 Node.js 20 或更新版本；使用成品 `index.html` 不需要 Node.js：
+## 开发与测试
+
+开发需 Node.js 20+；涉及静态检查器、agent 回报及发布打包时需 Python 3。使用成品 `html-review.html` 或 `index.html` 不需要这些运行环境。先在仓库根目录安装锁定的开发依赖：
 
 ```sh
-node scripts/build.mjs
-node scripts/build.mjs --check
-node --test tests/*.test.mjs
+npm ci
+npm run build
+npm run check
+npm test
 ```
 
 构建会从 `src/` 生成根目录 `index.html`。修改源代码后应重新构建，将源代码与生成的单文件产物一起提交。实际浏览器操作验证用于确认选择、下载、重新打开等行为；单元测试不能替代这个闭环。
 
-浏览器端到端测试使用 Playwright，它只是可选的开发测试依赖。首次运行可在仓库根目录执行：
+浏览器端到端测试使用锁定版本的 Playwright。安装开发依赖后，首次下载 Chromium，再运行各套件：
 
 ```sh
-npm install --no-save playwright
 npx playwright install chromium
-node scripts/build.mjs
-node tests/bridge.browser.mjs
-node tests/session.browser.mjs
-node tests/e2e.mjs
-node tests/usability.e2e.mjs
-node tests/ui.e2e.mjs
-node tests/motion.e2e.mjs
-node tests/local-reload.browser.mjs
-node tests/results.browser.mjs
+npm run test:bridge
+npm run test:session
+npm run test:e2e
+npm run test:usability
+npm run test:ui
+npm run test:motion
+npm run test:reload
+npm run test:results
 ```
 
-常规测试通过本地 `file://` URL 打开工具和下载副本，无需启动 HTTP 服务器。重载和处理结果专项测试会启动并关闭一个临时本机 HTTP 服务，使用 Chromium 原生文件系统句柄验证新内容读取、目录关联和 IndexedDB 恢复；文件选择器返回测试句柄，不操作系统选择窗口。兼容路径使用实际磁盘文件和目录选择事件。已有浏览器和 Playwright 的环境可用 `BROWSER_PATH` 指定浏览器可执行文件，或用 `PLAYWRIGHT_MODULE_PATH` 指定现有 Playwright 包的绝对目录或 `.mjs` / `.js` 入口文件；未设置时按测试脚本的默认模块/浏览器选择运行。例如在 PowerShell 中：
+常规测试通过本地 `file://` URL 打开工具和下载副本，无需启动 HTTP 服务器。重载和处理结果专项测试会启动并关闭一个临时本机 HTTP 服务，使用 Chromium 原生文件系统句柄验证新内容读取、目录关联和 IndexedDB 恢复；文件选择器返回测试句柄，不操作系统选择窗口。兼容路径使用实际磁盘文件和目录选择事件。已有浏览器和 Playwright 的环境可用 `BROWSER_PATH` 指定浏览器可执行文件，或用 `PLAYWRIGHT_MODULE_PATH` 指定现有 Playwright 包的绝对目录或 `index.mjs` 入口文件；会话测试还支持 `.js` 入口与 `file:` URL。未设置时使用已安装的 Playwright 与它的 Chromium。例如在 PowerShell 中：
 
 ```powershell
 $env:PLAYWRIGHT_MODULE_PATH = 'C:\path\to\node_modules\playwright'
@@ -262,6 +268,24 @@ node tests/e2e.mjs
 ```
 
 将示例路径替换成实际安装位置；仅在使用已有测试依赖或浏览器时需要设置这些变量。
+
+GitHub Actions 在推送、PR 和手动运行时，用 Node.js 20 与 24 检查生成文件、单元测试和上述浏览器套件，并保存测试报告与截图。Linux 首次安装浏览器依赖可执行 `npx playwright install --with-deps chromium`。
+
+## 可选：命令行打开
+
+需要 Node.js 20+。在源码仓库根目录运行 `npm ci`，再用 `npm link` 注册命令：
+
+```sh
+html-review                  # 打开空白批注工具
+html-review "./报告.html"     # 生成同目录的批注副本并打开
+html-review "./报告.review.html" # 继续编辑已有批注
+html-review "./报告.html" --no-open # 仅生成副本并输出路径
+```
+
+macOS 默认使用 Google Chrome；Windows/Linux 使用系统默认浏览器。
+命令不会覆盖已有文件：同名副本已存在时生成 `.review.1.html` 等新文件。
+生成的副本包含原文件快照；批注后仍需点击“下载批注副本”保存。
+外部 CSS、图片、JS 不会由命令自动收录，请运行无参数命令后使用“导入文件夹”。
 
 ## 已知限制
 
@@ -274,3 +298,7 @@ node tests/e2e.mjs
 - 工具尽量保留原页面样式和交互，但 sandbox、资源重写和浏览器本地文件策略可能影响依赖服务器或同源能力的页面。
 - 为使批注桥接脚本运行并避免预览自动跳走，原页面的 CSP 和 refresh `meta` 会在预览时移除并给出提示；原文件字节快照保持原样。表单提交、登录、存储和跨页跳转也受 sandbox 限制。
 - 哈希用于识别版本与检查快照一致性，不是数字签名。收到的批注仍需由人或 agent 审阅。
+
+## 许可证与反馈
+
+项目采用 [MIT 许可证](LICENSE)。v0.1.0 为 public beta；支持范围、界面与数据接口仍可能在后续版本调整。反馈问题时，请提供浏览器版本、复现步骤和可公开的最小 HTML 示例；不要附带未经处理的私人文件或资源。可通过 [GitHub Issues](https://github.com/King-A23/html-review/issues) 反馈。

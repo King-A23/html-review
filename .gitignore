@@ -5,3 +5,4 @@ test-results/
 output/playwright/
 __pycache__/
 *.pyc
+dist/
