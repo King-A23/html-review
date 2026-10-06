@@ -34,10 +34,10 @@ async function result(review, filename, id, status, summary) {
   await runPython([path.join(root, 'scripts/update_review.py'), review, '--id', id, '--status', status, '--summary', summary, '--output', output]);
   return {output, text: await readFile(output, 'utf8')};
 }
-let browser;
+let context;
 try {
-  browser = await chromium.launch({headless: true, ...(process.env.BROWSER_PATH ? {executablePath: process.env.BROWSER_PATH} : {})});
-  const context = await browser.newContext({viewport: {width: 1440, height: 1000}, acceptDownloads: true});
+  // A disposable normal profile exercises handle persistence without incognito storage.
+  context = await chromium.launchPersistentContext('', {headless: true, ...(process.env.BROWSER_PATH ? {executablePath: process.env.BROWSER_PATH} : {}), viewport: {width: 1440, height: 1000}, acceptDownloads: true});
   await context.addInitScript(() => {window.showDirectoryPicker = () => navigator.storage.getDirectory();});
   const page = await context.newPage(); page.on('dialog', dialog => dialog.accept());
   await page.goto(`http://127.0.0.1:${server.address().port}/`); await ready(page);
@@ -137,6 +137,6 @@ try {
   console.log('PASS handoff: new/pending/updated/completed states survive lightweight and full exports, copied tasks, and direct reopening');
   await context.close();
 } finally {
-  await browser?.close(); await new Promise(resolve => server.close(resolve));
+  await context?.close(); await new Promise(resolve => server.close(resolve));
   await rm(workspace, {recursive: true, force: true}); console.log('PROCESS_CLEANUP_COMPLETE');
 }

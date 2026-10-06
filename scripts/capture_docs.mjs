@@ -11,7 +11,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const app = await readFile(path.join(root, 'index.html'));
 const server = createServer((_req, res) => {res.setHeader('Content-Type','text/html;charset=utf-8'); res.end(app);});
 const temp = await mkdtemp(path.join(os.tmpdir(), 'html-review-docs-'));
-let browser;
+let context;
 async function nativeWrite(page, filename, text) {
   await page.evaluate(async ({filename,text}) => {
     const file = await (await navigator.storage.getDirectory()).getFileHandle(filename,{create:true});
@@ -20,8 +20,7 @@ async function nativeWrite(page, filename, text) {
 }
 try {
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  browser = await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
-  const context = await browser.newContext({viewport:{width:1440,height:1100},deviceScaleFactor:1,acceptDownloads:true});
+  context = await chromium.launchPersistentContext('', {headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{}),viewport:{width:1440,height:1100},deviceScaleFactor:1,acceptDownloads:true});
   await context.addInitScript(()=>{window.showDirectoryPicker=()=>navigator.storage.getDirectory();});
   const page = await context.newPage(); const errors=[];
   page.on('pageerror',e=>errors.push(e.message)); page.on('dialog',d=>d.accept());
@@ -67,7 +66,7 @@ try {
   assert.deepEqual(errors,[]);
   console.log('Captured two real screenshots and refreshed the portable example; completion feedback verified.');
 } finally {
-  await browser?.close();
+  await context?.close();
   if(server.listening) await new Promise(resolve=>server.close(resolve));
   await rm(temp,{recursive:true,force:true});
   console.log('PROCESS_CLEANUP_COMPLETE');

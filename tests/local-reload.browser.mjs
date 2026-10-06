@@ -17,7 +17,14 @@ const server = createServer((_req, res) => {res.setHeader('Content-Type', 'text/
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const url = `http://127.0.0.1:${server.address().port}/`;
 const temp = await mkdtemp(path.join(os.tmpdir(), 'html-review-reload-'));
-let browser;
+const contexts = [];
+async function isolatedContext(options = {}) {
+  // Native handle persistence uses a normal disk-backed profile, as in daily use.
+  // Empty userDataDir asks Playwright to create and clean an isolated temporary one.
+  const context = await chromium.launchPersistentContext('', {headless: true, ...(process.env.BROWSER_PATH ? {executablePath: process.env.BROWSER_PATH} : {}), ...options});
+  contexts.push(context);
+  return context;
+}
 const html = version => `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="assets/theme.css"><h1 id="summary">报告版本 ${version}</h1><img id="chart" src="assets/chart.svg">`;
 const svg = color => `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="${color}"/></svg>`;
 const ready = page => page.waitForFunction(() => !document.getElementById('open-button').disabled);
@@ -39,8 +46,7 @@ async function nativeWrite(page, filename, text) {
   }, {filename, text});
 }
 try {
-  browser = await chromium.launch({headless: true, ...(process.env.BROWSER_PATH ? {executablePath: process.env.BROWSER_PATH} : {})});
-  const context = await browser.newContext({viewport: {width: 1440, height: 1000}});
+  const context = await isolatedContext({viewport: {width: 1440, height: 1000}});
   await context.addInitScript(() => {
     window.__pickerCounts = {file: 0, directory: 0};
     window.showOpenFilePicker = async () => {
@@ -133,7 +139,7 @@ try {
   await context.close();
 
   // A snapshot-only/legacy workspace establishes its directory link on the first reload.
-  const legacy = await browser.newContext();
+  const legacy = await isolatedContext();
   await legacy.addInitScript(() => {
     window.__directoryPicks = 0;
     window.showDirectoryPicker = async () => { ++window.__directoryPicks; return navigator.storage.getDirectory(); };
@@ -166,7 +172,7 @@ try {
   assert.equal(await migrated.locator('#comment-input').inputValue(), '旧工作区草稿');
   await legacy.close();
 
-  const fallback = await browser.newContext();
+  const fallback = await isolatedContext();
   await fallback.addInitScript(() => {window.showOpenFilePicker = undefined; window.showDirectoryPicker = undefined;});
   const other = await fallback.newPage(); other.on('dialog', dialog => dialog.accept());
   await writeFile(path.join(temp, 'report.html'), html('旧'));
@@ -189,7 +195,7 @@ try {
   console.log('PASS compatibility: one folder selection refreshes actual disk HTML and resources without losing annotations or draft');
   await fallback.close();
 } finally {
-  await browser?.close();
+  await Promise.all(contexts.map(context => context.close()));
   await new Promise(resolve => server.close(resolve));
   await rm(temp, {recursive: true, force: true});
   console.log('PROCESS_CLEANUP_COMPLETE');

@@ -86,6 +86,7 @@ jobs:
           $candidates = @("${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe", "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe")
           $edge = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $edge) { throw "Microsoft Edge is required for Windows browser verification." }
+          Write-Output "Microsoft Edge $((Get-Item $edge).VersionInfo.ProductVersion)"
           "BROWSER_PATH=$edge" >> $env:GITHUB_ENV
 
       - name: Test Windows workflows in Microsoft Edge
