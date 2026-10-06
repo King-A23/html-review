@@ -51,9 +51,18 @@ try {
   await page.waitForFunction(() => window.messages.some(message => message.event === 'ready'));
   const frame = page.frames().find(candidate => candidate !== page.mainFrame());
   const initialFrameUrl = frame.url();
-  const command = payload => page.evaluate(payload => {
-    document.querySelector('iframe').contentWindow.postMessage({ hr: true, channel: 'qa', ...payload }, '*');
-  }, payload);
+  let modeSequence = 0;
+  const command = async payload => {
+    const barrierId = payload.command === 'set-mode' ? 'mode-sync-' + ++modeSequence : null;
+    await page.evaluate(({payload, barrierId}) => {
+      const preview = document.querySelector('iframe').contentWindow;
+      preview.postMessage({ hr: true, channel: 'qa', ...payload }, '*');
+      // Same sender/receiver message order: a locate reply proves the preceding mode was applied.
+      if (barrierId) preview.postMessage({hr: true, channel: 'qa', command: 'locate',
+        requestId: barrierId, target: {kind: 'element', tag: 'div', id: '__mode_sync_missing'}}, '*');
+    }, {payload, barrierId});
+    if (barrierId) await waitEvent('located', barrierId);
+  };
   async function waitEvent(event, requestId, targetId) {
     const match = { event, requestId, targetId };
     await page.waitForFunction(({ event, requestId, targetId }) => window.messages.some(message =>
