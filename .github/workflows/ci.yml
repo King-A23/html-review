@@ -107,6 +107,14 @@ jobs:
         if: matrix.node == '24'
         run: npm run release:prepare
 
+      - name: Build website
+        if: matrix.node == '24'
+        run: node scripts/build_site.mjs
+
+      - name: Verify online trial and direct downloads
+        if: matrix.node == '24'
+        run: npm run test:site
+
       - name: Save release downloads
         if: matrix.node == '24'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

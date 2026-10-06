@@ -27,7 +27,8 @@ test('release downloads preserve the standalone app, use a curated bundle and ma
     for (const name of ['LICENSE','index.html','docs/QUICKSTART.md','scripts/update_review.py','examples/demo.review.html']) assert(archive.names.includes(`html-review/${name}`));
     assert(archive.names.every(name => name.startsWith('html-review/')));
     assert(archive.names.every(name => !name.includes('\\')), 'ZIP paths use portable forward slashes on every OS');
-    for (const name of ['docs/WINDOWS.md','scripts/python.mjs','scripts/test.mjs']) assert(archive.names.includes(`html-review/${name}`));
+    for (const name of ['docs/WINDOWS.md','docs/REFERENCE.md','docs/media/demo.gif','docs/media/demo.mp4','docs/media/social-preview.png','site/index.html','scripts/build_site.mjs','scripts/python.mjs','scripts/test.mjs']) assert(archive.names.includes(`html-review/${name}`));
+    assert(!archive.names.includes('html-review/docs/media/launch.mp4'), 'full promotional film is streamed separately');
     assert(!archive.names.some(name => /(?:videos|node_modules|test-results|\.git|\.env|__pycache__)\//.test(name)));
     for (const line of (await readFile(path.join(output, 'SHA256SUMS.txt'), 'utf8')).trim().split('\n')) {
       const [hash, filename] = line.split('  ');

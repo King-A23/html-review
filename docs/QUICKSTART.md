@@ -1,10 +1,10 @@
 # HTML Review 快速开始
 
-[完整说明](../README.md) · [English](../README.en.md) · [Windows / PowerShell](WINDOWS.md) · [agent 结果接口](AGENT_RESULTS.md)
+[完整说明](REFERENCE.md) · [English](../README.en.md) · [Windows / PowerShell](WINDOWS.md) · [agent 结果接口](AGENT_RESULTS.md)
 
 ## 1. 打开工具
 
-在 [v0.1.0 页面](https://github.com/King-A23/html-review/releases/tag/v0.1.0) 下载 `html-review.html`，用现代桌面浏览器直接打开。无需安装或配置 AI 服务，推荐 Chrome 或 Edge。也可以下载或克隆源码，直接打开根目录 `index.html`。
+先[在线体验示例](https://king-a23.github.io/html-review/app.html?demo=1)，或[直接下载单文件 HTML](https://king-a23.github.io/html-review/downloads/html-review.html)。也可在 [v0.1.0 页面](https://github.com/King-A23/html-review/releases/tag/v0.1.0) 下载 `html-review.html`，用现代桌面浏览器直接打开。无需安装或配置 AI 服务，推荐 Chrome 或 Edge。也可以下载或克隆源码，直接打开根目录 `index.html`。
 
 只想体验时，点击**体验一份审阅示例**。自己的页面是独立 HTML 时，点击**打开 HTML**，也可直接拖入文件。带本地 CSS、图片或脚本时，点击顶部的**导入文件夹**，选择包含入口 HTML 和资源的目录，再选择入口。
 
@@ -67,4 +67,4 @@ python3 scripts/update_review.py report.review.json \
 
 显示**本机已保存**后，同一标签刷新可恢复草稿；重新打开工具地址会提示恢复。每个工具地址只保留最近一个工作区，浏览器清理数据或存储不可用可能导致恢复失败。**本机保存不等于下载副本**，需要长期保留或跨设备使用时请下载。
 
-仅打开可信 HTML。页面脚本可运行，网络资源仍可能联网。普通独立 HTML 和所选目录内的相对资源是主要支持范围；服务器接口、ES 模块依赖、嵌套 iframe、跨页跳转和需同源运行的应用可能无法完整重现。原始 HTML 上限 20 MiB，文件夹合计 50 MiB、最多 500 个文件，单资源 40 MiB，批注副本重新导入上限 100 MiB。完整协议与限制保留在 [README](../README.md)。
+仅打开可信 HTML。页面脚本可运行，网络资源仍可能联网。普通独立 HTML 和所选目录内的相对资源是主要支持范围；服务器接口、ES 模块依赖、嵌套 iframe、跨页跳转和需同源运行的应用可能无法完整重现。原始 HTML 上限 20 MiB，文件夹合计 50 MiB、最多 500 个文件，单资源 40 MiB，批注副本重新导入上限 100 MiB。完整协议与限制保留在 [完整参考](REFERENCE.md)。

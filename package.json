@@ -15,6 +15,8 @@
     "test:motion": "node tests/motion.e2e.mjs",
     "test:reload": "node tests/local-reload.browser.mjs",
     "test:results": "node tests/results.browser.mjs",
+    "site:build": "npm run release:prepare && node scripts/build_site.mjs",
+    "test:site": "node tests/site.browser.mjs",
     "release:prepare": "npm run check && node scripts/python.mjs scripts/package_release.py"
   },
   "engines": {
@@ -31,7 +33,7 @@
     "type": "git",
     "url": "git+https://github.com/King-A23/html-review.git"
   },
-  "homepage": "https://github.com/King-A23/html-review",
+  "homepage": "https://king-a23.github.io/html-review/",
   "bugs": {
     "url": "https://github.com/King-A23/html-review/issues"
   }

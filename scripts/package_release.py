@@ -11,9 +11,10 @@ ROOT = Path(__file__).resolve().parent.parent
 FILES = (
     "index.html", "LICENSE", "README.md", "README.en.md", "CHANGELOG.md",
     "AGENT_PROMPT.md", "VERIFICATION.md", "CONTRIBUTING.md", "docs/QUICKSTART.md", "docs/AGENT_RESULTS.md", "docs/WINDOWS.md",
-    "docs/preview.png", "docs/agent-feedback.png",
+    "docs/preview.png", "docs/agent-feedback.png", "docs/REFERENCE.md",
+    "docs/media/demo.gif", "docs/media/demo.mp4", "docs/media/social-preview.png", "docs/media/README.md",
     "scripts/inspect_review.py", "scripts/update_review.py",
-    "scripts/build.mjs", "scripts/package_release.py", "scripts/capture_docs.mjs",
+    "scripts/build.mjs", "scripts/package_release.py", "scripts/capture_docs.mjs", "scripts/build_site.mjs",
     "package.json", "package-lock.json", "bin/html-review.mjs", ".gitattributes",
     "scripts/test.mjs", "scripts/python.mjs",
 )
@@ -26,9 +27,9 @@ def package(output):
     paths = list(FILES) + [f"docs/releases/v{version}.md"]
     paths += sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / "examples").rglob("*")
                     if p.is_file() and p.suffix in (".html", ".svg", ".css", ".js", ".md"))
-    paths += sorted(p.relative_to(ROOT).as_posix() for folder in ("src", "tests")
+    paths += sorted(p.relative_to(ROOT).as_posix() for folder in ("src", "tests", "site")
                     for p in (ROOT / folder).iterdir()
-                    if p.is_file() and p.suffix in (".mjs", ".js", ".css", ".html"))
+                    if p.is_file() and p.suffix in (".mjs", ".js", ".css", ".html", ".svg"))
     contents = {}
     for relative in paths:
         path = ROOT / relative

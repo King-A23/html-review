@@ -676,7 +676,7 @@
     const copiedFrame = copy.querySelector('#preview-frame');
     copiedFrame.removeAttribute('srcdoc'); copiedFrame.removeAttribute('src'); copiedFrame.hidden = true;
     for (const dialog of copy.querySelectorAll('dialog')) { dialog.removeAttribute('open'); dialog.removeAttribute('data-closing'); }
-    for (const node of copy.querySelectorAll('[data-ui-transient],.select-popover')) node.remove();
+    for (const node of copy.querySelectorAll('[data-ui-transient],[data-site-only],.select-popover')) node.remove();
     for (const node of copy.querySelectorAll('[data-motion],[inert]')) { node.removeAttribute('data-motion'); node.removeAttribute('inert'); }
     for (const panel of copy.querySelectorAll('[data-settings-panel]')) panel.removeAttribute('aria-hidden');
     copy.querySelector('#page-select').replaceChildren();
@@ -1019,12 +1019,13 @@
     if (!confirmDiscard()) { event.target.value = currentEntryPath; return; }
     await run(async () => { try { await openFolderEntry(path); } catch (error) { $('entry-select').value = currentEntryPath; throw error; } });
   });
-  $('example-button').addEventListener('click', () => run(async () => {
+  async function openExample() {
     if (!confirmDiscard()) return;
     const example = JSON.parse($('html-review-example').textContent);
     const nextData = await core.importSource({bytes: core.base64ToBytes(example.base64), name: example.name});
     await activate(seedExample(nextData)); resetFolder(); exampleWorkspace = true; queueAutosave();
-  }));
+  }
+  $('example-button').addEventListener('click', () => run(openExample));
   for (const button of document.querySelectorAll('[data-mode]')) button.addEventListener('click', () => { if (data) setMode(button.dataset.mode); });
   $('comment-input').addEventListener('input', () => { autosavePaused = false; updateEditor(); });
   $('save-button').addEventListener('click', saveAnnotation);
@@ -1099,4 +1100,8 @@
   restoreSidebarPosition(); updateExportFormat(); resetFolder(); clearEditor(); setMode('browse'); applyWidth();
   for (const dialog of document.querySelectorAll('dialog[open]')) dialog.removeAttribute('open');
   bootPromise = initialize();
+  // A trial link opens the example once; existing work and pending recovery take priority.
+  bootPromise.then(() => {
+    if (new URL(location.href).searchParams.get('demo') === '1' && !data && !cachedSession) return run(openExample);
+  });
 })();

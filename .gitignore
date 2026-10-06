@@ -3,6 +3,8 @@ test-results/
 *.log
 .DS_Store
 output/playwright/
+.playwright-cli/
 __pycache__/
 *.pyc
 dist/
+_site/

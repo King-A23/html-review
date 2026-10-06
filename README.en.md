@@ -1,125 +1,69 @@
 # HTML Review
 
-[中文](README.md) · [Quick start (中文)](docs/QUICKSTART.md) · [Windows guide (中文)](docs/WINDOWS.md) · [v0.1.0 release notes](docs/releases/v0.1.0.md)
+## Point to the problem. Give your agent the context to change it.
 
-Review a rendered HTML page, attach specific feedback to text, elements, an existing page or the whole document, and hand it to a person or coding agent. Reload updated source files and import completion results to continue the review.
+Open an HTML page and leave feedback on the rendered text, images or cards. HTML Review preserves **the original content, target and surrounding context** for a person or coding agent. Reload the updated source, check the result and continue the review.
 
-**Download one HTML file and open it in your browser.** No installation, server, account or AI configuration is required. The interface is currently in Chinese; button labels below match the interface. HTML Review works independently of any agent, AI service or frontend framework.
+**[Try it now →](https://king-a23.github.io/html-review/app.html?demo=1)** · **[Download one HTML file ↓](https://king-a23.github.io/html-review/downloads/html-review.html)** · [Website](https://king-a23.github.io/html-review/)
 
-## Download and start
+Download the file and open it in your browser. No installation, account, server or AI configuration is required. **The interface is currently in Chinese.** Modern desktop browsers on Windows, macOS and Linux are supported; Chrome or Edge is recommended.
 
-**v0.1.0 is the first public beta.** Select a version in [Releases](https://github.com/King-A23/html-review/releases); the files below belong to v0.1.0.
+![HTML Review workflow: select a target, add feedback, hand it to an agent and check the change](docs/media/demo.gif)
 
-| File | Use |
+[Watch the full demo video](https://king-a23.github.io/html-review/media/launch.mp4) · [Sharing cover](docs/media/social-preview.png) · [中文](README.md) · [Quick start](docs/QUICKSTART.md) · [Windows guide](docs/WINDOWS.md)
+
+## Feedback with a target
+
+| What needs changing | How to identify it |
 | --- | --- |
-| [html-review.html](https://github.com/King-A23/html-review/releases/download/v0.1.0/html-review.html) | Standalone tool. Download and open it directly. |
-| [html-review-v0.1.0.zip](https://github.com/King-A23/html-review/releases/download/v0.1.0/html-review-v0.1.0.zip) | Offline bundle with the tool, examples, agent handoff scripts and documentation. Scripts require Python 3. |
-| [SHA256SUMS.txt](https://github.com/King-A23/html-review/releases/download/v0.1.0/SHA256SUMS.txt) | SHA-256 checksums for the assets above. |
+| A sentence | Select the text and describe the replacement. |
+| An image, button or card | Click the element; select its parent container if needed. |
+| One existing slide or print page | Select the page block already present in the HTML. |
+| The whole document | Describe the structure or layout change and its conditions. |
 
-1. Open `html-review.html` in a modern desktop browser. Chrome or Edge is recommended for the file-access workflow. Alternatively, download or clone the source and open the root `index.html`.
-2. Click **体验一份审阅示例** to try the built-in example, or **打开 HTML** to select a local file. Use **导入文件夹** when the page has relative CSS, images or scripts.
-3. Choose **文字** (text), **元素** (element), **单页** (existing page/slide) or **整体** (whole document). Select the target, write feedback and click **保存批注**. Whole-document feedback needs no selection.
-4. Click **下载批注副本** to save an editable review copy. Use **复制修改任务** to prepare an agent task and provide the original HTML and its resources alongside it.
+Annotations retain the selected content, nearby context and DOM clues to distinguish repeated text or similar sections. After a source change, locating an annotation reports confirmed, ambiguous or missing targets so you can check the match.
 
-The original file is read-only to the tool. A downloaded `.review.html` can be opened directly to continue editing. Local browser recovery is useful for drafts; download a copy for long-term retention or use on another device.
+## Start in three steps
 
-![Rendered HTML with annotations](docs/preview.png)
+1. **Open a page.** [Try the example](https://king-a23.github.io/html-review/app.html?demo=1), or download the tool and click **打开 HTML**. Use **导入文件夹** for local images, styles or scripts.
+2. **Add feedback.** Choose **文字** (text), **元素** (element), **单页** (existing page) or **整体** (whole document), then click **保存批注**. For example: “Align this card’s button with the other buttons; keep its title and colors.”
+3. **Hand it off and check the result.** Click **下载批注副本** to keep your review. Use **复制修改任务** to copy an agent task, and provide the original HTML and resources. After the change, click **重载页面** and import the completion results.
 
-## Review and return results
+The tool reads the original file without overwriting it and does not call an agent automatically. Open a downloaded `.review.html` directly to continue editing. Local browser recovery helps with drafts; download a copy for long-term retention or another device.
 
-The tool records feedback with the selected text or element, DOM clues, surrounding context and the preview viewport. It can report ambiguous or missing targets after source changes; review the context before editing source code.
+## Save and hand off
 
-To read the latest HTML and local resources, click **重载页面** (reload page). Chrome and Edge can retain a read-only file or directory association after selection. A downloaded copy or dragged file contains a snapshot; its first reload asks you to select the original file or folder. Browsers without persistent file access ask again on each reload. Saved annotations, drafts, the current mode and undo history are retained. The tool never writes source files.
+| Export | Use |
+| --- | --- |
+| `.review.html` | Complete editable copy with the tool, source, imported resources and annotations. Open it directly. |
+| `.review.html.gz` | Compressed complete copy. Extract before opening. |
+| `.review.json` | Lightweight annotations for an agent. Provide the source and resources alongside it; it cannot restore a workspace by itself. |
 
-Agents should inspect a review file before editing:
+Agents can use `scripts/inspect_review.py` to extract annotations and check the source version, then `scripts/update_review.py` to return results by annotation ID. Read the extracted data rather than placing the full copy or Base64 in the agent’s context. Reloading an associated folder also reads its matching result file; manual result import is available. Updated feedback becomes pending again, and old results cannot close newer feedback.
 
-```sh
-python3 scripts/inspect_review.py report.review.json report.html
-```
-
-The inspector also accepts `.review.html` and `.review.html.gz`, checks source versions and extracts annotation data without putting the full embedded HTML or Base64 in the agent's context. Provide the original HTML and resources with a lightweight JSON review. See the reusable handoff prompt in [AGENT_PROMPT.md](AGENT_PROMPT.md) (Chinese).
-
-After making and verifying a change, an agent can create a result file:
-
-```sh
-python3 scripts/update_review.py report.review.json \
-  --id "annotation-ID" \
-  --status resolved \
-  --summary "Updated the requested text and checked the layout." \
-  --output report.review-results.json
-```
-
-When the original directory is associated, **重载页面** also reads the matching result JSON beside the HTML. A single-file association does not grant access to a neighboring result file; use **导入 agent 处理结果** to import it manually. Results update status and history while retaining the original feedback and target. Old revisions cannot close newer feedback, and repeated batches do not duplicate history. Completion is reported by the sender and should be checked against the actual change. See [the result protocol](docs/AGENT_RESULTS.md) (Chinese).
-
-![Annotation status and notes after importing agent results](docs/agent-feedback.png)
-
-## Saving and local recovery
-
-| Export | Contents | How to use |
-| --- | --- | --- |
-| `.review.html` | Editor, source/resource snapshots and annotations | Open directly to continue editing. |
-| `.review.html.gz` | Gzip-compressed complete HTML copy | Extract before opening; the inspector can read it directly. |
-| `.review.json` | Metadata, source/resource hashes and full annotations | Provide alongside the source and resources. It cannot restore an editable workspace by itself. |
-
-IndexedDB stores the latest workspace for each tool address, including drafts and layout preferences. Refreshing the same tab restores it after a successful save; opening the address again offers recovery. Browser data cleanup, private browsing, permissions or quota can prevent recovery. Concurrent tabs share the latest workspace at that address; download separate copies to preserve parallel reviews. Undo/redo history covers the latest 50 operations and does not survive refresh.
+[Handoff prompt](AGENT_PROMPT.md) · [Result protocol](docs/AGENT_RESULTS.md) · [Data and target reference](docs/REFERENCE.md#下载的副本包含什么) — detailed guides are in Chinese.
 
 ## Supported pages and limits
 
-Self-contained HTML is the primary target. Folder import bundles local resources and rewrites ordinary `src`, `href`, CSS `url()` and `@import` paths. Choose a directory containing only the intended page and resources; bundled files are shared with the review copy. Resources outside that directory are not read automatically.
+The main target is **self-contained HTML**, including local relative CSS, images and scripts imported from a folder. Import trusted HTML only: page scripts can run and network resources may make requests. Choose a folder containing only the intended files; sharing the review copy shares those bundled resources too.
 
-| Input | Limit |
-| --- | --- |
-| Original HTML | 20 MiB |
-| Folder | 50 MiB total, 500 files; entry HTML 20 MiB, individual resource 40 MiB |
-| Review HTML reimport | 100 MiB total; original source snapshot remains limited to 20 MiB |
+- Original HTML: **20 MiB**. Folder: **50 MiB / 500 files**, with **40 MiB** per resource. Review HTML reimport: **100 MiB**.
+- Server APIs, ES module dependencies, nested iframes, cross-page navigation and apps requiring the original origin may not reproduce fully. Folder import does not start a server or build a project.
+- Page mode requires existing page blocks. Image text, canvas, Shadow DOM and cross-iframe content cannot be targeted like ordinary DOM text.
+- Chrome and Edge can retain read-only source associations through the file picker; other browsers may ask you to select files again on reload. Local recovery depends on browser storage, keeps the latest workspace per tool address and does not provide collaborative editing.
 
-1 MiB is 1,048,576 bytes. Base64 and the editor increase the exported file size. Text decoding uses the BOM or declared charset, falling back to UTF-8; source hashes always refer to the original bytes.
+See the [full reference](docs/REFERENCE.md) for encoding, resource handling, shortcuts, saving behavior and positioning limits.
 
-- Import trusted HTML only. Page scripts run in a sandboxed iframe, and pages or resources can still make network requests. The tool is not a malicious-file analysis environment.
-- Network resources require network access. Dynamic URLs, `fetch`/XHR, ES module dependencies, nested iframes, server routes and applications requiring the original origin are outside the reliable scope of this beta. Folder import does not start a development server or build the project.
-- Existing page/slide structures are recognized; a continuous page is not automatically paginated. Use element or whole-document feedback instead.
-- Shadow DOM, canvas text, image text and cross-iframe content cannot be targeted like ordinary DOM text. Use an outer element or describe the whole-document change.
-- Runtime DOM changes, fonts, timing and responsive layout can affect positioning. The copy retains source bytes and feedback, not a recording of runtime state.
-- Browser file policies and enterprise settings can affect import, download and reload. CSP and refresh meta tags are removed for the preview with a warning; original bytes are retained. Forms, login, storage and cross-page navigation are constrained by the sandbox.
-- Local recovery depends on browser storage. There is no collaborative editing. Hashes identify versions and snapshot consistency; they are not digital signatures.
+## Documentation and examples
 
-The [Chinese README](README.md) contains the full data schema, target semantics and limitations.
+[Quick start](docs/QUICKSTART.md) · [Windows / PowerShell](docs/WINDOWS.md) · [Full reference](docs/REFERENCE.md) · [Verification](VERIFICATION.md) · [v0.1.0 release notes](docs/releases/v0.1.0.md)
 
-## Development
+Examples: [standalone page](examples/demo.html) · [existing pages](examples/pages.html) · [local resources](examples/with-assets/index.html) · [editable review copy](examples/demo.review.html)
 
-Use Node.js 20+ and Python 3.8+. The standalone tool needs neither. Install the locked development dependencies, then build and test:
+The public beta is **v0.1.0**. For the offline bundle, scripts and checksums, use the [ZIP](https://github.com/King-A23/html-review/releases/download/v0.1.0/html-review-v0.1.0.zip), [SHA256SUMS.txt](https://github.com/King-A23/html-review/releases/download/v0.1.0/SHA256SUMS.txt) or [GitHub Releases](https://github.com/King-A23/html-review/releases/tag/v0.1.0).
 
-```sh
-npm ci
-npm run build
-npm run check
-npm test
-npx playwright install chromium
-npm run test:bridge
-npm run test:session
-npm run test:e2e
-npm run test:usability
-npm run test:ui
-npm run test:motion
-npm run test:reload
-npm run test:results
-```
+## Development and feedback
 
-Commit `index.html` with source changes after rebuilding. GitHub Actions checks generated output and runs the Node and browser suites on Windows and Linux with Node 20 and 24; Windows also runs workflow checks in Microsoft Edge. On Linux, install Chromium system dependencies with `npx playwright install --with-deps chromium`.
+Development requires Node.js 20+ and Python 3.8+; the standalone tool requires neither. Run `npm ci`, then `npm run build`, `npm run check` and `npm test`. Rebuild and commit `index.html` with source changes. Browser suites and the optional CLI are documented in the [development reference](docs/REFERENCE.md#开发与测试). GitHub Actions checks Windows and Linux with Node 20 and 24; Windows also checks workflows in Microsoft Edge.
 
-Tests use installed Playwright and its Chromium by default. Override `BROWSER_PATH` with a browser executable, or `PLAYWRIGHT_MODULE_PATH` with an absolute Playwright directory or its `index.mjs`. The session suite also accepts `.js` entries and `file:` URLs. Most suites open local files; reload/results tests create and close a temporary local server.
-
-For optional command-line opening, run `npm link` in the source repository after `npm ci`:
-
-```sh
-html-review
-html-review "./report.html"
-html-review "./report.review.html"
-html-review "./report.html" --no-open
-```
-
-The command creates a review copy without overwriting an existing file. It does not automatically bundle external resources; use folder import for those. macOS opens Google Chrome by default; Windows and Linux use the default browser. Download the review copy after annotating to retain changes.
-
-## License and feedback
-
-[MIT](LICENSE). v0.1.0 is a public beta; supported behavior, interface and data APIs may evolve. Report reproducible problems through [GitHub Issues](https://github.com/King-A23/html-review/issues), including browser version and a shareable minimal HTML example.
+[MIT license](LICENSE). v0.1.0 is a public beta; the interface and data APIs may evolve. Report issues through [GitHub Issues](https://github.com/King-A23/html-review/issues) with your browser version, reproduction steps and a shareable minimal HTML example.
