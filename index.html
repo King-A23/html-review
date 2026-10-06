@@ -2832,13 +2832,15 @@ window.HRBridge = function HRBridge(channel, shortcutFor) {
     }
     queueAutosave();
   }
-  function restoreSidebarPosition() {
-    let position = workspace.dataset.sidebarPosition;
+  function preferredSidebarPosition(fallback) {
     try {
       const saved = localStorage.getItem(sidebarPreferenceKey);
-      if (saved === 'left' || saved === 'right') position = saved;
+      if (saved === 'left' || saved === 'right') return saved;
     } catch (_) { /* Exported copies retain their layout without browser storage. */ }
-    setSidebarPosition(position, false);
+    return fallback;
+  }
+  function restoreSidebarPosition() {
+    setSidebarPosition(preferredSidebarPosition(workspace.dataset.sidebarPosition), false);
   }
 
   function updateGuide() {
@@ -2913,7 +2915,8 @@ window.HRBridge = function HRBridge(channel, shortcutFor) {
       mode = draft.mode === 'page' && draft.pendingTarget?.scope === 'whole-document' ? 'whole' : draft.mode; editingId = draft.editingId || null;
       pendingTarget = draft.pendingTarget ? structuredClone(draft.pendingTarget) : null;
       $('comment-input').value = draft.comment; draftBaseline = draft.baseline;
-      setSidebarPosition(record.preferences.sidebar);
+      // An older async session snapshot must not overwrite the latest layout choice.
+      setSidebarPosition(preferredSidebarPosition(record.preferences.sidebar), false);
       $('preview-width').value = record.preferences.width; applyWidth();
       $('export-format').value = record.preferences.exportFormat; updateExportFormat();
       if (pendingTarget) setTarget(pendingTarget); else $('target-preview').hidden = true;

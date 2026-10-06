@@ -169,6 +169,8 @@ GitHub Actions 已配置 Ubuntu、Node.js 20/24、Python 3.12、锁定 Chromium 
 
 本机 45 项单元/CLI/发布包检查、3 组界面检查和 4 组结果回传通过。新增检查覆盖 Windows 打开参数、中文与特殊字符文件名、真实 Python 发现、旧输出编码环境，以及打包路径；Windows 不运行仅适用于 Unix 的 npm 符号链接入口检查。Windows 的实际浏览器按 Control 显示快捷键。
 
+首次 Windows 实测发现测试需要兼容短路径别名与 CRLF 输出，现按真实文件和标准化换行核对。后续检查还发现旧的异步会话快照可能覆盖最新侧栏偏好，恢复逻辑改为优先使用即时保存的布局选择；完整流程新增真实 IndexedDB 旧快照回归，确认刷新后侧栏位置及批注保留。
+
 CI 矩阵扩展为 Windows / Linux、Node.js 20/24、Python 3.12，运行完整单元与浏览器套件并在两个系统打包；Windows Node.js 24 额外用预装 Edge 运行完整流程、易用性、界面、重载与处理结果检查。实际执行状态见[对应提交的 Actions 记录](https://github.com/King-A23/html-review/actions)。浏览器检查为无界面的真实浏览器测试，文件选择器返回原生测试句柄，不代表已人工操作 Windows 系统文件选择窗口或所有系统版本。
 
 [Windows 使用说明](docs/WINDOWS.md)提供浏览器打开、PowerShell 交接、Python 配置、命令行入口及哈希校验示例；PowerShell 执行策略受限时可使用 `.cmd` 入口，无需更改系统策略。辅助脚本与使用说明随 ZIP 交付。测试浏览器与临时目录均已清理。`PROCESS_CLEANUP_COMPLETE`。

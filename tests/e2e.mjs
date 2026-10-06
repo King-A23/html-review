@@ -182,7 +182,9 @@ try {
     await layout.locator('#save-button').click();
     const copy = await download(layout, 'demo.right-sidebar.review.html');
     assert.equal((await extract(copy)).annotations[0].kind, 'text');
+    await layout.waitForFunction(() => document.querySelector('#autosave-state').textContent.includes('本机已保存'));
     await layout.reload();
+    await frameFor(layout);
     assert.equal(await layout.locator('#sidebar-position').inputValue(), 'right');
     await layout.locator('#sidebar-position').selectOption('left');
     assert((await sidebar()).x < (await preview()).x);
@@ -210,6 +212,17 @@ try {
       assert(await portable.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
       await portable.screenshot({path: path.join(resultDir, '05-narrow-sidebar.png')});
     } finally { await isolated.close(); }
+    // Seed a stale session preference to reproduce an in-flight save at reload.
+    await layout.locator('#sidebar-position').selectOption('right');
+    await layout.waitForFunction(() => document.querySelector('#autosave-state').textContent.includes('本机已保存'));
+    await layout.evaluate(async () => {
+      const key = 'workspace:' + location.href.split('#')[0];
+      const record = await window.HRSession.load(key);
+      record.preferences.sidebar = 'left';
+      await window.HRSession.save(key, record);
+    });
+    await layout.reload(); await frameFor(layout); await waitCount(layout, 1);
+    assert.equal(await layout.locator('#sidebar-position').inputValue(), 'right', 'latest saved layout wins over a stale session snapshot');
     await layout.close();
   });
   await check('text target can be cancelled explicitly or by clicking the preview; draft and saved annotations remain', async () => {
