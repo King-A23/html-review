@@ -219,7 +219,8 @@ test('inspector displays normalized defaults and new, updated, pending and compl
   f.light.annotations.push({...structuredClone(f.light.annotations[0]), id: 'pending', history: [event]});
   await writeFile(f.json, JSON.stringify(f.light));
   const {stdout} = await runPython([inspector, f.json, f.source], {encoding: 'utf8'});
-  const annotations = JSON.parse(stdout.slice(stdout.indexOf('[\n'), stdout.lastIndexOf('\n]') + 2));
+  const normalized = stdout.replace(/\r\n/g, '\n');
+  const annotations = JSON.parse(normalized.slice(normalized.indexOf('[\n'), normalized.lastIndexOf('\n]') + 2));
   assert.deepEqual(annotations.map(row => row.taskState), ['new', 'updated', 'completed', 'pending']);
   assert.deepEqual([annotations[0].revision, annotations[0].status, annotations[0].history], [1, 'open', []]);
   assert.equal(annotations[0].comment, f.light.annotations[0].comment);

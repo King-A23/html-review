@@ -51,7 +51,7 @@ test('CLI accepts file URLs and relative paths with Windows-valid special charac
   assert.equal(data.source.name,name); assert.deepEqual(Buffer.from(data.source.base64,'base64'),bytes);
   assert.equal((await command(pathToFileURL(fromURL).href)).stdout.trim(),fromURL,'annotated file URLs reopen the original copy');
   const relative=(await run(process.execPath,[cli,name,'--no-open'],{cwd:dir})).stdout.trim();
-  assert.equal(relative,path.join(await realpath(dir),name.replace(/\.html$/i,'.review.1.html')));
+  assert.equal(await realpath(relative),await realpath(path.join(dir,name.replace(/\.html$/i,'.review.1.html'))));
  } finally {await rm(dir,{recursive:true,force:true});}
 });
 test('Windows browser launch plans preserve drive and UNC file URLs without a shell',()=>{
