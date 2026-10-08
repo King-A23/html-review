@@ -59,7 +59,7 @@ Remove-Item Env:DOCX_ARTIFACT_DIR
 
 ## 验证结果
 
-- 55 项 Node/Python 单元及协议测试通过，覆盖 schema 1/2、原始字节身份、轻量快照排除、CLI、中文文件名、Windows drive/UNC 路径和 UTF-8 输出。
+- 61 项 Node/Python 单元及协议测试通过，覆盖 schema 1/2、原始字节身份、轻量快照排除、CLI、中文文件名、Windows drive/UNC 路径和 UTF-8 输出，以及六种测试文档的独立结构与图片完整性检查。
 - DOCX 浏览器主流程通过：导入、文字/元素/整体批注、轻量配对恢复、复制任务、结果回传、新版本重载、完整副本离线编辑。
 - 对导出定位重新解析原始 OOXML，验证段落路径、脚注后 UTF-16 偏移、跨样式、跨段落、跨单元格、外层/嵌套表格、已有段落 ID 与图片关系/哈希。插入段落、移动表格、删除目标、替换图片都不复用未经核实的旧 DOM 路径；删除重复目标时返回歧义。
 - 原生 OPFS 文件/目录 handle 测试通过：直接重载无需第二次选择、目录结果读取、刷新恢复批注/草稿/关联、取消和缺失源文件保留工作区、已有目录中的 JSON 配对、gzip 离线恢复与 CLI 配对工作区。
@@ -70,6 +70,18 @@ Remove-Item Env:DOCX_ARTIFACT_DIR
 实际浏览器：macOS Chrome 154.0.8037.98、Microsoft Edge 154.0.4258.62。两者的 DOCX 主流程、定位与错误处理均通过；Chrome 原生关联套件通过。Edge 原生关联套件曾发生一次浏览器进程 SIGTRAP 崩溃，macOS 崩溃记录指向 ThreadPoolForegroundWorker，不能据此确定根因；随后同一套件连续 6 次通过，另有 50 次独立 OPFS/IndexedDB handle 恢复通过。保留这项偶发现象，未宣称已修复浏览器崩溃。OPFS 是真实浏览器 handle，但不能替代用户手选磁盘目录权限的真机检查。
 
 **未进行 Windows 真机验证。** Windows 路径、启动参数和编码契约的自动测试不等于 Windows Chrome/Edge 实测。
+
+## Word 兼容性修复
+
+2026-10-08 用户反馈测试文档无法用 Word 打开。本机复现了同一错误；此前浏览器和 Python 可以读取该测试文件，不能作为 Word 能打开的证据。
+
+生成器修正了四处缺陷：首张 PNG 的 IDAT 校验和错误；`numbering.xml` 把 `abstractNum` 与 `num` 交错排列；脚注/尾注使用了不允许的 `w:author` 属性；空 `c:plotArea` 缺少必需图表。编号与注释规则见 [Microsoft WordprocessingML schema](https://raw.githubusercontent.com/dotnet/Open-XML-SDK/main/data/schemas/schemas_openxmlformats_org_wordprocessingml_2006_main.json)，图表规则见 [Microsoft Chart schema](https://raw.githubusercontent.com/dotnet/Open-XML-SDK/main/data/schemas/schemas_openxmlformats_org_drawingml_2006_chart.json)。仅修正图片的诊断副本仍被 Word 拒绝，不能把错误归因于图片这一项。
+
+四项修正后的副本已由本机 Microsoft Word 16.113.1 正常打开，显示两页，标题、正文、列表和表格可读。正式 `review.docx` 已从修正后的生成器重新生成，其 ZIP 内各部件与 Word 成功打开的诊断副本逐字一致；配套 JSON、完整工作区、任务与映射同时重新生成，使用新的源文件哈希。原演示文件保留在 `output/docx-review/word-qa/original/`。
+
+使用 bundled LibreOffice 和 `render_docx.py` 渲染正式交付文档，并检查两页 PNG。渲染器默认字体配置遗漏中文字体，已仅通过本轮 QA 的 `FONTCONFIG_FILE` 指向系统中文字体解决，没有修改文档内容或系统字体配置。脚注/尾注、显式分页和修订测试内容保留；外部图片及危险链接是故意的负面测试内容，不能据此判断完整 Word 排版还原。
+
+新增 `tests/docx-fixtures.test.mjs` 对全部六种有效变体独立检查 ZIP/PNG CRC、图片解压数据、编号分组顺序、注释允许属性与图表必要结构。原生成器六项失败，修正后六项通过；DOCX 浏览器主流程、定位、恢复与协议回归通过。
 
 ## 已知预览边界
 
