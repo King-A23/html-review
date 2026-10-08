@@ -401,4 +401,45 @@ kbd{color:#4d6040;font-size:12px}
 
 .mode-tabs.is-docx{grid-template-columns:repeat(4,1fr)}
 .mode-tabs.is-docx .mode-indicator{width:calc((100% - 16px)/4)}
+
+/* Reveal the workflow when there is something to review. */
+.workspace:not(.has-document) .source-info,.workspace:not(.has-document) .editor-section,.workspace:not(.has-document) .annotations-section,.workspace:not(.has-document) .sidebar-footer{display:none}
+.app-header:has(~.workspace:not(.has-document)) .select-field,.app-header:has(~.workspace:not(.has-document)) #download-button,.app-header:has(~.workspace:not(.has-document)) .action-divider{display:none}
+.workspace:not(.has-document) .guide-card{margin-top:24px}
+.workspace:not(.has-document):has(#onboarding-card[hidden]):not(:has(#retry-recovery:not([hidden]))){grid-template-columns:minmax(0,1fr)}
+.workspace:not(.has-document):has(#onboarding-card[hidden]):not(:has(#retry-recovery:not([hidden])))>.sidebar{display:none}
+.workspace:not(.has-document) .sidebar-footer:has(#retry-recovery:not([hidden])){display:grid}
+.welcome-actions{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0 14px}
+.welcome-actions .primary{background:#475a38;border-color:#475a38;padding:13px 21px}
+.welcome-actions .primary:hover:not(:disabled){background:#334927;border-color:#334927}
+.welcome-actions .quiet{font-size:12px;color:#6d7963}
+.format-note{font-size:11px;line-height:1.8;color:#68745f;margin:14px 0 0;padding-top:12px;border-top:1px solid #e1e6d8}
+.header-actions .handoff-button{background:#f1f4e9;color:#445c32;border-color:#d7e0cb;white-space:nowrap}
+.header-actions .handoff-button .icon{width:14px;height:14px}
+.handoff-dialog{width:min(590px,calc(100vw - 28px))}
+.handoff-summary{background:#f1f4e9;border-radius:8px;padding:8px 13px;color:#526447;font-size:12px!important;white-space:pre-line;line-height:1.7}
+.handoff-steps{list-style:none;padding:0;margin:14px 0;display:grid;gap:16px}
+.handoff-steps li{display:flex;gap:14px}
+.handoff-steps li>span{display:grid;place-items:center;flex-shrink:0;width:27px;height:27px;border-radius:50%;background:#f4eee5;color:#a06e50;font-size:12px}
+.handoff-steps li>div{flex:1;min-width:0}
+.handoff-steps h3{font-size:15px;margin:3px 0 6px;font-weight:600}
+.handoff-steps p,.handoff-return p{font-size:12px;line-height:1.8;color:#68745f;margin:6px 0}
+.handoff-source{display:block;padding:10px 13px;background:#faf9f5;border:1px solid #e3e7db;border-radius:8px;font-size:13px;font-weight:500;overflow-wrap:anywhere}
+.handoff-steps .primary{margin-top:5px}
+#copy-agent-status{min-height:22px;font-size:11px}
+.handoff-return{margin:14px 0;border:1px solid #e2e7da;border-radius:10px;padding:10px 15px;font-size:12px}
+.handoff-return summary{cursor:pointer;font-weight:550;color:#506443}
+.handoff-return-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.handoff-return-actions button{font-size:12px;padding:9px 11px}
+#task-details{margin-top:14px;padding-top:10px}
+#task-details textarea{margin-top:10px;font-size:11px}
+.document-nav-dialog{width:min(580px,calc(100vw - 28px))}
+#document-search{width:100%;font:inherit;font-size:14px;padding:12px 14px;border:1px solid #dce3d1;border-radius:9px;background:#fffefc;color:#30352f}
+#document-search:focus{outline:3px solid #c77a5b33;outline-offset:2px}
+#document-search-status,.navigation-empty{font-size:12px;color:#7b886e;line-height:1.7}
+.document-nav-item{display:block;width:100%;text-align:left;font-size:13px;line-height:1.8;padding:10px 12px;border:0;border-radius:7px;background:transparent;font-weight:400;overflow-wrap:anywhere}
+.document-nav-item:hover:not(:disabled){background:#f0f4e8;box-shadow:none}
+#document-outline,#document-search-results{max-height:40dvh;overflow:auto;padding:3px 0;scrollbar-width:thin}
+#document-search-results .document-nav-item{border-bottom:1px solid #eef1e6;border-radius:0}
+@media(max-width:800px){.header-actions .handoff-button{padding:8px 10px;font-size:11px}.header-actions .handoff-button .icon{display:none}.welcome-actions{margin-top:18px}.preview-controls #document-nav-button{font-size:10px;padding:7px 6px}}
 #cancel-conversion{position:fixed;right:24px;bottom:20px;z-index:100;background:#fffefb;padding:12px;border:1px solid #dce1d5}

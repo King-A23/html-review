@@ -65,9 +65,18 @@ try {
   assert.equal(await page.locator('#comment-input').inputValue(),'原生重载保留草稿');
   assert.deepEqual(await page.evaluate(()=>window.__pickerCounts),{file:1,directory:1});
   await stableSave(page,'原生重载保留草稿');
-  await page.evaluate(key=>sessionStorage.removeItem(key),'html-review.resume:'+url);recoveryConfirms=0;
-  await page.reload();await ready(page);await page.locator('#recovery-banner').waitFor({state:'visible'});await page.locator('#recover-session').click();await ready(page);try {await frame(page).locator('body').filter({hasText:'Inserted paragraph'}).waitFor({timeout:5000});} catch(e){console.error('session recovery',await page.locator('#status').textContent(),await page.locator('#autosave-state').textContent(),await page.locator('#source-name').textContent());throw e;}
+  // A new tab is genuinely empty; changing sessionStorage before a reload can
+  // race with a pending autosave and does not model this user action reliably.
+  const recoveryPage=await native.newPage();recoveryConfirms=0;recoveryPage.setDefaultTimeout(8000);
+  recoveryPage.on('dialog',d=>{if(d.type()==='confirm')recoveryConfirms++;d.accept();});
+  await recoveryPage.goto(url);await ready(recoveryPage);await recoveryPage.locator('#recovery-banner').waitFor({state:'visible'});await recoveryPage.locator('#recover-session').click();await ready(recoveryPage);
+  await frame(recoveryPage).locator('body').filter({hasText:'Inserted paragraph'}).waitFor();
   assert.equal(recoveryConfirms,0,'Recovering into an empty workspace must not ask to discard anything');
+  assert.equal(await recoveryPage.locator('#annotation-count').textContent(),'1');assert.equal(await recoveryPage.locator('#comment-input').inputValue(),'原生重载保留草稿');
+  assert.deepEqual(await recoveryPage.locator('#entry-select option').evaluateAll(options=>options.map(option=>option.value)),['companion.xhtml','review.docx'],'An empty tab recovers all supported directory entry extensions');
+  // Keep the recovered handle-owning tab alive until context cleanup. Closing it
+  // immediately before reload crashes macOS Chromium in native raw_ptr handling.
+  await page.reload();await ready(page);await frame(page).locator('body').filter({hasText:'Inserted paragraph'}).waitFor();
   assert.equal(await page.locator('#entry-select').inputValue(),'review.docx');assert.equal(await page.locator('#annotation-count').textContent(),'1');assert.equal(await page.locator('#comment-input').inputValue(),'原生重载保留草稿');
   assert.deepEqual(await page.locator('#entry-select option').evaluateAll(options=>options.map(option=>option.value)),['companion.xhtml','review.docx'],'Same-tab restore keeps all supported directory entry extensions');
   await nativeWrite(page,'review.docx',base);await page.locator('#reload-preview').click();await ready(page);await frame(page).locator('body').filter({hasText:'Delete this paragraph'}).waitFor();

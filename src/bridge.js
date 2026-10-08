@@ -423,6 +423,17 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
         discoverPages();
         lastHover = null;
         clearFocus();
+      } else if (message.command === 'search-document' && docxHash && typeof message.query === 'string' && message.query.length <= 200) {
+        const query = message.query.trim();
+        const matches = documentMatches(query);
+        send('document-search', {query, total:matches.length, items:matches.slice(0,50).map((element,index) => {
+          const value = clean(element.textContent); const start = Math.max(0, value.toLocaleLowerCase().indexOf(query.toLocaleLowerCase()) - 45);
+          return {index, text:(start ? '…' : '') + value.slice(start,start+215)};
+        })});
+      } else if (message.command === 'navigate-document' && docxHash && Number.isInteger(message.index) && message.index >= 0) {
+        const items = message.kind === 'outline' ? documentHeadings() : message.kind === 'search' && typeof message.query === 'string' && message.query.length <= 200 ? documentMatches(message.query.trim()) : [];
+        const element = items[message.index];
+        if (element) element.scrollIntoView({block:'start', behavior:'instant'});
       } else if (message.command === 'select-page' && mode === 'page') {
         discoverPages();
         if (Number.isInteger(message.index) && pages[message.index - 1]) capturePage(pages[message.index - 1]);
@@ -550,11 +561,20 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   window.addEventListener('resize', scheduleFocus);
   function watchPages() {
     discoverPages();
+    if (docxHash) send('document-outline', {items:documentHeadings().slice(0,1000).map((element,index) => ({index, text:clean(element.textContent).slice(0,160), level:Number(element.tagName.slice(1))}))});
     let timer;
     new MutationObserver(records => {
       if (!records.some(record => !own(record.target) && (record.type === 'attributes' || Array.from(record.addedNodes).concat(Array.from(record.removedNodes)).some(node => !own(node))))) return;
       clearTimeout(timer); timer = setTimeout(discoverPages, 80);
     }).observe(document.body, {subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'data-page', 'data-page-number', 'data-slide', 'data-page-title', 'aria-label']});
+  }
+  function documentHeadings() {
+    return Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,h6')).filter(element => !own(element));
+  }
+  function documentMatches(query) {
+    if (!query) return [];
+    const needle = query.toLocaleLowerCase();
+    return Array.from(document.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li')).filter(element => !own(element) && !(element.localName === 'li' && element.querySelector('p')) && clean(element.textContent).toLocaleLowerCase().includes(needle));
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchPages, {once: true}); else watchPages();
   send('ready', { version: 1 });

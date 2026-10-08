@@ -13,6 +13,7 @@ try {
  browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH ? {executablePath:process.env.BROWSER_PATH}: {})});
  const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true}); page.on('pageerror',e=>errors.push(e.message));
  await page.goto(pathToFileURL(path.join(root,'index.html')).href); await page.waitForFunction(()=>!document.querySelector('#open-button').disabled);
+ await page.locator('#file-input').setInputFiles(path.join(root,'examples/pages.html')); await page.waitForFunction(()=>!document.querySelector('#open-button').disabled); await page.locator('#preview-frame').waitFor({state:'visible'});
  await page.locator('#export-format-trigger').click();
  const frames=[];
  for(const time of [35,120,300]) {
@@ -29,7 +30,7 @@ try {
  await page.waitForFunction(()=>document.querySelector('.select-popover')?.dataset.motion==='open');
  await page.keyboard.press('End'); await page.keyboard.press('Enter'); assert.equal(await page.locator('#export-format').inputValue(),'annotations');
  await page.evaluate(()=>document.querySelector('#export-format-trigger').click()); await page.waitForFunction(()=>document.querySelector('.select-popover')?.dataset.motion==='open'); assert.equal(await page.getByRole('option',{selected:true}).getAttribute('data-value'),'annotations');
- await page.keyboard.press('Tab'); assert.equal(await page.locator('#download-button').evaluate(e=>e===document.activeElement),false,'disabled download is skipped'); assert.equal(await page.locator('#settings-button').evaluate(e=>e===document.activeElement),true);
+ await page.keyboard.press('Tab'); assert.equal(await page.locator('#download-button').evaluate(e=>e===document.activeElement),true,'loaded document exposes the next download action in keyboard order'); await page.keyboard.press('Tab'); assert.equal(await page.locator('#settings-button').evaluate(e=>e===document.activeElement),true);
  await page.locator('.select-popover').waitFor({state:'detached'});
  console.log('PASS anchored unfolding, staggered options, reverse without a jump, selected state and Tab focus');
  await page.locator('#settings-button').click();

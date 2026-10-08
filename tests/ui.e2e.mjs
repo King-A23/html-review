@@ -27,6 +27,8 @@ try {
  try {
   assert.equal(await page.locator('.save-key-hint').textContent(), process.platform === 'darwin' ? '⌘ ↵' : 'Ctrl ↵');
   assert.equal(await page.locator('.welcome-shortcut kbd').first().textContent(), process.platform === 'darwin' ? '⌘' : 'Ctrl');
+  assert.equal(await page.locator('#export-format-trigger').isVisible(),false,'Export controls appear only after opening a document');
+  await page.locator('#file-input').setInputFiles(path.join(root,'examples/pages.html')); await page.locator('#preview-frame').waitFor({state:'visible'}); await page.waitForFunction(()=>!document.querySelector('#open-button').disabled);
   await page.locator('#export-format-trigger').focus(); await page.keyboard.press('ArrowDown'); await page.keyboard.press('End'); await page.keyboard.press('Enter');
   assert.equal(await page.locator('#export-format').inputValue(),'annotations'); assert.equal(await page.locator('#export-format-trigger').getAttribute('aria-expanded'),'false'); assert.equal(await page.locator('#export-format-trigger').evaluate(e=>e===document.activeElement),true);
   await page.locator('#export-format-trigger').click(); await page.keyboard.press('Escape'); await page.locator('.select-popover').waitFor({state:'detached'}); assert.equal(await page.locator('.select-popover').count(),0);

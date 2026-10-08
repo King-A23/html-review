@@ -288,7 +288,7 @@ try {
     assert.equal(light.source.sha256, originalHash);
     assert.deepEqual(light.annotations, stored.annotations.map(annotation => ({...annotation, taskState: 'new'})));
     assert(!lightBytes.includes(Buffer.from(stored.source.base64)));
-    assert((await formats.locator('#save-state').textContent()).includes('连同原文件保留'));
+    assert((await formats.locator('#save-state').textContent()).includes('与原始文档一起交付'));
     assert(packed.length < fullBytes.length);
     assert(lightBytes.length < packed.length);
     exportSizes = {original: originalBytes.length, html: fullBytes.length, gzip: packed.length, annotations: lightBytes.length};

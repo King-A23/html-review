@@ -55,6 +55,9 @@ export async function createDocxFixture(variant = 'base') {
   put('word/media/image2.png', Buffer.from(pngBlue, 'base64'));
   const overrides = {document:'document.main',styles:'styles',numbering:'numbering',footnotes:'footnotes',endnotes:'endnotes',comments:'comments',header1:'header'};
   put('[Content_Types].xml', xml(`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/>${Object.entries(overrides).map(([name,type]) => `<Override PartName="/word/${name}.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.${type}+xml"/>`).join('')}<Override PartName="/word/charts/chart1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/></Types>`));
+  // JSZip creates parent directory entries with the current time by default.
+  // Freeze those entries too, so fixture hashes do not depend on wall-clock time.
+  zip.forEach((_name, entry) => { entry.date = fixedDate; });
   return zip.generateAsync({type:'nodebuffer', compression:'DEFLATE'});
 }
 export const docxFixture = createDocxFixture;
