@@ -45,6 +45,11 @@
   const reviewFiles = new WeakSet();
   let renderGeneration = 0;
   const locations = new Map();
+  const manualLocationRequests = new Map();
+  let locationReview = null;
+  let locationRequest = null;
+  let locationTimer = null;
+  const needsLocationReview = annotation => core.annotationStatus(annotation) === 'open' && ['missing','ambiguous','fallback'].includes(locations.get(annotation.id)?.status);
   const undoStack = [];
   const redoStack = [];
   let bootPromise = Promise.resolve();
@@ -299,11 +304,12 @@
     $('annotation-count').textContent = annotations.length;
     const pendingCount = annotations.filter(annotation => core.annotationStatus(annotation) === 'open').length;
     $('review-progress').textContent = `待处理 ${pendingCount} · 已完成 ${annotations.length - pendingCount}`;
+    renderLocationReview();
     const filter = $('annotation-filter').value;
     if (!annotations.length) { list.append(textNode('p', 'empty-list', '还没有批注。直接填写整体意见，或选择具体内容后批注。')); return; }
     annotations.forEach((annotation, index) => {
       const resolved = core.annotationStatus(annotation) === 'resolved';
-      if (filter !== 'all' && (resolved ? 'resolved' : 'open') !== filter) return;
+      if (filter === 'attention' ? !needsLocationReview(annotation) : filter !== 'all' && (resolved ? 'resolved' : 'open') !== filter) return;
       const state = core.taskState(annotation);
       const stateLabels = {new: '新增意见', updated: '已更新', pending: '待处理', completed: '已完成'};
       const card = document.createElement('article');
@@ -330,7 +336,18 @@
         if (action === 'locate' && resolved) { button.disabled = true; button.title = '已完成批注保留为记录，无需再次定位'; }
         actions.append(button);
       }
+      if (needsLocationReview(annotation)) {
+        const button = textNode('button', 'text-button reselect-button', '重新选择位置');
+        button.type = 'button'; button.dataset.action = 'reselect'; button.dataset.id = annotation.id;
+        actions.prepend(button);
+      }
       card.append(actions);
+      if (annotation.targetHistory?.length) {
+        const history = document.createElement('details'); history.className = 'annotation-history target-history';
+        history.append(textNode('summary', '', `原定位记录 · ${annotation.targetHistory.length}`));
+        for (const event of annotation.targetHistory.slice().reverse()) history.append(textNode('p', '', `第 ${event.revision} 版 · ${new Date(event.at).toLocaleString()}\n${targetLabel(event.target)} · ${targetText(event.target).slice(0,180)}`));
+        card.append(history);
+      }
       if (annotation.history?.length) {
         const history = document.createElement('details'); history.className = 'annotation-history';
         history.append(textNode('summary', '', `处理记录 · ${annotation.history.length}`));
@@ -342,8 +359,53 @@
       }
       list.append(card);
     });
-    if (!list.childElementCount) list.append(textNode('p', 'empty-list', filter === 'open' ? '目前没有待处理意见。' : '还没有已完成的处理记录。'));
+    if (!list.childElementCount) list.append(textNode('p', 'empty-list', filter === 'attention' ? '目前没有需要确认位置的批注。' : filter === 'open' ? '目前没有待处理意见。' : '还没有已完成的处理记录。'));
+    renderLocationReview();
     window.HRUI.enterCards(list);
+  }
+  function locationDescription(status, reason = '') {
+    const description = {exact:'位置与原文已匹配',fallback:'原定位已变化，通过原文找到候选，请核对',ambiguous:'有多个候选，不能自动确认原位置',missing:'原文或元素已变化，无法确认原位置'}[status];
+    return description + (reason ? ' · ' + reason.slice(0,500) : '');
+  }
+  function renderLocationReview() {
+    if (!locationReview || !data) { $('reload-review').hidden = true; return; }
+    $('reload-review').hidden = locationReview.dismissed;
+    const pending = data.annotations.filter(annotation => core.annotationStatus(annotation) === 'open');
+    const counts = {exact:0,fallback:0,ambiguous:0,missing:0};
+    for (const annotation of pending) { const status = locations.get(annotation.id)?.status; if (status in counts) ++counts[status]; }
+    const checked = Object.values(counts).reduce((a,b) => a+b,0);
+    const attention = counts.fallback + counts.ambiguous + counts.missing;
+    const completedNow = data.annotations.filter(annotation => core.annotationStatus(annotation) === 'resolved' && locationReview.completedNow.includes(annotation.id)).length;
+    $('reload-review-title').textContent = locationReview.changed ? '已读取新版本' : '已重新读取文档';
+    $('reload-review-summary').textContent = `已完成 ${data.annotations.length-pending.length} · 待处理 ${pending.length}` + (completedNow ? ` · 本次新完成 ${completedNow}` : '') + (locationReview.checking ? ` · 正在检查位置 ${checked}/${pending.length}` : ` · 需确认位置 ${attention}`);
+    $('reload-review-detail').textContent = locationReview.checking ? '正在核对待处理意见，检查不会改变选区、草稿或完成状态。' :
+      [counts.missing ? `无法确认 ${counts.missing} 条（原文可能被修改或删除）` : '',counts.ambiguous ? `多处候选 ${counts.ambiguous} 条` : '',counts.fallback ? `通过原文找到 ${counts.fallback} 条，需核对` : '', checked < pending.length ? `${pending.length-checked} 条尚未检查，可重试或手动定位` : ''].filter(Boolean).join('；') || '待处理意见的位置已匹配。已完成批注保留作记录，不再检查旧目标。';
+    $('review-attention').hidden = !attention;
+    $('review-retry').hidden = locationReview.checking || checked === pending.length;
+    $('review-retry').disabled = busy || !previewReady;
+  }
+  function startLocationReview() {
+    if (!locationReview || !previewReady || !data) return;
+    clearTimeout(locationTimer); locationRequest = null; locations.clear();
+    locationReview.queue = data.annotations.filter(annotation => core.annotationStatus(annotation) === 'open').map(annotation => annotation.id);
+    locationReview.checking = true;
+    nextLocationBatch();
+  }
+  function nextLocationBatch() {
+    if (!locationReview || !previewReady || !data) return;
+    const records = new Map(data.annotations.map(annotation => [annotation.id,annotation]));
+    const items = locationReview.queue.splice(0,10).map(id => records.get(id)).filter(annotation => annotation && core.annotationStatus(annotation) === 'open').map(annotation => ({id:annotation.id,revision:core.annotationRevision(annotation),target:structuredClone(annotation.target)}));
+    if (!items.length) {
+      if (locationReview.queue.length) { locationTimer = setTimeout(nextLocationBatch,0); return; }
+      locationReview.checking = false; locationRequest = null; renderAnnotations(); return;
+    }
+    locationRequest = {id:id(),items};
+    send('check-targets', {requestId:locationRequest.id,items});
+    renderLocationReview();
+    locationTimer = setTimeout(() => {
+      locationRequest = null;
+      if (locationReview) { locationReview.checking = false; locationReview.queue = []; renderAnnotations(); }
+    },8000);
   }
   async function preparePreview(nextData) {
     if(isDocx(nextData)) note('正在生成 DOCX 内容预览，可随时取消…');
@@ -358,13 +420,17 @@
     $('document-search').value = ''; renderDocumentNavigation();
     pageInventory = []; $('page-select').replaceChildren(new Option('点击预览或选择页面', '')); renderPageControls();
     channel = result.channel;
+    clearTimeout(locationTimer); locationRequest = null; manualLocationRequests.clear();
     const localChannel = result.channel;
     locations.clear();
     showWarnings(result.warnings);
     frame.srcdoc = result.html;
     renderAnnotations();
     setTimeout(() => {
-      if (channel === localChannel && !previewReady) note('页面已载入，但批注定位脚本未响应。原页面可能存在脚本错误、跳转或不支持的结构；可重载或改用普通静态 HTML。', true);
+      if (channel === localChannel && !previewReady) {
+        if (locationReview) { locationReview.checking = false; renderLocationReview(); }
+        note('页面已载入，但批注定位脚本未响应。原页面可能存在脚本错误、跳转或不支持的结构；可重载或改用普通静态 HTML。', true);
+      }
     }, 8000);
   }
   async function renderPreview() {
@@ -380,6 +446,8 @@
     const prepared = await preparePreview(nextData);
     autosavePaused = false;
     data = nextData;
+    locationReview = null; $('reload-review').hidden = true;
+    if ($('annotation-filter').value === 'attention') { $('annotation-filter').value = 'all'; window.HRUI.syncSelect('annotation-filter'); }
     data.annotations = data.annotations.map(core.normalizeAnnotation);
     undoStack.length = 0; redoStack.length = 0;
     cachedSession = null; $('recovery-banner').hidden = true;
@@ -500,8 +568,11 @@
     await core.validateData(nextData);
     if(isDocx(nextData)!==isDocx(data)) throw new Error('重载文件格式发生变化，当前工作区已保留。');
     const prepared = await preparePreview(nextData);
+    const completedNow = nextData.annotations.filter(annotation => core.annotationStatus(annotation) === 'resolved' && core.annotationStatus(data.annotations.find(item => item.id === annotation.id)) !== 'resolved').map(annotation => annotation.id);
     if (resultCount) recordResultsChange(data, nextData);
     data = nextData;
+    locationReview = {changed, completedNow, queue:[], checking:true, dismissed:false};
+    $('reload-review').hidden = false;
     localAccess = access;
     exampleWorkspace = false;
     if (files) updateFolder(files, entryPath);
@@ -691,6 +762,7 @@
     if (merged.applied) {
       recordResultsChange(data, merged.data); data = merged.data;
       markDirty(); renderAnnotations(); updateEditor(); queueAutosave();
+      startLocationReview();
     }
     note(merged.applied ? `已更新 ${merged.applied} 条处理记录；原批注和草稿已保留，可撤销。结果只更新处理状态，请重载 agent 修改后的原文档查看新内容。` : '该批处理结果已导入，无需重复更新。');
     if (merged.applied) {
@@ -707,6 +779,7 @@
     const merged = core.applyAgentResults(data, patch);
     recordResultsChange(data, merged.data); data = merged.data;
     markDirty(); renderAnnotations(); updateEditor();
+    startLocationReview();
     note(status === 'resolved' ? '已标记完成，批注原文作为记录保留，可撤销。' : '已重新设为待处理，下次交接会包含这条意见。');
   }
   function saveAnnotation() {
@@ -717,12 +790,21 @@
     const existing = editingId && data.annotations.find(annotation => annotation.id === editingId);
     if (pendingTarget.kind === 'page') pendingTarget.viewport = view();
     const annotation = {revision: existing ? core.annotationRevision(existing) + 1 : 1, status: 'open', history: existing?.history || [], id: existing?.id || id(), kind: pendingTarget.kind, comment, createdAt: existing?.createdAt || now, updatedAt: now, target: structuredClone(pendingTarget), view: view()};
+    if (existing?.targetHistory) annotation.targetHistory = structuredClone(existing.targetHistory);
+    const targetChanged = existing && JSON.stringify(existing.target) !== JSON.stringify(annotation.target);
+    if (targetChanged) {
+      if ((existing.targetHistory?.length || 0) >= 100) { note('这条意见已保留 100 次定位记录，请新建批注继续；当前意见和草稿已保留。',true); return; }
+      annotation.targetHistory = [...(annotation.targetHistory || []), {revision:core.annotationRevision(existing),target:structuredClone(existing.target),...(existing.view ? {view:structuredClone(existing.view)} : {}),at:now}];
+    }
     recordChange(existing || null, annotation, existing ? data.annotations.indexOf(existing) : data.annotations.length);
     if (existing) data.annotations[data.annotations.indexOf(existing)] = annotation;
     else data.annotations.push(annotation);
+    locations.delete(annotation.id);
+    manualLocationRequests.delete(annotation.id);
     guideAnnotated = true;
     markDirty(); clearEditor(); renderAnnotations(); window.HRUI.saved($('save-button'));
-    note(existing ? '批注已更新。准备好后，点击「交给 agent」交付本轮意见。' : '批注已添加。准备好后，点击「交给 agent」；下载副本可留作备份。');
+    startLocationReview();
+    note(targetChanged ? '新位置已保存，原定位保留作记录；交给 agent 时会使用新的位置。' : existing ? '批注已更新。准备好后，点击「交给 agent」交付本轮意见。' : '批注已添加。准备好后，点击「交给 agent」；下载副本可留作备份。');
   }
   function recordChange(before, after, index) {
     undoStack.push({before: before ? structuredClone(before) : null, after: after ? structuredClone(after) : null, index});
@@ -745,6 +827,7 @@
     }
     to.push(change);
     markDirty(); clearEditor(); setMode('browse'); renderAnnotations();
+    startLocationReview();
     note(redo ? '已重做批注操作，下载可保存最新结果。' : '已撤销上次批注操作，原批注内容和位置已恢复。');
   }
   function locate(annotation) {
@@ -758,7 +841,9 @@
       renderAnnotations(); return;
     }
     if (!previewReady) { note('页面还在载入，请稍后定位。', true); return; }
-    send('locate', {target: annotation.target, requestId: annotation.id});
+    const token = id();
+    manualLocationRequests.set(annotation.id, {token,revision:core.annotationRevision(annotation),target:JSON.stringify(annotation.target)});
+    send('locate', {target: annotation.target, requestId: annotation.id,locationToken:token});
   }
   function edit(annotation) {
     if (draftDirty() && !confirm('编辑框中有未保存的修改。确定切换到这条批注吗？')) return;
@@ -773,6 +858,17 @@
     draftTargetChanged = false;
     updateEditor(); renderAnnotations();
     $('comment-input').focus();
+  }
+  function reselect(annotation) {
+    if (busy || !previewReady) { note('文档还在载入，请稍后重新选择位置。',true); return; }
+    if (draftDirty() && !confirm('编辑框中有未保存的修改。确定切换到这条批注并重新选择位置吗？')) return;
+    editingId = annotation.id; draftBaseline = annotation.comment;
+    $('comment-input').value = annotation.comment;
+    pendingTarget = null; draftTargetChanged = false;
+    $('target-preview').hidden = true; send('clear-selection'); send('clear-focus');
+    setMode(annotation.kind === 'page' ? 'page' : annotation.kind);
+    updateEditor(); renderAnnotations();
+    note('在预览中重新选择位置，再点击「更新批注」。意见会保留，保存后原位置也会留作记录。');
   }
   async function download(requestedFormat) {
     if (draftDirty()) { note('编辑框中还有未保存的修改，请先点击「保存批注」或「更新批注」，再下载副本。', true); return; }
@@ -805,6 +901,8 @@
     for (const selector of ['#handoff-source', '#handoff-summary', '#agent-task-help', '#copy-agent-status', '#document-outline', '#document-search-results', '#document-search-status']) copy.querySelector(selector).replaceChildren();
     copy.querySelector('#document-search').value = ''; copy.querySelector('#document-search').removeAttribute('value');
     copy.querySelector('#task-details').removeAttribute('open');
+    copy.querySelector('#reload-review').hidden = true;
+    for (const selector of ['#reload-review-summary','#reload-review-detail']) copy.querySelector(selector).textContent = '';
     copy.querySelector('#recovery-banner').hidden = true;
     copy.querySelector('#onboarding-card').hidden = true;
     copy.querySelector('#drop-overlay').hidden = true;
@@ -1132,7 +1230,21 @@
     } else if (message.event === 'shortcut') { if (typeof message.action === 'string') shortcut(message.action); }
     else if (message.event === 'file-drag') $('drop-overlay').hidden = false;
     else if (message.event === 'dropped-files') { if (Array.isArray(message.files) && message.files.every(file => file instanceof File)) droppedFiles(message.files); }
-    else if (message.event === 'ready') { previewReady = true; send('set-mode', {mode: mode === 'whole' ? 'browse' : mode}); updateEditor(); }
+    else if (message.event === 'ready') { previewReady = true; send('set-mode', {mode: mode === 'whole' ? 'browse' : mode}); updateEditor(); startLocationReview(); }
+    else if (message.event === 'targets-checked') {
+      if (!locationRequest || message.requestId !== locationRequest.id || !Array.isArray(message.items) || message.items.length !== locationRequest.items.length) return;
+      const expected = new Map(locationRequest.items.map(item => [item.id,item]));
+      const seen = new Set();
+      if (!message.items.every(item => expected.has(item.id) && !seen.has(item.id) && (seen.add(item.id),true) && item.revision === expected.get(item.id).revision && ['exact','fallback','ambiguous','missing'].includes(item.status) && typeof item.reason === 'string' && item.reason.length <= 1000)) return;
+      clearTimeout(locationTimer);
+      for (const item of message.items) {
+        const annotation = data.annotations.find(annotation => annotation.id === item.id);
+        if (!annotation || core.annotationStatus(annotation) !== 'open' || core.annotationRevision(annotation) !== item.revision || JSON.stringify(annotation.target) !== JSON.stringify(expected.get(item.id).target)) continue;
+        locations.set(item.id, {status:item.status,message:locationDescription(item.status,item.reason)});
+      }
+      locationRequest = null;
+      renderLocationReview(); locationTimer = setTimeout(nextLocationBatch,0);
+    }
     else if (message.event === 'document-outline' && isDocx(data)) {
       if (!Array.isArray(message.items) || message.items.length > 1000 || !message.items.every(item => Number.isInteger(item.index) && item.index >= 0 && typeof item.text === 'string' && item.text.length <= 160 && item.level >= 1 && item.level <= 6)) return;
       documentOutline = message.items; renderDocumentNavigation();
@@ -1156,11 +1268,14 @@
         const target = JSON.parse(serialized);
         if (!target || target.kind !== mode || typeof target.selector !== 'string' || target.selector.length > 4096) return;
         core.validateTarget(target, target.kind);
-        setTarget(target); note('目标已选中，请填写修改意见。');
+        setTarget(target); note(editingId ? '新位置已选中，点击「更新批注」保存；原位置会保留作记录。' : '目标已选中，请填写修改意见。');
       } catch (error) { note(error.message, true); }
     } else if (message.event === 'located') {
-      if (!data.annotations.some(annotation => annotation.id === message.requestId) || !['exact', 'fallback', 'ambiguous', 'missing'].includes(message.status)) return;
-      const description = {exact: '已定位并核对内容', fallback: '通过上下文重新定位', ambiguous: '存在多个候选，需人工确认', missing: '目标无法确认，原页面可能已变化'}[message.status];
+      const request = manualLocationRequests.get(message.requestId);
+      const annotation = data.annotations.find(annotation => annotation.id === message.requestId);
+      if (!request || request.token !== message.locationToken || !annotation || core.annotationStatus(annotation) !== 'open' || core.annotationRevision(annotation) !== request.revision || JSON.stringify(annotation.target) !== request.target || !['exact', 'fallback', 'ambiguous', 'missing'].includes(message.status)) return;
+      manualLocationRequests.delete(message.requestId);
+      const description = locationDescription(message.status);
       const reason = typeof message.reason === 'string' ? message.reason.slice(0, 500) : '';
       locations.set(message.requestId, {status: message.status, message: description + (reason ? ' · ' + reason : '')});
       renderAnnotations(); note(description, ['missing', 'ambiguous'].includes(message.status));
@@ -1182,6 +1297,9 @@
   $('handoff-import-results').addEventListener('click', () => { window.HRUI.closeDialog($('agent-task-dialog')); $('results-input').click(); });
   $('handoff-reload').addEventListener('click', () => { window.HRUI.closeDialog($('agent-task-dialog')); reloadSource(); });
   $('handoff-export-json').addEventListener('click', () => run(() => download('annotations')));
+  $('review-attention').addEventListener('click', () => { $('annotation-filter').value = 'attention'; window.HRUI.syncSelect('annotation-filter'); renderAnnotations(); $('annotation-list').scrollIntoView({block:'nearest',behavior:'smooth'}); });
+  $('review-retry').addEventListener('click', startLocationReview);
+  $('review-dismiss').addEventListener('click', () => { if (locationReview) locationReview.dismissed = true; renderLocationReview(); });
   $('compatible-open').addEventListener('click', () => { window.HRUI.closeDialog($('settings-dialog')); openCompatible(); });
   $('compatible-folder').addEventListener('click', () => { window.HRUI.closeDialog($('settings-dialog')); openCompatible(false, true); });
   $('compatible-reload').addEventListener('click', () => {
@@ -1239,6 +1357,7 @@
     if (!annotation) return;
     if (button.dataset.action === 'locate') locate(annotation);
     else if (button.dataset.action === 'edit') edit(annotation);
+    else if (button.dataset.action === 'reselect') reselect(annotation);
     else if (button.dataset.action === 'status') { try { toggleStatus(annotation); } catch (error) { note(error.message, true); } }
     else if (button.dataset.action === 'delete') {
       if (draftDirty()) { note('编辑框中有未保存的意见，请先保存或取消编辑，再删除批注。', true); return; }
@@ -1247,6 +1366,7 @@
       data.annotations = data.annotations.filter(item => item.id !== annotation.id);
       if (editingId === annotation.id) clearEditor();
       locations.delete(annotation.id); markDirty(); renderAnnotations(); updateEditor(); note('批注已删除，可撤销恢复；下载新副本即可保存。');
+      startLocationReview();
     }
   });
   $('data-button').addEventListener('click', () => {

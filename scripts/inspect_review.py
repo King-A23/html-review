@@ -4,6 +4,7 @@ import gzip
 import hashlib
 import io
 import json
+import math
 import posixpath
 import re
 import sys
@@ -65,8 +66,9 @@ def validate_docx_targets(data, expected):
         raise ValueError("DOCX 资源必须保留在原始 ZIP 中，resources 必须为空列表")
     if any(key in source for key in ("encoding", "html", "index", "previewHtml", "blockIndex")):
         raise ValueError("DOCX source 不应包含编码或预览缓存")
-    for annotation in data["annotations"]:
-        target = annotation.get("target")
+    targets = [annotation.get("target") for annotation in data["annotations"]]
+    targets.extend(event["target"] for annotation in data["annotations"] for event in annotation.get("targetHistory", []))
+    for target in targets:
         if not isinstance(target, dict) or target.get("kind") not in ("text", "element", "page"):
             raise ValueError("DOCX 批注目标无效")
         if target["kind"] == "page" and target.get("scope") != "whole-document":
@@ -350,6 +352,141 @@ def string_length(value):
     return len(value.encode("utf-16-le", errors="surrogatepass")) // 2
 
 
+def validate_dimensions(value):
+    if not isinstance(value, dict):
+        raise ValueError("定位视口或边界必须为对象")
+    for key in ("x", "y", "width", "height", "scrollX", "scrollY", "devicePixelRatio"):
+        if key in value and (type(value[key]) not in (int, float) or not math.isfinite(value[key]) or
+                             (key in ("width", "height", "devicePixelRatio") and value[key] < 0)):
+            raise ValueError("定位视口或边界包含无效尺寸")
+
+
+def validate_history_target(target):
+    """Validate historical HTML anchors by their own kind, without source evidence lookup."""
+    if not isinstance(target, dict) or target.get("kind") not in ("text", "element", "page"):
+        raise ValueError("重新定位历史目标类型无效")
+    kind = target["kind"]
+
+    def text(value, maximum, required=False):
+        if not isinstance(value, str) or string_length(value) > maximum or (required and not value.strip()):
+            raise ValueError("重新定位历史目标文字字段无效")
+
+    def integer(value):
+        return type(value) is int and 0 <= value <= 9007199254740991
+
+    def dom_path(value):
+        if not isinstance(value, list) or len(value) > 150 or any(not integer(index) for index in value):
+            raise ValueError("重新定位历史 DOM 路径无效")
+
+    nodes = [0]
+    def tree(value, depth=0):
+        nodes[0] += 1
+        if nodes[0] > 30000 or depth > 24:
+            raise ValueError("重新定位历史目标过于复杂")
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if key in ("__proto__", "prototype", "constructor"):
+                    raise ValueError("重新定位历史包含不安全字段")
+                tree(child, depth + 1)
+        elif isinstance(value, list):
+            for child in value:
+                tree(child, depth + 1)
+        elif isinstance(value, str):
+            text(value, 250000)
+        elif type(value) in (int, float) and not math.isfinite(value):
+            raise ValueError("重新定位历史包含无效数字")
+    tree(target)
+    for key in ("text", "selector", "tag", "id", "scope", "textFingerprint"):
+        if key in target:
+            text(target[key], 20000 if key == "text" else 4096)
+    if kind != "page":
+        text(target.get("selector"), 4096, True)
+    if kind == "element" and (not isinstance(target.get("tag"), str) or not re.fullmatch(r"[a-zA-Z][\w:-]*", target["tag"])):
+        raise ValueError("重新定位历史元素类型无效")
+    if kind == "page" and target.get("scope") == "page":
+        if any(type(target.get(key)) is not int for key in ("pageIndex", "pageCount")) or not 1 <= target["pageIndex"] <= target["pageCount"] <= 1000:
+            raise ValueError("重新定位历史页码无效")
+        text(target.get("pageTitle"), 100)
+        text(target.get("selector"), 4096)
+        if not target.get("tag"):
+            raise ValueError("重新定位历史单页目标缺少元素类型")
+    if "quote" in target or kind == "text":
+        quote = target.get("quote")
+        if not isinstance(quote, dict):
+            raise ValueError("重新定位历史原文无效")
+        for key in ("exact", "prefix", "suffix"):
+            if key in quote or (key == "exact" and kind == "text"):
+                text(quote.get(key), 20000, key == "exact" and kind == "text")
+    if "attributes" in target:
+        if not isinstance(target["attributes"], dict):
+            raise ValueError("重新定位历史元素属性无效")
+        for value in target["attributes"].values():
+            text(value, 16000)
+    if "classes" in target:
+        if not isinstance(target["classes"], list) or len(target["classes"]) > 4000:
+            raise ValueError("重新定位历史样式类无效")
+        for value in target["classes"]:
+            text(value, 4096)
+    if "domPath" in target:
+        dom_path(target["domPath"])
+    if "range" in target:
+        if not isinstance(target["range"], dict):
+            raise ValueError("重新定位历史文字范围无效")
+        for key in ("start", "end"):
+            endpoint = target["range"].get(key)
+            if not isinstance(endpoint, dict) or not integer(endpoint.get("offset")):
+                raise ValueError("重新定位历史文字范围无效")
+            dom_path(endpoint.get("path"))
+    if "position" in target:
+        value = target["position"]
+        if not isinstance(value, dict) or not integer(value.get("start")) or not integer(value.get("end")) or value["start"] >= value["end"]:
+            raise ValueError("重新定位历史文字偏移无效")
+    if "textLength" in target and not integer(target["textLength"]):
+        raise ValueError("重新定位历史文字长度无效")
+    if "textFingerprint" in target and not re.fullmatch(r"[a-f0-9]{8}", target["textFingerprint"]):
+        raise ValueError("重新定位历史文字指纹无效")
+    if "attributeFingerprints" in target:
+        if not isinstance(target["attributeFingerprints"], dict):
+            raise ValueError("重新定位历史属性指纹无效")
+        for value in target["attributeFingerprints"].values():
+            if not isinstance(value, dict) or not integer(value.get("length")) or not isinstance(value.get("hash"), str) or not re.fullmatch(r"[a-f0-9]{8}", value["hash"]):
+                raise ValueError("重新定位历史属性指纹无效")
+    if "context" in target:
+        context = target["context"]
+        if not isinstance(context, dict):
+            raise ValueError("重新定位历史上下文无效")
+        if "sourcePath" in context:
+            text(context["sourcePath"], 4096, True)
+        for key in ("ancestor", "siblingBefore", "siblingAfter"):
+            neighbor = context.get(key)
+            if neighbor is None:
+                continue
+            if not isinstance(neighbor, dict):
+                raise ValueError("重新定位历史相邻上下文无效")
+            for field in ("tag", "id", "text"):
+                if field in neighbor:
+                    text(neighbor[field], 4096)
+    for key in ("rect", "viewport"):
+        if key in target:
+            validate_dimensions(target[key])
+
+
+def validate_target_history(annotation, revision):
+    history = annotation.get("targetHistory", [])
+    if not isinstance(history, list) or len(history) > 100:
+        raise ValueError("重新定位历史无效或超过 100 条")
+    previous_revision = 0
+    for event in history:
+        if not isinstance(event, dict) or type(event.get("revision")) is not int or not previous_revision < event["revision"] < revision:
+            raise ValueError("重新定位历史 revision 必须严格递增且小于当前版本")
+        previous_revision = event["revision"]
+        validate_history_target(event.get("target"))
+        if "view" in event:
+            validate_dimensions(event["view"])
+        if not valid_time(event.get("at")):
+            raise ValueError("重新定位历史时间无效")
+
+
 def normalize_annotations(annotations):
     ids = set()
     for annotation in annotations:
@@ -366,6 +503,7 @@ def normalize_annotations(annotations):
         revision = annotation.get("revision", 1)
         if type(revision) is not int or revision < 1 or revision > 9007199254740991:
             raise ValueError("批注 revision 必须是正整数：" + annotation_id)
+        validate_target_history(annotation, revision)
         status = annotation.get("status", "open")
         if status not in ("open", "resolved"):
             raise ValueError("批注状态无效：" + annotation_id)
@@ -447,7 +585,15 @@ def inspect(review_path, original_path):
     else:
         print("文本编码：", source.get("encoding", "未注明"))
     print("批注数量：", len(data["annotations"]))
-    print(json.dumps([{**annotation, "taskState": task_state(annotation)} for annotation in data["annotations"]], ensure_ascii=False, indent=2))
+    displayed = []
+    for annotation in data["annotations"]:
+        item = {key: value for key, value in annotation.items() if key != "targetHistory"}
+        item["taskState"] = task_state(annotation)
+        if "targetHistory" in annotation:
+            item["targetHistorySummary"] = [{"revision": event["revision"], "kind": event["target"]["kind"]}
+                                            for event in annotation["targetHistory"]]
+        displayed.append(item)
+    print(json.dumps(displayed, ensure_ascii=False, indent=2))
     if actual != expected or len(actual_bytes) != source["byteLength"]:
         print(
             "版本不一致：请先比较原文件版本并核实每个目标；不要直接套用定位或覆盖文件。",

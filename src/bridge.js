@@ -414,6 +414,9 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     if (hits.length > 1) return { status: 'ambiguous', reason: '存在多个相同元素，无法可靠确定批注对应哪一个。' };
     return { status: 'missing', reason: '原元素内容或属性已变化，无法可靠定位；请根据记录的原文及上下文人工核对。' };
   }
+  function resolveTarget(target) {
+    return target.kind === 'page' ? ((target.scope === 'whole-document' || !target.selector) ? {status:'exact',reason:'这是针对整个文件的批注。'} : locateElement(target)) : target.kind === 'text' ? locateText(target) : target.kind === 'element' ? locateElement(target) : {status:'missing',reason:'未知的批注定位类型。'};
+  }
   window.addEventListener('message', function (event) {
     const message = event.data;
     if (event.source !== parent || !message || message.hr !== true || message.channel !== channel) return;
@@ -454,16 +457,25 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
           focus(element, false);
           send('target', { target: Object.assign(baseTarget(element), { kind: 'element' }) });
         }
+      } else if (message.command === 'check-targets' && typeof message.requestId === 'string' && Array.isArray(message.items) && message.items.length <= 10) {
+        // Verification must not move the viewport, focus a target or change selection.
+        const items = message.items.map(item => {
+          let result;
+          try { result = resolveTarget(item.target || {}); }
+          catch (_) { result = {status:'missing',reason:'定位无法核对，请手动检查原文。'}; }
+          return {id:item.id,revision:item.revision,status:result.status,reason:result.reason};
+        });
+        send('targets-checked', {requestId:message.requestId,items});
       } else if (message.command === 'locate') {
         const target = message.target || {};
         clearFocus();
-        const result = target.kind === 'page' ? ((target.scope === 'whole-document' || !target.selector) ? { status: 'exact', reason: '这是针对整个文件的批注。' } : locateElement(target)) : target.kind === 'text' ? locateText(target) : target.kind === 'element' ? locateElement(target) : { status: 'missing', reason: '未知的批注定位类型。' };
+        const result = resolveTarget(target);
         if (result.value) focus(result.value, true);
         else if (target.kind === 'page') window.scrollTo({ top: 0, behavior: 'instant' });
-        send('located', { requestId: message.requestId, status: result.status, reason: result.reason });
+        send('located', { requestId: message.requestId, locationToken:message.locationToken, status: result.status, reason: result.reason });
       }
     } catch (error) {
-      if (message.command === 'locate') send('located', { requestId: message.requestId, status: 'missing', reason: '定位失败：' + error.message });
+      if (message.command === 'locate') send('located', { requestId: message.requestId, locationToken:message.locationToken, status: 'missing', reason: '定位失败：' + error.message });
       else warn(error);
     }
   });

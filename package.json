@@ -22,7 +22,8 @@
     "test:docx-errors": "node tests/docx-errors.browser.mjs",
     "test:docx-location": "node tests/docx-location.browser.mjs",
     "test:docx-session": "node tests/docx-session.browser.mjs",
-    "test:simplification": "node tests/ui-simplification.browser.mjs"
+    "test:simplification": "node tests/ui-simplification.browser.mjs",
+    "test:reload-review": "node tests/reload-review.browser.mjs"
   },
   "engines": {
     "node": ">=20"

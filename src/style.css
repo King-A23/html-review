@@ -123,6 +123,15 @@ textarea:disabled{background:#f8f9f4}
 .annotation-actions .delete-button{margin-left:auto;color:#a2ac93}
 .location-status{font-size:9px;color:#8b9a76;line-height:1.6;margin-top:9px}
 .location-status.missing,.location-status.ambiguous{color:#b26045}
+.location-status.fallback{color:#927244}
+.reselect-button{color:#a55f43!important;font-weight:550!important}
+.reload-review{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 22px;background:#f3f5ed;border-bottom:1px solid #dde4d2}
+.reload-review strong{font-size:13px;font-weight:600;color:#425634}
+.reload-review p{margin:5px 0 0;font-size:11px;line-height:1.7;color:#617353}
+.reload-review #reload-review-detail{color:#818c77}
+.reload-review-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.reload-review-actions button{font-size:11px;padding:8px 10px}
+@media(max-width:800px){.reload-review{padding:12px 16px;align-items:flex-start;flex-direction:column;gap:8px}.reload-review-actions{align-self:flex-end}}
 .sidebar-footer{padding:15px 24px 18px;border-top:1px solid var(--line);font-size:9px;line-height:1.6;color:#98a387;display:grid;gap:4px;background:#fafbf4}
 .recovery-tools{display:flex;gap:14px}
 .sidebar-footer .text-button{font-size:9px;padding:2px 0}

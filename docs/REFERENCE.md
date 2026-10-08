@@ -144,10 +144,13 @@ HTML 保存时不再携带工具内置示例，批注 JSON 使用紧凑格式；
 | `annotations[].comment` | 用户填写的修改意见。 |
 | `annotations[].revision`、`status` | 意见版本，以及 `open`（待处理）/`resolved`（已完成）；旧记录默认第 1 版、待处理。 |
 | `annotations[].history` | 对应意见版本的处理者、时间、状态与说明；不会覆盖原文与定位。 |
+| `annotations[].targetHistory` | 可选的重新定位历史数组；每项保存上次的 `revision`、`target`、可选 `view`，以及重定位发生时间 `at`。最多 100 条，版本须严格递增且小于当前批注 `revision`；旧批注没有该字段时视为空。 |
 | `annotations[].taskState` | 轻量导出、复制任务与静态检查器中的派生状态：`new` / `updated` / `pending` / `completed`。 |
 | `annotations[].createdAt`、`updatedAt` | 意见创建和最后修改时间；agent 回报不改变意见版本或该时间。 |
 | `annotations[].target` | 相应类型的定位、原文、元素和上下文数据。读取时应检查实际字段。 |
 | `annotations[].view` | 保存该批注时的预览视口 `width`、`height` 和 `devicePixelRatio`。 |
+
+重新定位会把之前的定位与视口写入 `targetHistory`，再更新当前 `kind`、`target`、`view` 并增加批注版本。历史目标须按各自的 `target.kind` 校验，允许与当前类型不同；尺寸、坐标和时间仍须有效。该历史只作记录，agent 修改应以当前 `target`、`view` 和意见为依据。完整副本、轻量导出以及导入处理结果均保留历史；静态检查器只显示历史的版本和类型摘要，不展开旧目标原文。
 
 文字、元素和单页目标的主要定位字段包括：
 
@@ -194,7 +197,7 @@ DOCX 的 `source.type` 固定为 `docx`，`source.adapterVersion` 固定为字�
 
 `blocks` 是所选原文对应的 OOXML 块；整体意见可以为空。`part` 支持 `word/document.xml`、`word/footnotes.xml` 和 `word/endnotes.xml`。`path` 是绝对子节点路径，每一步都包含命名空间前缀及从 1 开始的同标签兄弟索引；它不是可执行的任意 XPath，也不是预览 DOM 的路径。`paraId` 存在时须与原段落属性核对。表格内段落另含 `table: {path, row, column}`，行、列均为原始 XML 从 1 开始的索引；合并单元格不改变这一计数。图片另含 `image: {relationshipId, mediaPath, sha256}`，指向该 part 的内部图片关系及 `word/media/` 中的原始图片字节。
 
-`target.docx.sourceSha256` 记录**保存该目标时**的 DOCX 哈希。重载修改后的源文件时，旧批注（包括已完成记录）保留原定位，因此它可以与当前 `source.sha256` 不同。检查器仍接受这些记录并允许生成处理结果，但把它们标为旧版本目标，不对当前 ZIP 强行校验旧路径、偏移或图片；只有目标哈希与当前原文件一致时才输出对应原文证据。旧意见应结合其原文快照和上下文重新核对，不能直接套用旧定位。
+`target.docx.sourceSha256` 记录**保存该目标时**的 DOCX 哈希。重载修改后的源文件时，旧批注（包括已完成记录）保留原定位，因此它可以与当前 `source.sha256` 不同。检查器仍接受这些记录并允许生成处理结果，但把它们标为旧版本目标，不对当前 ZIP 强行校验旧路径、偏移或图片；只有目标哈希与当前原文件一致时才输出对应原文证据。旧意见应结合其原文快照和上下文重新核对，不能直接套用旧定位。`targetHistory[].target.docx.sourceSha256` 同样属于各自保存目标时的版本；检查器校验其结构，不用当前源文件哈希拒绝旧历史，也不在当前 ZIP 中解析旧历史路径。
 
 文字范围的 `start` 与 `end` 必须同时存在，分别给出块 ID 与段落预览字符串中的 UTF-16 码元偏移。段落字符串按原顺序拼接 `w:t`，制表符为 `\t`，普通 `w:br` 与 `w:cr` 为 `\n`；页、列分隔不增加字符。`w:noBreakHyphen` 与 `w:softHyphen` 分别为 U+2011 与 U+00AD。显示插入内容，忽略删除内容。脚注标号与返回链接等预览生成字符不属于原文偏移。`quote.exact/prefix/suffix` 保留精确选中文字及前后文，供再次核对。不要将这些偏移当作 XML、ZIP 字节或 Word 光标坐标。
 
