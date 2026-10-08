@@ -17,7 +17,11 @@
     "test:results": "node tests/results.browser.mjs",
     "site:build": "npm run release:prepare && node scripts/build_site.mjs",
     "test:site": "node tests/site.browser.mjs",
-    "release:prepare": "npm run check && node scripts/python.mjs scripts/package_release.py"
+    "release:prepare": "npm run check && node scripts/python.mjs scripts/package_release.py",
+    "test:docx": "node tests/docx.browser.mjs",
+    "test:docx-errors": "node tests/docx-errors.browser.mjs",
+    "test:docx-location": "node tests/docx-location.browser.mjs",
+    "test:docx-session": "node tests/docx-session.browser.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -26,6 +30,7 @@
     "html-review": "bin/html-review.mjs"
   },
   "devDependencies": {
+    "esbuild": "0.25.12",
     "playwright": "1.62.0"
   },
   "license": "MIT",
@@ -36,5 +41,10 @@
   "homepage": "https://king-a23.github.io/html-review/",
   "bugs": {
     "url": "https://github.com/King-A23/html-review/issues"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "0.8.15",
+    "jszip": "3.10.2",
+    "mammoth": "1.13.0"
   }
 }

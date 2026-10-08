@@ -10,6 +10,7 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from zipfile import BadZipFile
 
 from inspect_review import configure_stdio, read_review, string_length
 
@@ -95,7 +96,7 @@ def main(argv=None):
                 temporary_path.unlink(missing_ok=True)
         print(str(output.resolve()))
         return 0
-    except (OSError, EOFError, UnicodeDecodeError, ValueError, KeyError, TypeError, binascii.Error, gzip.BadGzipFile) as error:
+    except (OSError, EOFError, UnicodeDecodeError, ValueError, KeyError, TypeError, binascii.Error, gzip.BadGzipFile, BadZipFile, RuntimeError, RecursionError) as error:
         print("生成结果失败：" + str(error), file=sys.stderr)
         return 1
 

@@ -3,6 +3,7 @@ test-results/
 *.log
 .DS_Store
 output/playwright/
+output/docx-review/
 .playwright-cli/
 __pycache__/
 *.pyc

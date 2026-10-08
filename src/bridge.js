@@ -1,5 +1,5 @@
 /* Runs inside the opaque-origin preview iframe. Keep this function self-contained. */
-window.HRBridge = function HRBridge(channel, shortcutFor) {
+window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   'use strict';
   const OWNED = 'data-html-review-owned';
   const EXCLUDED = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'HEAD']);
@@ -11,6 +11,30 @@ window.HRBridge = function HRBridge(channel, shortcutFor) {
   let scheduled = false;
   let lastHover = null;
   let lastSelectedElement = null;
+  const docxHash = docxMeta?.sourceSha256 || '';
+  let docxMap = {};
+  try { docxMap = JSON.parse(document.querySelector('script[data-docx-map]')?.textContent || '{}'); } catch (_) {}
+  function docxMapping(element, range) {
+    if(!docxHash) return undefined;
+    let mapped = element.closest('[data-docx-id]');
+    let nodes = mapped ? [mapped] : Array.from(element.querySelectorAll('[data-docx-id]'));
+    if(range) nodes = Array.from(document.querySelectorAll('span[data-docx-id]')).filter(node=>range.intersectsNode(node) && docxMap[node.getAttribute('data-docx-id')] && !docxMap[node.getAttribute('data-docx-id')].image);
+    const blocks = nodes.map(node=>docxMap[node.getAttribute('data-docx-id')]).filter(Boolean);
+    const mapping = {adapterVersion:'1',sourceSha256:docxHash,blocks};
+    if(range) {
+      function endpoint(container,offset) {
+        const element = container.nodeType===1 ? container : container.parentElement;
+        const block = element.closest('span[data-docx-id]');
+        if(!block || !docxMap[block.getAttribute('data-docx-id')]) return null;
+        const prefix = document.createRange();prefix.selectNodeContents(block);prefix.setEnd(container,offset);
+        const clone=prefix.cloneContents();for(const auxiliary of clone.querySelectorAll('['+OWNED+']')) auxiliary.remove();
+        return {id:block.getAttribute('data-docx-id'),offset:clone.textContent.length};
+      }
+      mapping.start=endpoint(range.startContainer,range.startOffset);
+      mapping.end=endpoint(range.endContainer,range.endOffset);
+    }
+    return mapping;
+  }
 
   function send(event, data) {
     parent.postMessage(Object.assign({ hr: true, channel: channel, event: event }, data || {}), '*');
@@ -151,13 +175,20 @@ window.HRBridge = function HRBridge(channel, shortcutFor) {
   }
   function baseTarget(element) {
     const text = elementText(element);
-    return {
+    const target = {
       selector: selector(element), domPath: nodePath(element, true),
       tag: element.localName, id: element.id || '', classes: Array.from(element.classList),
       attributes: attributes(element), attributeFingerprints: attributeFingerprints(element), text: text.slice(0, 1600),
       textLength: text.length, textFingerprint: fingerprint(text),
       context: context(element), rect: box(element.getBoundingClientRect())
     };
+    if(docxHash) {
+      target.docx=docxMapping(element);
+      // Source media hashes carry image evidence without putting Base64 in JSON.
+      delete target.attributes.src;delete target.attributeFingerprints.src;
+      target.docx.occurrences=Array.from(document.getElementsByTagName(element.localName)).filter(node=>matchesElement(node,target)).length;
+    }
+    return target;
   }
   let pages = [];
   let pageSignature = '';
@@ -239,6 +270,14 @@ window.HRBridge = function HRBridge(channel, shortcutFor) {
         end: { path: nodePath(range.endContainer, false), offset: range.endOffset }
       }, rect: box(range.getBoundingClientRect())
     });
+    if(docxHash) {
+      // Browser selections can use paragraph/container boundaries (for example
+      // selecting a whole paragraph). Resolve them to actual source text nodes.
+      target.docx=docxMapping(element,rangeAt(pos.start,pos.end,data) || range);
+      let count=0,offset=0;while((offset=data.text.indexOf(pos.text,offset))>=0 && count<=10000) {count++;offset++;}
+      target.docx.occurrences=count;
+      if(!target.docx.start || !target.docx.end) {send('warning',{message:'此选区含无法对应源文档的辅助内容，请选择正文文字。'});return;}
+    }
     focus(range, false);
     send('target', { target: target });
   }
@@ -313,8 +352,9 @@ window.HRBridge = function HRBridge(channel, shortcutFor) {
     const data = stream();
     const quote = target.quote || { exact: target.text };
     let range = restoreRange(target);
-    if (validQuote(range, quote, data, true)) return { value: range, status: 'exact', reason: 'DOM 范围、原文及上下文均匹配。' };
-    if (target.position) {
+    const sameVersion=!target.docx || target.docx.sourceSha256===docxHash;
+    if (sameVersion && validQuote(range, quote, data, true)) return { value: range, status: 'exact', reason: 'DOM 范围、原文及上下文均匹配。' };
+    if (sameVersion && target.position) {
       range = rangeAt(target.position.start, target.position.end, data);
       if (validQuote(range, quote, data, true)) return { value: range, status: 'fallback', reason: 'DOM 路径已变化，使用原文和上下文验证了文字偏移位置。' };
     }
@@ -329,6 +369,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor) {
       if (hits.length > 10000) return { status: 'ambiguous', reason: '原文重复过多，无法可靠定位。' };
     }
     let candidates = hits;
+    if(!sameVersion && target.docx?.occurrences>hits.length && target.docx.occurrences>1) return {status:'ambiguous',reason:'原文曾有多处重复且候选数量已变化，无法确认是否为被删除的原目标。'};
     if (hits.length > 1) candidates = hits.filter(p => contextMatches(p.start, p.end, quote, data.text));
     if (candidates.length === 1) {
       range = rangeAt(candidates[0].start, candidates[0].end, data);
@@ -339,7 +380,8 @@ window.HRBridge = function HRBridge(channel, shortcutFor) {
   }
   function matchesElement(element, target) {
     if (!element || element.nodeType !== 1 || own(element) || element.localName !== target.tag) return false;
-    if ((element.id || '') !== (target.id || '')) return false;
+    if (!target.docx && (element.id || '') !== (target.id || '')) return false;
+    if(target.docx && target.tag==='img') return element.getAttribute('data-docx-media-hash') === target.docx.blocks.find(block=>block.image)?.image.sha256 && ['alt','title'].every(key=>(element.getAttribute(key)||'')===(target.attributes?.[key]||''));
     const stableClasses = classes => classes.filter(value => target.scope !== 'page' || !['active', 'present', 'past', 'future', 'current', 'is-active'].includes(value)).sort().join(' ');
     if (Array.isArray(target.classes) && stableClasses(target.classes) !== stableClasses(Array.from(element.classList))) return false;
     for (const key of Object.keys(target.attributes || {})) {
@@ -359,12 +401,14 @@ window.HRBridge = function HRBridge(channel, shortcutFor) {
   }
   function locateElement(target) {
     const selected = target.selector ? query(target.selector) : [];
-    if (selected.length === 1 && matchesElement(selected[0], target)) return { value: selected[0], status: 'exact', reason: '选择器、元素属性和原内容均匹配。' };
+    const sameVersion=!target.docx || target.docx.sourceSha256===docxHash;
+    if (sameVersion && selected.length === 1 && matchesElement(selected[0], target)) return { value: selected[0], status: 'exact', reason: '选择器、元素属性和原内容均匹配。' };
     const byPath = fromPath(target.domPath, true);
-    if (matchesElement(byPath, target) && contextEqual(byPath, target)) return { value: byPath, status: 'fallback', reason: '选择器失效，DOM 路径、元素内容及相邻上下文匹配。' };
+    if (sameVersion && matchesElement(byPath, target) && contextEqual(byPath, target)) return { value: byPath, status: 'fallback', reason: '选择器失效，DOM 路径、元素内容及相邻上下文匹配。' };
     if (!target.tag || !/^[a-zA-Z][\w:-]*$/.test(target.tag)) return { status: 'missing', reason: '批注缺少有效的元素类型。' };
     const hits = Array.from(document.getElementsByTagName(target.tag)).filter(e => matchesElement(e, target));
     let candidates = hits;
+    if(!sameVersion && target.docx?.occurrences>hits.length && target.docx.occurrences>1) return {status:'ambiguous',reason:'原元素曾有多处相同内容且候选数量已变化，无法确认原目标。'};
     if (hits.length > 1) candidates = hits.filter(e => contextEqual(e, target));
     if (candidates.length === 1) return { value: candidates[0], status: 'fallback', reason: '原路径已变化，按唯一匹配的元素内容及属性定位；请核对。' };
     if (hits.length > 1) return { status: 'ambiguous', reason: '存在多个相同元素，无法可靠确定批注对应哪一个。' };
@@ -442,6 +486,12 @@ window.HRBridge = function HRBridge(channel, shortcutFor) {
   document.addEventListener('click', function (event) {
     const element = event.target && (event.target.nodeType === 1 ? event.target : event.target.parentElement);
     if (!element || own(element)) return;
+    if(docxHash && mode==='browse') {
+      const link=element.closest('a[href]');
+      if(link && /^(https?:|mailto:)/i.test(link.getAttribute('href'))) {
+        event.preventDefault();send('external-link',{url:link.getAttribute('href')});return;
+      }
+    }
     if (mode === 'page') {
       event.preventDefault(); event.stopImmediatePropagation();
       try { discoverPages(); capturePage(pages.find(page => page.contains(element))); } catch (error) { warn(error); }

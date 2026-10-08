@@ -2,18 +2,232 @@ import base64
 import binascii
 import gzip
 import hashlib
+import io
 import json
+import posixpath
 import re
 import sys
 from datetime import datetime
 from html.parser import HTMLParser
 from pathlib import Path
+from zipfile import ZipFile, BadZipFile
+from xml.etree import ElementTree as ET
 
 
 FULL_FORMAT = "html-review"
 ANNOTATIONS_FORMAT = "html-review-annotations"
 SCHEMA_VERSION = 1
 SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
+DOCX_PARTS = {"word/document.xml", "word/footnotes.xml", "word/endnotes.xml"}
+DOCX_NAMESPACES = {
+    "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+    "w14": "http://schemas.microsoft.com/office/word/2010/wordml",
+    "a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+    "wp": "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
+    "pic": "http://schemas.openxmlformats.org/drawingml/2006/picture",
+    "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+    "v": "urn:schemas-microsoft-com:vml",
+}
+DOCX_STEP_RE = re.compile(r"([A-Za-z][A-Za-z0-9]*):([A-Za-z][A-Za-z0-9]*)\[([1-9][0-9]*)\]")
+
+
+def docx_path_steps(path):
+    """Parse only absolute child paths; never execute user supplied XPath."""
+    if not isinstance(path, str) or not path.startswith("/") or len(path) > 8192:
+        raise ValueError("DOCX 路径无效")
+    steps = []
+    for segment in path[1:].split("/"):
+        match = DOCX_STEP_RE.fullmatch(segment)
+        if not match or match[1] not in DOCX_NAMESPACES or len(match[3]) > 9:
+            raise ValueError("DOCX 路径必须为带命名空间和 1 起始索引的子节点路径")
+        steps.append(("{" + DOCX_NAMESPACES[match[1]] + "}" + match[2], int(match[3])))
+    return steps
+
+
+def resolve_docx_path(root, path):
+    steps = docx_path_steps(path)
+    if not steps or steps[0] != (root.tag, 1):
+        raise ValueError("DOCX 路径根节点不匹配：" + path)
+    node = root
+    for tag, index in steps[1:]:
+        children = [child for child in node if child.tag == tag]
+        if index > len(children):
+            raise ValueError("DOCX 路径不存在：" + path)
+        node = children[index - 1]
+    return node
+
+
+def validate_docx_targets(data, expected):
+    source = data["source"]
+    if source.get("type") != "docx" or source.get("adapterVersion") != "1":
+        raise ValueError("DOCX source 类型或适配器版本无效")
+    if data.get("resources") != []:
+        raise ValueError("DOCX 资源必须保留在原始 ZIP 中，resources 必须为空列表")
+    if any(key in source for key in ("encoding", "html", "index", "previewHtml", "blockIndex")):
+        raise ValueError("DOCX source 不应包含编码或预览缓存")
+    for annotation in data["annotations"]:
+        target = annotation.get("target")
+        if not isinstance(target, dict) or target.get("kind") not in ("text", "element", "page"):
+            raise ValueError("DOCX 批注目标无效")
+        if target["kind"] == "page" and target.get("scope") != "whole-document":
+            raise ValueError("DOCX 不支持单页批注")
+        mapping = target.get("docx")
+        if not isinstance(mapping, dict) or mapping.get("adapterVersion") != "1":
+            raise ValueError("DOCX 目标适配器版本无效")
+        if not isinstance(mapping.get("sourceSha256"), str) or not SHA256_RE.fullmatch(mapping["sourceSha256"]):
+            raise ValueError("DOCX 目标源文件哈希无效")
+        blocks = mapping.get("blocks")
+        if not isinstance(blocks, list) or len(blocks) > 10000:
+            raise ValueError("DOCX 目标 blocks 无效")
+        ids = set()
+        for block in blocks:
+            if not isinstance(block, dict) or not isinstance(block.get("id"), str) or not block["id"] or block["id"] in ids:
+                raise ValueError("DOCX block ID 无效或重复")
+            ids.add(block["id"])
+            if block.get("part") not in DOCX_PARTS:
+                raise ValueError("DOCX block part 不受支持")
+            docx_path_steps(block.get("path"))
+            if "paraId" in block and not isinstance(block["paraId"], str):
+                raise ValueError("DOCX paraId 无效")
+            if "table" in block:
+                table = block["table"]
+                if not isinstance(table, dict) or any(type(table.get(key)) is not int or table[key] < 1 for key in ("row", "column")):
+                    raise ValueError("DOCX 表格行列必须为 1 起始整数")
+                docx_path_steps(table.get("path"))
+            if "image" in block:
+                image = block["image"]
+                if not isinstance(image, dict) or not isinstance(image.get("relationshipId"), str) or not image["relationshipId"] or not isinstance(image.get("mediaPath"), str) or not image["mediaPath"].startswith("word/media/") or ".." in image["mediaPath"].split("/") or "\\" in image["mediaPath"] or not isinstance(image.get("sha256"), str) or not SHA256_RE.fullmatch(image["sha256"]):
+                    raise ValueError("DOCX 图片映射无效")
+        for endpoint in ("start", "end"):
+            if endpoint in mapping:
+                point = mapping[endpoint]
+                if not isinstance(point, dict) or point.get("id") not in ids or type(point.get("offset")) is not int or point["offset"] < 0:
+                    raise ValueError("DOCX 文字偏移无效")
+        if ("start" in mapping) != ("end" in mapping):
+            raise ValueError("DOCX 文字范围必须同时提供 start 和 end")
+        if target["kind"] == "text" and "start" not in mapping:
+            raise ValueError("DOCX 文字目标缺少 start 和 end")
+        if not blocks and target.get("scope") != "whole-document":
+            raise ValueError("DOCX 非整体目标缺少 blocks")
+
+
+def bounded_docx_archive(raw):
+    archive = ZipFile(io.BytesIO(raw))
+    entries = archive.infolist()
+    if len(entries) > 3000 or sum(info.file_size for info in entries) > 100 * 1024 * 1024:
+        archive.close()
+        raise ValueError("DOCX ZIP 超出 3000 文件或 100 MiB 解压大小限制")
+    names = [info.filename for info in entries]
+    if len(set(names)) != len(names) or any(name.startswith("/") or "\\" in name or ".." in name.split("/") for name in names):
+        archive.close()
+        raise ValueError("DOCX ZIP 含重复或不安全路径")
+    if "word/document.xml" not in names:
+        archive.close()
+        raise ValueError("DOCX ZIP 缺少 word/document.xml")
+    return archive
+
+
+def read_docx_xml(archive, part):
+    raw = archive.read(part)
+    if re.search(br"<!\s*(?:DOCTYPE|ENTITY)\b", raw.replace(b"\x00", b""), re.I):
+        raise ValueError("DOCX XML 不允许 DTD 或实体声明")
+    try:
+        return ET.fromstring(raw)
+    except ET.ParseError as error:
+        raise ValueError("DOCX XML 无效：" + part) from error
+
+
+def docx_paragraph_text(node):
+    w = "{" + DOCX_NAMESPACES["w"] + "}"
+    def visit(item):
+        if item.tag == w + "del":
+            return ""
+        if item.tag == w + "t":
+            return item.text or ""
+        if item.tag == w + "tab":
+            return "\t"
+        if item.tag == w + "noBreakHyphen":
+            return "\u2011"
+        if item.tag == w + "softHyphen":
+            return "\u00ad"
+        if item.tag == w + "br" and item.get(w + "type") in ("page", "column"):
+            return ""
+        if item.tag in (w + "br", w + "cr"):
+            return "\n"
+        return "".join(visit(child) for child in item)
+    return visit(node)
+
+
+def docx_evidence(data, raw):
+    """Return only mapped paragraphs and table/image evidence, never the full ZIP."""
+    with bounded_docx_archive(raw) as archive:
+        roots = {}
+        output = []
+        current_hash = sha256(raw)
+        for annotation in data["annotations"]:
+            mapping = annotation["target"]["docx"]
+            if mapping["sourceSha256"].lower() != current_hash:
+                output.append({"annotationId": annotation["id"], "stale": True,
+                               "sourceSha256": mapping["sourceSha256"],
+                               "message": "旧版本目标：批注时源文件与当前 DOCX 不同；请根据原文和上下文重新核对定位。",
+                               "evidence": []})
+                continue
+            evidence = []
+            texts = {}
+            for block in mapping["blocks"]:
+                part = block["part"]
+                if part not in roots:
+                    roots[part] = read_docx_xml(archive, part)
+                node = resolve_docx_path(roots[part], block["path"])
+                paragraph_tag = "{" + DOCX_NAMESPACES["w"] + "}p"
+                text = docx_paragraph_text(node)
+                if "paraId" in block and node.get("{" + DOCX_NAMESPACES["w14"] + "}paraId") != block["paraId"]:
+                    raise ValueError("DOCX paraId 不匹配：" + block["id"])
+                record = {"id": block["id"], "part": part, "path": block["path"]}
+                if node.tag == paragraph_tag:
+                    record["paragraph"] = text
+                    texts[block["id"]] = text
+                elif node.tag in ("{" + DOCX_NAMESPACES["w"] + "}" + tag for tag in ("tbl", "tr", "tc")) and "table" in block:
+                    record["paragraphs"] = [docx_paragraph_text(paragraph) for paragraph in node.iter(paragraph_tag)]
+                elif "image" not in block:
+                    raise ValueError("DOCX block 路径未指向段落或图片")
+                if "table" in block:
+                    table = block["table"]
+                    table_node = resolve_docx_path(roots[part], table["path"])
+                    w = "{" + DOCX_NAMESPACES["w"] + "}"
+                    rows = [child for child in table_node if child.tag == w + "tr"]
+                    if table_node.tag != w + "tbl" or table["row"] > len(rows):
+                        raise ValueError("DOCX 表格行映射不匹配")
+                    cells = [child for child in rows[table["row"] - 1] if child.tag == w + "tc"]
+                    if table["column"] > len(cells) or (node not in list(cells[table["column"] - 1].iter()) and cells[table["column"] - 1] not in list(node.iter())):
+                        raise ValueError("DOCX 表格列映射不匹配")
+                    record["table"] = table
+                if "image" in block:
+                    image = block["image"]
+                    relpart = posixpath.join(posixpath.dirname(part), "_rels", posixpath.basename(part) + ".rels")
+                    rels = read_docx_xml(archive, relpart)
+                    matches = [rel for rel in rels if rel.get("Id") == image["relationshipId"]]
+                    if len(matches) != 1 or matches[0].get("TargetMode") == "External" or not matches[0].get("Type", "").endswith("/image"):
+                        raise ValueError("DOCX 图片关系无效")
+                    target = matches[0].get("Target", "")
+                    media_path = posixpath.normpath(target.lstrip("/") if target.startswith("/") else posixpath.join(posixpath.dirname(part), target))
+                    relationship_values = [value for item in node.iter() for key, value in item.attrib.items() if key in ("{" + DOCX_NAMESPACES["r"] + "}embed", "{" + DOCX_NAMESPACES["r"] + "}id")]
+                    if image["relationshipId"] not in relationship_values or media_path != image["mediaPath"] or sha256(archive.read(media_path)) != image["sha256"].lower():
+                        raise ValueError("DOCX 图片内容或关系映射不匹配")
+                    record["image"] = image
+                evidence.append(record)
+            for endpoint in ("start", "end"):
+                if endpoint in mapping:
+                    point = mapping[endpoint]
+                    if point["id"] not in texts or point["offset"] > string_length(texts[point["id"]]):
+                        raise ValueError("DOCX 文字偏移超出对应段落")
+            if "start" in mapping:
+                start, end = mapping["start"], mapping["end"]
+                ids = [block["id"] for block in mapping["blocks"]]
+                if ids.index(start["id"]) > ids.index(end["id"]) or (start["id"] == end["id"] and start["offset"] > end["offset"]):
+                    raise ValueError("DOCX 文字范围顺序无效")
+            output.append({"annotationId": annotation["id"], "evidence": evidence})
+        return output
 
 
 def configure_stdio():
@@ -195,19 +409,25 @@ def task_state(annotation):
 def read_review(review_path):
     """Read and validate a review independently of the current source file."""
     data, input_kind = read_review_data(review_path)
-    if not isinstance(data, dict) or type(data.get("schemaVersion")) is not int or data["schemaVersion"] != SCHEMA_VERSION:
+    if not isinstance(data, dict) or type(data.get("schemaVersion")) is not int or data["schemaVersion"] not in (1, 2):
         raise ValueError("不支持的数据格式或版本")
     source, expected = require_source(data)
+    normalize_annotations(data["annotations"])
+    if data["schemaVersion"] == 2:
+        validate_docx_targets(data, expected)
+    elif source.get("type") == "docx":
+        raise ValueError("DOCX 必须使用 schemaVersion 2")
 
     if data.get("format") == FULL_FORMAT:
         if not isinstance(source.get("base64"), str):
             raise ValueError("完整批注副本缺少原文件快照")
         validate_full_snapshot(data, source, expected)
+        if data["schemaVersion"] == 2:
+            docx_evidence(data, base64.b64decode(source["base64"], validate=True))
     elif data.get("format") == ANNOTATIONS_FORMAT:
         validate_lightweight_data(data)
     else:
         raise ValueError("不支持的数据格式或版本")
-    normalize_annotations(data["annotations"])
     return data, input_kind
 
 
@@ -222,7 +442,10 @@ def inspect(review_path, original_path):
     print("导入时路径：", source.get("path", ""))
     print("批注时 SHA-256：", expected)
     print("当前原文件 SHA-256：", actual)
-    print("文本编码：", source.get("encoding", "未注明"))
+    if data["schemaVersion"] == 2:
+        print("原文件类型： DOCX；适配器版本：", source["adapterVersion"])
+    else:
+        print("文本编码：", source.get("encoding", "未注明"))
     print("批注数量：", len(data["annotations"]))
     print(json.dumps([{**annotation, "taskState": task_state(annotation)} for annotation in data["annotations"]], ensure_ascii=False, indent=2))
     if actual != expected or len(actual_bytes) != source["byteLength"]:
@@ -231,6 +454,9 @@ def inspect(review_path, original_path):
             file=sys.stderr,
         )
         return 2
+    if data["schemaVersion"] == 2:
+        print("DOCX 对应原文证据：")
+        print(json.dumps(docx_evidence(data, actual_bytes), ensure_ascii=False, indent=2))
     if data["format"] == ANNOTATIONS_FORMAT:
         print("版本校验通过：轻量批注不含源文件快照；可结合收到的原文件、批注和上下文逐条定位。")
     else:
@@ -241,8 +467,8 @@ def inspect(review_path, original_path):
 if __name__ == "__main__":
     configure_stdio()
     if len(sys.argv) != 3:
-        raise SystemExit("用法：python inspect_review.py 批注副本.review.html|.review.html.gz|.review.json 原始.html")
+        raise SystemExit("用法：python inspect_review.py 批注副本.review.html|.review.html.gz|.review.json 原始.html|原始.docx")
     try:
         raise SystemExit(inspect(sys.argv[1], sys.argv[2]))
-    except (OSError, EOFError, UnicodeDecodeError, ValueError, KeyError, TypeError, binascii.Error, gzip.BadGzipFile) as error:
+    except (OSError, EOFError, UnicodeDecodeError, ValueError, KeyError, TypeError, binascii.Error, gzip.BadGzipFile, BadZipFile, RuntimeError, RecursionError) as error:
         raise SystemExit("检查失败：" + str(error))

@@ -2,7 +2,7 @@
 
 Windows 的 PowerShell 命令与解释器说明见 [Windows 使用](WINDOWS.md)。
 
-接口通过本地 JSON 文件交接，无需服务、账号或 API Key。agent 修改原 HTML 和资源后回传处理结果；工具按批注 ID 更新状态，原批注、目标与上下文保留作为记录。
+接口通过本地 JSON 文件交接，无需服务、账号或 API Key。agent 修改原 HTML 和资源或原 DOCX 后回传处理结果；工具按批注 ID 更新状态，原批注、目标与上下文保留作为记录。
 
 ## 意见与处理状态
 
@@ -37,24 +37,27 @@ python3 scripts/update_review.py report.review.json \
   --output report.review-results.json
 ```
 
-输入也支持 `.review.html` 和 `.review.html.gz`。脚本读取并校验批注快照，生成带版本保护的轻量结果；不会修改批注副本或原 HTML，也不会将 Base64 输出到上下文。回报发生在修改之后，不要求当前原文件仍与修改前的哈希一致。
+输入也支持 `.review.html` 和 `.review.html.gz`。脚本读取并校验批注快照，生成带版本保护的轻量结果；不会修改批注副本或原 HTML/DOCX，也不会将 Base64 输出到上下文。回报发生在修改之后，不要求当前原文件仍与修改前的哈希一致。
+
+HTML 批注使用 schemaVersion 1；DOCX 批注使用 schemaVersion 2，定位协议见[完整参考](REFERENCE.md#docx-数据与定位)。`inspect_review.read_review()` 与回报脚本均接受这两种批注。**处理结果协议继续使用 schemaVersion 1**：结果只关联批注 ID、意见版本和更新时间，不复制 DOCX 原文、OOXML 定位或文件快照。先用 `python3 scripts/inspect_review.py "报告.review.json" "报告.docx"` 核对原 ZIP 哈希及目标段落、表格或图片证据，再修改并验证 DOCX，最后使用上述回报命令。不要把原始 DOCX 的 schemaVersion 2 填入结果 JSON。
 
 `--id` 可重复使用，明确选择本次处理的 ID；`--pending` 明确选择全部未完成意见。仅在选中的意见均完成并验证后，才回报 `resolved`。未完成可回报 `--status open --summary "待澄清原因"`。`--by` 默认 `agent`。
 
 同一次脚本调用选中的意见使用相同状态与说明。需要逐条回报不同状态或说明时，按下方协议生成一个包含全部结果的 JSON。不要连续覆盖同一文件而遗失尚未导入的上一批结果。
 
-输出可以替换已有的处理结果 JSON，以便下一轮继续回报；脚本拒绝覆盖输入批注、其他 JSON、HTML 或符号链接。
+输出可以替换已有的处理结果 JSON，以便下一轮继续回报；脚本拒绝覆盖输入批注、其他 JSON、HTML、DOCX 或符号链接。
 
 ## 工具如何读取
 
-已通过“导入文件夹”关联原项目时，把结果放在原 HTML 旁边，文件名去掉 `.html`、`.htm` 或 `.xhtml` 后加 `.review-results.json`：
+已通过“导入文件夹”关联原项目时，把结果放在原 HTML 或 DOCX 旁边，文件名去掉 `.html`、`.htm`、`.xhtml` 或 `.docx` 后加 `.review-results.json`：
 
 ```text
 report.html                   → report.review-results.json
 slides/index.html             → slides/index.review-results.json
+report.docx                   → report.review-results.json
 ```
 
-用户点击“重载页面”，工具同步更新原 HTML 和资源，并读取对应结果文件。结果文件不作为页面资源打包。仅关联单个 HTML 的读取权限不包含旁边的 JSON；此时使用批注列表的“导入 agent 处理结果”，或先关联整个资源文件夹。不支持持久文件访问的浏览器可在重载时选择目录。
+用户点击“重载页面”，工具同步更新原 HTML 和资源，或重新生成原 DOCX 的内容预览，并读取对应结果文件。结果文件不作为页面资源打包。仅关联单个 HTML 或 DOCX 的读取权限不包含旁边的 JSON；此时使用批注列表的“导入 agent 处理结果”，或先关联整个资源文件夹。不支持持久文件访问的浏览器可在重载时选择目录。
 
 状态可以在列表筛选、手动完成或重新待处理，也可以撤销与重做。收到结果后需等待本机保存，或下载新副本长期保留。结果导入不会覆盖未保存草稿。
 

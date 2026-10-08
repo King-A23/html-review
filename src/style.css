@@ -395,3 +395,7 @@ kbd{color:#4d6040;font-size:12px}
 .annotation-history summary::before{content:'＋';margin-right:5px}
 .annotation-history[open] summary::before{content:'−'}
 .annotation-history p{margin:7px 0;white-space:pre-wrap;overflow-wrap:anywhere;padding-left:10px;border-left:2px solid #dce3d1}
+
+.mode-tabs.is-docx{grid-template-columns:repeat(4,1fr)}
+.mode-tabs.is-docx .mode-indicator{width:calc((100% - 16px)/4)}
+#cancel-conversion{position:fixed;right:24px;bottom:20px;z-index:100;background:#fffefb;padding:12px;border:1px solid #dce1d5}

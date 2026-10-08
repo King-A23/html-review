@@ -48,7 +48,7 @@
     canPickFile: () => typeof global.showOpenFilePicker === 'function',
     canPickDirectory: () => typeof global.showDirectoryPicker === 'function',
     pickFile: () => global.showOpenFilePicker({id: 'html-review-source', multiple: false,
-      types: [{description: 'HTML 页面', accept: {'text/html': ['.html', '.htm', '.xhtml']}}]}),
+      types: [{description: 'HTML / DOCX 文档或批注', accept: {'text/html': ['.html', '.htm', '.xhtml'], 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':['.docx'],'application/json':['.json']}}]}),
     pickDirectory: () => global.showDirectoryPicker({id: 'html-review-resources', mode: 'read'})
   });
 })(window);
