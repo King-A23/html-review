@@ -90,7 +90,9 @@ try {
   for (const text of ['第二条','第三条','第四条']) await saveWhole(page,text);
   let review=await exportJSON(page,'first.json'); assert.equal(review.annotations.length,4);
   await importFeedback(page,review.annotations,[[0,'resolved'],[1,'resolved'],[2,'open']],'feedback.json');
-  assert(await page.locator('#status').getByRole('button',{name:'读取修改后的文档'}).isVisible());
+  assert(await page.locator('#result-review-reload').isVisible());
+  assert(await page.locator('#result-review-start').isHidden(),'Read the changed body before the global review action');
+  assert.equal(await page.locator('#status').getByRole('button',{name:'读取修改后的文档'}).count(),0,'Only one follow-up prompt');
   const id=review.annotations[1].id;
   const feedbackSnapshot=await exportJSON(page,'feedback-before-review.json');
   await page.locator('#comment-input').fill('复核期间保留的草稿');
@@ -129,11 +131,11 @@ try {
   await page.locator('[data-close="agent-task-dialog"]').click();
   console.log('PASS handoff preserves export preferences, summarizes all task states, and handles unavailable clipboard');
 
-  // Re-import results with a fresh batch while drafting, then use the status action's actual chooser.
+  // Re-import results with a fresh batch while drafting, then use the unified next-step chooser.
   review=await exportJSON(page,'next.json'); await page.locator('[data-mode=whole]').click(); await page.locator('#comment-input').fill('读取修改后仍保留的草稿');
   await importFeedback(page,review.annotations,[[3,'open']],'next-feedback.json');
   const beforeReload=await draftSnapshot(page); const reloadChooser=page.waitForEvent('filechooser');
-  await page.locator('#status').getByRole('button',{name:'读取修改后的文档'}).click(); await (await reloadChooser).setFiles(source); await ready(page);
+  await page.locator('#result-review-reload').click(); await (await reloadChooser).setFiles(source); await ready(page);
   assert.deepEqual(await draftSnapshot(page),beforeReload,'Result follow-up reload preserves draft and target');
   await page.locator('#cancel-edit').click();
   await page.locator('#document-nav-button').click(); await page.locator('#document-search').fill('Duplicate');

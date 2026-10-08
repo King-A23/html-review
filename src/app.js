@@ -56,8 +56,8 @@
   let locationRequest = null;
   let locationTimer = null;
   let locationInspection = null;
-  let resultReviewDismissed = false;
   let resultReviewQueue = null;
+  let workflow = {handoffStamp:'',documentRead:false,documentChanged:false,resultsRead:false,needsDocument:false};
   const needsLocationReview = annotation => core.annotationStatus(annotation) === 'open' && ['missing','ambiguous','fallback'].includes(locations.get(annotation.id)?.status);
   const undoStack = [];
   const redoStack = [];
@@ -69,7 +69,6 @@
   let autosaveRevision = 0;
   let autosavePhase = 'idle';
   let guideDismissed = false;
-  let delivered = false;
   let guideAnnotated = false;
   let autosavePaused = false;
   let needsEpochRefresh = false;
@@ -401,16 +400,66 @@
     $('review-retry').hidden = locationReview.checking || checked === pending.length;
     $('review-retry').disabled = busy || !previewReady;
   }
+  function workflowStamp() {return data ? data.source.sha256+':'+data.updatedAt : '';}
+  function rememberHandoff(stamp=workflowStamp()) {
+    if(stamp!==workflowStamp())return;
+    workflow={handoffStamp:workflowStamp(),documentRead:false,documentChanged:false,resultsRead:false,needsDocument:false,documentReadAt:''};
+    note('');
+    renderResultReview();queueAutosave();
+  }
   function renderResultReview() {
     const annotations=data?.annotations || [],hasFeedback=annotations.some(item=>item.history?.length);
-    $('result-review').hidden=!hasFeedback || resultReviewDismissed;
     const done=annotations.filter(item=>core.annotationStatus(item)==='resolved').length;
     const fresh=annotations.filter(item=>['new','updated'].includes(core.taskState(item))).length;
     const attention=annotations.filter(needsLocationReview).length;
+    const prepared=Boolean(workflow.handoffStamp && workflow.handoffStamp===workflowStamp());
+    const newAfterReading=annotations.some(item=>['new','updated'].includes(core.taskState(item)) && item.updatedAt>(workflow.documentReadAt || ''));
+    let stage='annotate',title='先读文档，再写下你的意见。',help='选中文字、图片或表格，也可以直接填写整体意见。',action='write',label='写第一条意见';
+    if(workflow.needsDocument) {
+      stage='read-return';title='处理记录已导入，正文还没有重新读取。';help='完成状态由处理者回报，仍需检查实际效果。请先读取修改后的文档；批注和草稿会保留。';
+    } else if(draftDirty()) {
+      stage='draft';title='先保存这条意见，再继续下一步。';help=pendingTarget ? '保存后，这条意见才会进入交接材料。' : '先在预览中选择目标，或切换到整体；已填写的意见会保留。';label=pendingTarget && $('comment-input').value.trim() ? '保存这条意见' : '继续填写意见';action=pendingTarget && $('comment-input').value.trim() ? 'save' : 'write';
+    } else if(prepared) {
+      stage='prepared';title='交接材料已准备好。';help='请把材料交给你使用的 agent。工具不会自动发送或修改文档；拿到返回文件后，从这里继续。';action='handoff';label='再查看交接材料';
+    } else if(annotations.length && workflow.documentRead && !newAfterReading) {
+      stage='review';title=workflow.documentChanged ? '已读取新版本，逐条看看修改。' : '读取完成，文件内容没有变化。';help=workflow.resultsRead ? '正文与处理记录已读入。完成状态由处理者回报，仍需检查实际效果；复核不改变状态或原定位。' : '尚未导入处理记录，意见仍保留原有状态。可先检查文档，或导入 agent 返回的 JSON。';
+    } else if(annotations.length && fresh) {
+      stage='handoff';title=hasFeedback ? '新意见已保存，可以准备下一轮修改。' : '意见已保存，可以交给 agent。';help='复制任务并附上原文档，或一次下载含原文档、批注和说明的交接包。';action='handoff';label='交给 agent';
+    } else if(annotations.length && (hasFeedback || locationReview)) {
+      stage='review';title='处理记录已保留，可以继续审阅。';help='当前显示这份工作区中的文档。agent 修改了文件时，请先读取返回的新文档。';
+    } else if(annotations.length) {
+      stage='handoff';title='意见已保存，可以交给 agent。';help='原文档和批注一起交付，agent 才能确认要修改哪里。';action='handoff';label='交给 agent';
+    }
+    if(locationReview?.checking && !workflow.needsDocument)help+=' 正在检查待处理意见的位置…';
+    $('result-review').hidden=!data;
+    $('result-review').dataset.stage=stage;
+    $('result-review-title').textContent=title;
+    $('workflow-stage').textContent=stage==='review'||stage==='read-return' ? '03 / 读取与复核' : stage==='handoff'||stage==='prepared' ? '02 / 交给 agent' : '01 / 阅读与批注';
+    $('result-review-summary').hidden=!annotations.length;
     $('result-review-summary').textContent=`完成记录 ${done} · 待处理 ${annotations.length-done} · 新增 / 已更新 ${fresh} · 需确认位置 ${attention}`;
-    $('result-review-reload').disabled=busy || !data;
-    $('result-review-start').disabled=busy || !previewReady || !annotations.length;
-    $('result-review-help').textContent=locationReview?.changed ? '当前已读取新版本。完成记录可逐条核对；确认位置不会标记任务完成。' : '处理结果只更新记录。请先读取修改后的文档，再核对完成项与待处理意见。';
+    $('result-review-help').textContent=help;
+    $('workflow-primary').hidden=stage==='read-return' || stage==='review';
+    $('workflow-primary').textContent=label;$('workflow-primary').dataset.action=action;$('workflow-primary').disabled=busy || !previewReady;
+    $('result-review-reload').hidden=stage!=='read-return';$('result-review-reload').disabled=busy || !data;
+    $('result-review-start').hidden=stage!=='review';$('result-review-start').disabled=busy || !previewReady || !annotations.length;
+    $('workflow-return').hidden=!annotations.length;$('workflow-return').disabled=busy;
+    $('handoff-button').classList.remove('primary');
+    updateGuide();renderReturnSteps();
+  }
+  function renderReturnSteps() {
+    if(!data)return;
+    $('return-document-name').textContent=data.source.name;
+    $('return-results-name').textContent=core.resultPath(data.source.path).split('/').at(-1);
+    $('return-document-state').textContent=workflow.needsDocument ? '请读取本轮返回的文档' : workflow.documentRead ? workflow.documentChanged ? '已读取 · 正文已更新' : '已读取 · 文件内容没有变化' : '尚未从这里读取返回文档';
+    $('return-results-state').textContent=workflow.resultsRead ? '已导入 · 处理记录已更新' : '尚未在本轮导入处理记录';
+    $('handoff-reload').disabled=busy;
+    $('handoff-import-results').disabled=busy;
+    $('return-review').disabled=busy || !previewReady || !data.annotations.length || workflow.needsDocument || !workflow.documentRead;
+    $('return-help').textContent=workflow.needsDocument ? '处理记录已导入，请继续读取修改后的文档。' : workflow.documentRead && !workflow.resultsRead ? '文档已读取；没有处理记录也能继续审阅，但完成状态不会自动更新。' : workflow.documentRead ? '可以开始复核，也可以返回工作区添加新意见。' : '两份文件可以分开读入。取消或读取失败时，当前文档、批注和草稿会保留。';
+  }
+  function openReturnSteps() {
+    if(busy || !data)return;
+    window.HRUI.closeDialog($('agent-task-dialog'));renderReturnSteps();window.HRUI.openDialog($('return-dialog'));
   }
   function startResultReview(annotationId) {
     if(busy || !previewReady || !data)return;
@@ -458,7 +507,7 @@
   }
   function installPreview(result) {
     previewReady = false;latestSelectionSerial=0;
-    locationInspection=null;resultReviewQueue=null;resultReviewDismissed=false; window.HRUI.closeDialog($('location-dialog')); $('location-preview-bar').hidden=true;
+    locationInspection=null;resultReviewQueue=null; window.HRUI.closeDialog($('location-dialog')); $('location-preview-bar').hidden=true;
     $('pdf-thumbnails').hidden=true; $('pdf-thumbnails').replaceChildren(); $('pdf-thumbnail-toggle').setAttribute('aria-expanded','false');
     $('pdf-search-bar').hidden=true; $('pdf-scan-guide').hidden=true;
     frame.setAttribute('aria-busy',String(!result.pdf));pdfPreview.setAttribute('aria-busy',String(Boolean(result.pdf)));
@@ -500,7 +549,7 @@
     data.annotations = data.annotations.map(core.normalizeAnnotation);
     undoStack.length = 0; redoStack.length = 0;
     cachedSession = null; $('recovery-banner').hidden = true;
-    delivered = false;
+    workflow={handoffStamp:'',documentRead:false,documentChanged:false,resultsRead:false,needsDocument:false,documentReadAt:''};
     guideAnnotated = false;
     dirty = false;
     lastExportFormat = hasSearch(nextData) ? 'annotations' : 'html';
@@ -621,6 +670,7 @@
     if (resultCount) recordResultsChange(data, nextData);
     data = nextData;
     locationReview = {changed, completedNow, queue:[], checking:true, dismissed:false};
+    workflow.handoffStamp='';workflow.documentRead=true;workflow.documentChanged=changed;workflow.documentReadAt=new Date().toISOString();workflow.needsDocument=false;if(resultCount)workflow.resultsRead=true;
     $('reload-review').hidden = false;
     localAccess = access;
     exampleWorkspace = false;
@@ -633,8 +683,7 @@
     updateEditor();
     queueAutosave();
     if (resultError) note('预览已更新；agent 处理结果未导入：' + resultError + '。原批注和草稿已保留。', true);
-    else note((changed ? `已读取最新文档和资源，保留 ${data.annotations.length} 条批注及草稿。`
-      : '已从原文件重新载入，批注和草稿已保留。') + (resultCount ? ` 已更新 ${resultCount} 条处理记录。` : ''));
+    else note('');
   }
   async function importSelectedFile(file, handle = null, reloading = false) {
     if (reloading && file.name !== data.source.name) throw new Error(`请选择当前原文件 ${data.source.name}，批注和草稿已保留。`);
@@ -796,29 +845,30 @@
     try { return JSON.parse(await file.text()); }
     catch (_) { throw new Error('处理结果不是有效 JSON。'); }
   }
-  function recordResultsChange(before, after) {
+  function recordResultsChange(before, after, needsDocument=!workflow.documentRead) {
     const items = [];
     before.annotations.forEach((annotation, index) => {
       const updated = after.annotations[index];
       if (core.annotationStatus(annotation) !== core.annotationStatus(updated) || (annotation.history?.length || 0) !== (updated.history?.length || 0)) items.push({before: structuredClone(annotation), after: structuredClone(updated), index});
     });
     if (!items.length) return;
-    undoStack.push({items}); if (undoStack.length > 50) undoStack.shift(); redoStack.length = 0;
+    undoStack.push({items,resultsReadBefore:workflow.resultsRead,needsDocumentBefore:workflow.needsDocument,needsDocumentAfter:needsDocument,documentReadAt:workflow.documentReadAt || ''}); if (undoStack.length > 50) undoStack.shift(); redoStack.length = 0;
   }
   async function importResults(file) {
-    const merged = core.applyAgentResults(data, await readResultFile(file));
+    const patch=await readResultFile(file);
+    const merged = core.applyAgentResults(data, patch);
     await core.validateData(merged.data);
     if (merged.applied) {
-      recordResultsChange(data, merged.data); data = merged.data;resultReviewDismissed=false;
+      const needsDocument=!workflow.documentRead || merged.data.annotations.some(item=>item.history?.at(-1)?.batchId===patch.batchId && item.updatedAt>(workflow.documentReadAt || ''));
+      recordResultsChange(data, merged.data, needsDocument); data = merged.data;
+      workflow.handoffStamp='';workflow.resultsRead=true;workflow.needsDocument=needsDocument;
       markDirty(); renderAnnotations(); updateEditor(); queueAutosave();
       startLocationReview();
     }
-    note(merged.applied ? `已更新 ${merged.applied} 条处理记录；原批注和草稿已保留，可撤销。结果只更新处理状态，请重载 agent 修改后的原文档查看新内容。` : '该批处理结果已导入，无需重复更新。');
-    if (merged.applied) {
-      const next = textNode('button', 'text-button', '读取修改后的文档'); next.type = 'button';
-      next.addEventListener('click', reloadSource); $('status').append(' ', next);
-    }
+    if(merged.applied)note('');
+    else note('该批处理记录已导入，无需重复更新。');
   }
+
   function toggleStatus(annotation) {
     if (busy) return;
     const status = core.annotationStatus(annotation) === 'resolved' ? 'open' : 'resolved';
@@ -873,6 +923,11 @@
       data.annotations = data.annotations.filter(annotation => annotation.id !== changedId);
       if (target) data.annotations.splice(Math.min(item.index, data.annotations.length), 0, structuredClone(target));
       locations.delete(changedId);
+    }
+    workflow.handoffStamp='';
+    if(typeof change.resultsReadBefore==='boolean') {
+      workflow.resultsRead=redo || change.resultsReadBefore;
+      workflow.needsDocument=(workflow.documentReadAt || '')===change.documentReadAt ? (redo ? change.needsDocumentAfter : change.needsDocumentBefore) : workflow.resultsRead && !workflow.documentRead;
     }
     to.push(change);
     markDirty(); clearEditor(); setMode('browse'); renderAnnotations();
@@ -1069,6 +1124,8 @@
     for (const selector of ['#handoff-source', '#handoff-summary', '#agent-task-help', '#copy-agent-status', '#document-outline', '#document-search-results', '#document-search-status']) copy.querySelector(selector).replaceChildren();
     copy.querySelector('#document-search').value = ''; copy.querySelector('#document-search').removeAttribute('value');
     copy.querySelector('#task-details').removeAttribute('open');
+    copy.querySelector('#workflow-check-details').removeAttribute('open');
+    for(const selector of ['#return-document-name','#return-document-state','#return-results-name','#return-results-state','#return-help'])copy.querySelector(selector).replaceChildren();
     copy.querySelector('#reload-review').hidden = true;
     for (const selector of ['#reload-review-summary','#reload-review-detail']) copy.querySelector(selector).textContent = '';
     copy.querySelector('#recovery-banner').hidden = true;
@@ -1103,7 +1160,7 @@
   function finishDownload(format, message) {
     $('backup-menu').open=false;
     dirty = false; lastExportFormat = format; updateSaveState(); note(message);
-    delivered = true; updateGuide(); queueAutosave();
+    renderResultReview(); queueAutosave();
   }
   function updateExportFormat() {
     autosavePaused = false;
@@ -1144,9 +1201,10 @@
   }
 
   function updateGuide() {
-    $('onboarding-card').hidden = guideDismissed;
-    const complete = {open: Boolean(data), annotate: Boolean(data?.annotations.length) && (!exampleWorkspace || guideAnnotated), deliver: delivered};
-    for (const item of document.querySelectorAll('[data-guide-step]')) item.dataset.complete = String(complete[item.dataset.guideStep]);
+    $('onboarding-card').hidden = guideDismissed || !data;
+    const stage=$('result-review').dataset.stage;
+    const current=['read-return','review'].includes(stage) ? 2 : ['handoff','prepared'].includes(stage) ? 1 : 0;
+    Array.from(document.querySelectorAll('[data-guide-step]')).forEach((item,index)=>{item.dataset.complete=String(index<current);item.toggleAttribute('aria-current',index===current);if(index===current)item.setAttribute('aria-current','step');});
   }
   function autosaveStatus(message, error = false) {
     $('autosave-state').textContent = message;
@@ -1155,7 +1213,7 @@
     $('retry-recovery').hidden = !error;
   }
   function sessionSnapshot() {
-    return structuredClone({version: 1, data, localAccess, exampleWorkspace, guideAnnotated, draft: {comment: $('comment-input').value, pendingTarget, editingId, baseline: draftBaseline, targetChanged: draftTargetChanged, mode}, dirty, lastExportFormat,
+    return structuredClone({version: 1, data, localAccess, exampleWorkspace, guideAnnotated, workflow:{...workflow,sourceHash:data.source.sha256}, draft: {comment: $('comment-input').value, pendingTarget, editingId, baseline: draftBaseline, targetChanged: draftTargetChanged, mode}, dirty, lastExportFormat,
       preferences: {width: $('preview-width').value, sidebar: $('sidebar-position').value, exportFormat: $('export-format').value}});
   }
   function queueAutosave() {
@@ -1215,6 +1273,8 @@
         if (!entries.includes(localAccess.entryPath)) entries.push(localAccess.entryPath);
         showFolderEntries(entries, localAccess.entryPath);
       }
+      const savedFlow=record.workflow;
+      if(savedFlow?.sourceHash===data.source.sha256)workflow={handoffStamp:typeof savedFlow.handoffStamp==='string'?savedFlow.handoffStamp.slice(0,120):'',documentRead:savedFlow.documentRead===true,documentChanged:savedFlow.documentChanged===true,resultsRead:savedFlow.resultsRead===true,needsDocument:savedFlow.needsDocument===true,documentReadAt:typeof savedFlow.documentReadAt==='string' && Number.isFinite(Date.parse(savedFlow.documentReadAt))?savedFlow.documentReadAt:''};
       const draft = record.draft;
       mode = draft.mode === 'page' && draft.pendingTarget?.scope === 'whole-document' ? 'whole' : draft.mode; editingId = draft.editingId || null;
       pendingTarget = draft.pendingTarget ? structuredClone(draft.pendingTarget) : null;
@@ -1337,12 +1397,13 @@
     if (!data || !data.annotations.length || busy) return;
     if (draftDirty()) { note('编辑框中有未保存的意见，请先保存或取消编辑，再复制任务。', true); return; }
     prepareHandoff();
+    const stamp=workflowStamp();
     try {
       await navigator.clipboard.writeText($('agent-task-text').value); note(isPdf(data) ? '修改任务已复制，请连同原始 PDF 交给 agent。' : isDocx(data) ? '修改任务已复制，请连同原始 DOCX 交给 agent。' : '修改任务已复制，请连同原 HTML 和资源交给 agent。');
       const help = textNode('button', 'text-button', '查看交接步骤'); help.type = 'button'; help.addEventListener('click', openHandoff); $('status').append(' ', help);
+      rememberHandoff(stamp);
     }
     catch (_) { $('task-details').open = true; $('copy-agent-status').textContent = '请选中下方任务，按 Ctrl / ⌘ + C 复制。'; window.HRUI.openDialog($('agent-task-dialog')); $('agent-task-text').focus(); $('agent-task-text').select(); }
-    delivered = true; updateGuide();
   }
   function cancelEditor() {
     if (!draftDirty() || confirm('确定放弃编辑框中尚未保存的修改吗？')) { clearEditor(); setMode('browse'); renderAnnotations(); }
@@ -1478,13 +1539,16 @@
   $('confirm-location').addEventListener('click',confirmLocation);$('confirm-preview-location').addEventListener('click',confirmLocation);
   $('result-review-start').addEventListener('click',()=>startResultReview());
   $('result-review-reload').addEventListener('click',reloadSource);
-  $('result-review-dismiss').addEventListener('click',()=>{resultReviewDismissed=true;renderResultReview();});
+  $('workflow-primary').addEventListener('click',()=>{if(busy || !data)return;const action=$('workflow-primary').dataset.action;if(action==='handoff')openHandoff();else if(action==='save')saveAnnotation();else {$('comment-input').focus();$('comment-input').scrollIntoView({block:'nearest',behavior:'smooth'});}});
+  $('workflow-return').addEventListener('click',openReturnSteps);
+  $('handoff-show-return').addEventListener('click',openReturnSteps);
+  $('return-review').addEventListener('click',()=>{if($('return-review').disabled)return;window.HRUI.closeDialog($('return-dialog'));startResultReview();});
   $('review-previous').addEventListener('click',()=>moveResultReview(-1));
   $('review-next').addEventListener('click',()=>moveResultReview(1));
   $('review-current-document').addEventListener('click',()=>{if(inspectionAnnotation()){window.HRUI.closeDialog($('location-dialog'));$('location-preview-bar').hidden=false;$('location-preview-label').textContent='正在核对当前文档。返回对照后可以继续下一条。';$('confirm-preview-location').hidden=true;}});
   $('return-location-comparison').addEventListener('click',()=>{if(inspectionAnnotation())window.HRUI.openDialog($('location-dialog'));});
   $('reselect-location').addEventListener('click',()=>{const annotation=inspectionAnnotation();window.HRUI.closeDialog($('location-dialog'));$('location-preview-bar').hidden=true;locationInspection=null;if(annotation)reselect(annotation);});
-  $('handoff-export-package').addEventListener('click',()=>run(async()=>{if(!data || draftDirty())return;const result=await window.HRHandoff.create(data);downloadBlob(result.blob,result.filename);delivered=true;updateGuide();queueAutosave();$('copy-agent-status').textContent='交接包已下载。将 ZIP 附给 agent，让它读取包内任务说明。';}));
+  $('handoff-export-package').addEventListener('click',()=>run(async()=>{if(!data || draftDirty())return;const result=await window.HRHandoff.create(data);downloadBlob(result.blob,result.filename);rememberHandoff();$('copy-agent-status').textContent='交接包已下载。将 ZIP 附给 agent，让它读取包内任务说明。';}));
   $('backup-menu').querySelector('summary').addEventListener('click',()=>{if(!$('backup-menu').open && $('export-format').value==='annotations'){$('export-format').value='html';updateExportFormat();}});
   document.addEventListener('click',event=>{if(!$('backup-menu').contains(event.target) && !event.target.closest('.select-popover'))$('backup-menu').open=false;});
   $('pdf-prev-page').addEventListener('click',()=>window.HRPdf.goToPage(Math.max(1,Number($('pdf-page-number').value)-1)));
@@ -1505,8 +1569,8 @@
     const query = $('document-search').value.trim();
     if (query) searchTimer = setTimeout(() => send('search-document', {query}), 150);
   });
-  $('handoff-import-results').addEventListener('click', () => { window.HRUI.closeDialog($('agent-task-dialog')); $('results-input').click(); });
-  $('handoff-reload').addEventListener('click', () => { window.HRUI.closeDialog($('agent-task-dialog')); reloadSource(); });
+  $('handoff-import-results').addEventListener('click', () => { window.HRUI.closeDialog($('return-dialog')); $('results-input').click(); });
+  $('handoff-reload').addEventListener('click', () => { window.HRUI.closeDialog($('return-dialog')); reloadSource(); });
   $('handoff-export-json').addEventListener('click', () => run(() => download('annotations')));
   $('review-attention').addEventListener('click', () => { $('annotation-filter').value = 'attention'; window.HRUI.syncSelect('annotation-filter'); renderAnnotations(); $('annotation-list').scrollIntoView({block:'nearest',behavior:'smooth'}); });
   $('review-retry').addEventListener('click', startLocationReview);
@@ -1596,7 +1660,8 @@
     if (file && data) await run(() => importResults(file));
   });
   $('copy-agent-text').addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText($('agent-task-text').value); $('copy-agent-status').textContent = '已复制。请附上原文档，再粘贴到 agent 对话中。'; delivered = true; updateGuide(); queueAutosave(); }
+    const stamp=workflowStamp();
+    try { await navigator.clipboard.writeText($('agent-task-text').value); $('copy-agent-status').textContent = '已复制。请附上原文档，再粘贴到 agent 对话中。'; rememberHandoff(stamp); }
     catch (_) { $('task-details').open = true; $('agent-task-text').focus(); $('agent-task-text').select(); $('copy-agent-status').textContent = '已选中，请按 Ctrl / ⌘ + C 复制。'; }
   });
   $('onboarding-dismiss').addEventListener('click', () => { guideDismissed = true; try { localStorage.setItem(guideKey, 'true'); } catch (_) {} updateGuide(); });

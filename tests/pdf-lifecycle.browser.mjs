@@ -38,12 +38,17 @@ async function stableSave(page,url,comment,handleKind='file'){
   // The IndexedDB transaction can become readable before the app resumes its
   // save continuation and publishes the refresh marker. Wait for the user's
   // complete-save signal, as well as the actual persisted data and handle.
-  await page.waitForFunction(async({key,comment,handleKind})=>{
-    const record=await window.HRSession.load(key);
-    return record?.draft?.comment===comment && record?.data?.source?.type==='pdf'
-      && record.localAccess?.[handleKind==='directory'?'directoryHandle':'fileHandle']?.kind===handleKind
-      && sessionStorage.getItem('html-review.resume:'+key)===record.data.source.sha256
-      && document.getElementById('autosave-state').textContent.startsWith('本机已保存');
+  await page.evaluate(async({key,comment,handleKind})=>{
+    const deadline=performance.now()+8000;
+    while(performance.now()<deadline) {
+      const record=await window.HRSession.load(key);
+      if(record?.draft?.comment===comment && record?.data?.source?.type==='pdf'
+        && record.localAccess?.[handleKind==='directory'?'directoryHandle':'fileHandle']?.kind===handleKind
+        && sessionStorage.getItem('html-review.resume:'+key)===record.data.source.sha256
+        && document.getElementById('autosave-state').textContent.startsWith('本机已保存'))return;
+      await new Promise(resolve=>setTimeout(resolve,50));
+    }
+    throw new Error('PDF source, draft, handle and refresh marker were not saved together');
   },{key:'workspace:'+url,comment,handleKind});
 }
 try{

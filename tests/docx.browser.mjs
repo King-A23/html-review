@@ -189,7 +189,7 @@ try {
   const feedbackCard = restored.locator(`.annotation-card[data-annotation-id="${first.data.annotations[0].id}"]`);
   await feedbackCard.locator('.annotation-feedback').waitFor({state:'visible'});
   assert.equal(await feedbackCard.getAttribute('data-review-state'), 'pending');
-  assert.equal(await feedbackCard.locator('.annotation-feedback').textContent(), '处理反馈' + feedbackSummary, 'Pending agent feedback is visible without expanding history');
+  assert.equal(await feedbackCard.locator('.annotation-feedback').textContent(), '未完成说明' + feedbackSummary, 'Pending agent feedback is visible without expanding history');
   assert.equal(await feedbackCard.locator('.annotation-feedback img, .annotation-feedback script, .annotation-feedback svg').count(), 0, 'Agent feedback is rendered as text, never as markup');
   assert.equal(await restored.evaluate(() => window.__feedbackExecuted), undefined, 'Feedback text cannot execute code');
   await feedbackCard.locator('[data-action=edit]').click(); await restored.locator('#comment-input').fill('更新意见后需要重新处理'); await restored.locator('#save-button').click();
@@ -197,7 +197,8 @@ try {
   console.log('PASS DOCX pending feedback is visible and safely cleared by an edit');
   await restored.locator('#comment-input').fill('保留这条未保存草稿');
   await restored.locator('#settings-button').click(); await restored.locator('#help-button').click();
-  if (!await restored.locator('#help-dialog details.help-details').evaluate(details => details.open)) await restored.locator('#help-dialog details.help-details summary').click();
+  const compatibilityHelp=restored.locator('#help-dialog details.help-details').filter({has:restored.locator('#compatible-reload')});
+  if (!await compatibilityHelp.evaluate(details => details.open)) await compatibilityHelp.locator('summary').click();
   assert.equal(await restored.locator('#compatible-reload').isDisabled(), false, 'A loaded non-example document exposes compatible reload');
   const reloadPicker = restored.waitForEvent('filechooser'); await restored.locator('#compatible-reload').click(); await (await reloadPicker).setFiles(changedSource); await ready(restored);
   await frame(restored).locator('body').filter({hasText:'Inserted paragraph'}).waitFor();
@@ -239,11 +240,12 @@ try {
   const statusFallback = blockedPicker.locator('#status').getByRole('button', {name:'改用兼容文件选择'});
   const fallbackChooser = blockedPicker.waitForEvent('filechooser'); await statusFallback.click(); await fallbackChooser;
   await blockedPicker.locator('#settings-button').click(); await blockedPicker.locator('#help-button').click();
-  if (!await blockedPicker.locator('#help-dialog details.help-details').evaluate(details => details.open)) await blockedPicker.locator('#help-dialog details.help-details summary').click();
+  const blockedCompatibilityHelp=blockedPicker.locator('#help-dialog details.help-details').filter({has:blockedPicker.locator('#compatible-reload')});
+  if (!await blockedCompatibilityHelp.evaluate(details => details.open)) await blockedCompatibilityHelp.locator('summary').click();
   assert.equal(await blockedPicker.locator('#compatible-reload').isDisabled(), true, 'Compatible reload remains unavailable before a document is opened');
   const compatibleOpenChooser = blockedPicker.waitForEvent('filechooser'); await blockedPicker.locator('#compatible-open').click(); await compatibleOpenChooser;
   await blockedPicker.locator('#settings-button').click(); await blockedPicker.locator('#help-button').click();
-  if (!await blockedPicker.locator('#help-dialog details.help-details').evaluate(details => details.open)) await blockedPicker.locator('#help-dialog details.help-details summary').click();
+  if (!await blockedCompatibilityHelp.evaluate(details => details.open)) await blockedCompatibilityHelp.locator('summary').click();
   const compatibleFolderChooser = blockedPicker.waitForEvent('filechooser'); await blockedPicker.locator('#compatible-folder').click(); await compatibleFolderChooser;
   console.log('PASS DOCX compatible open, folder and reload entry points');
   assert.deepEqual(requests, [], 'DOCX preview must never fetch external relationships or conversion services');

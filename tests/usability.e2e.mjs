@@ -127,17 +127,21 @@ try {
   await check('first-run guide describes the three steps, restarts from help, and sample provides three usable targets', async () => {
     const {context, page} = await newPage();
     try {
+      assert(await page.locator('#onboarding-card').isHidden(),'Empty workspace presents the open action first');
+      await page.locator('#example-button').click();
+      await frameFor(page);
       await page.locator('#onboarding-card').waitFor({state: 'visible'});
       for (const step of ['open', 'annotate', 'deliver']) assert(await page.locator(`[data-guide-step="${step}"]`).isVisible());
       await page.locator('#onboarding-dismiss').click();
+      await waitAutosaved(page);
       await page.reload();
+      await frameFor(page);
       assert.equal(await page.locator('#onboarding-card').isVisible(), false);
       await page.locator('#settings-button').click();
       await page.locator('#help-button').click();
       await page.locator('#restart-guide').click();
       await page.locator('#onboarding-card').waitFor({state: 'visible'});
       await page.locator('#onboarding-dismiss').click();
-      await page.locator('#example-button').click();
       await frameFor(page);
       assert.equal(await annotationCount(page), 3);
       assert.deepEqual(await page.locator('.annotation-card .tag').allTextContents(), ['文字', '元素', '整体']);

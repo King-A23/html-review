@@ -170,9 +170,9 @@ try {
     await layout.goto(appUrl);
     const sidebar = () => layout.locator('.sidebar').boundingBox();
     const preview = () => layout.locator('.preview-section').boundingBox();
-    assert((await sidebar()).x < (await preview()).x);
     await layout.locator('#file-input').setInputFiles(originalPath);
     const frame = await frameFor(layout);
+    assert((await sidebar()).x < (await preview()).x);
     await frame.locator('#demo-button').click();
     await selectText(layout, '#cross-node-text');
     await layout.locator('#comment-input').fill('保留选中的原文，简化表达。');
