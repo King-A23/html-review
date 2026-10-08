@@ -16,8 +16,13 @@ test('DOCX stores exact original bytes with binary metadata and emits no snapsho
  assert.deepEqual(Buffer.from(data.source.base64,'base64'),await createDocxFixture());
  const light=core.createAnnotationExport(data);await core.validateAnnotationExport(light);
  assert.equal(light.source.base64,undefined);assert.equal(light.preview,undefined);assert.equal(light.index,undefined);
- assert.deepEqual(clone(light.resources),[]);assert(!core.createAgentTask(data).includes(data.source.base64));
- assert.match(core.createAgentTask(data),/OOXML/);assert.equal(core.resultPath('目录/中文审阅.docx'),'目录/中文审阅.review-results.json');
+ assert.deepEqual(clone(light.resources),[]);const task=core.createAgentTask(data);assert(!task.includes(data.source.base64));
+ assert.match(task,/OOXML/);assert.match(task,/只有原 DOCX 与以下批注也可以完成核对、修改和回报/);
+ assert.match(task,/"format":"html-review-results","schemaVersion":1/);assert.match(task,/"annotationUpdatedAt":"对应批注 updatedAt"/);
+ assert.match(task,/修改后的 DOCX 和处理结果 JSON/);assert.match(task,/结果仅更新批注状态/);assert.match(task,/重载修改后的原文档/);
+ assert.match(task,/辅助脚本不是交接必需文件/);assert.equal(task.includes('docs/AGENT_RESULTS.md'),false);
+ const payload=JSON.parse(task.slice(task.lastIndexOf('\n\n')+2));assert.deepEqual(payload,clone(light));
+ assert.equal(core.resultPath('目录/中文审阅.docx'),'目录/中文审阅.review-results.json');
 });
 test('DOCX rejects corrupted metadata, missing mapping, unsafe source paths and malformed ranges transactionally',async()=>{
  const good=await fixture();good.annotations=[annotation(good)];

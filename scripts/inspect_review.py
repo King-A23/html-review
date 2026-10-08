@@ -466,8 +466,12 @@ def inspect(review_path, original_path):
 
 if __name__ == "__main__":
     configure_stdio()
+    usage = "用法：python inspect_review.py 批注副本.review.html|.review.html.gz|.review.json 原始.html|原始.docx"
+    if len(sys.argv) == 2 and sys.argv[1] in ("-h", "--help"):
+        print(usage)
+        raise SystemExit(0)
     if len(sys.argv) != 3:
-        raise SystemExit("用法：python inspect_review.py 批注副本.review.html|.review.html.gz|.review.json 原始.html|原始.docx")
+        raise SystemExit(usage)
     try:
         raise SystemExit(inspect(sys.argv[1], sys.argv[2]))
     except (OSError, EOFError, UnicodeDecodeError, ValueError, KeyError, TypeError, binascii.Error, gzip.BadGzipFile, BadZipFile, RuntimeError, RecursionError) as error:

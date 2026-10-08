@@ -44,6 +44,15 @@ async function newPage(url = pathToFileURL(path.join(root, 'index.html')).href) 
   const page = await context.newPage(); page.on('dialog', dialog => dialog.accept());
   await page.goto(url); await ready(page); return page;
 }
+async function newBlockedPickerPage() {
+  const context = await browser.newContext({viewport: {width: 1440, height: 1000}, acceptDownloads: true}); contexts.push(context);
+  await context.addInitScript(() => {
+    window.showOpenFilePicker = async () => { throw new DOMException('blocked by this environment', 'SecurityError'); };
+    window.showDirectoryPicker = async () => { throw new DOMException('blocked by this environment', 'SecurityError'); };
+  });
+  const page = await context.newPage(); page.on('dialog', dialog => dialog.accept());
+  await page.goto(pathToFileURL(path.join(root, 'index.html')).href); await ready(page); return page;
+}
 try {
   await Promise.all([mkdir(path.join(temp, 'changed')), mkdir(path.join(temp, 'invalid'))]);
   const base = await createDocxFixture();
@@ -53,12 +62,16 @@ try {
   assert.match(originalXML, /<w:tbl>/); assert.match(originalXML, /w:commentRangeStart/);
   browser = await chromium.launch({headless: true, ...(process.env.BROWSER_PATH ? {executablePath: process.env.BROWSER_PATH} : {})});
   const page = await newPage(); const requests = [];
+  assert.doesNotMatch(await page.locator('#save-state').textContent(), /已(?:导出|请求下载|下载)/, 'An unopened workspace must not claim that a copy was exported');
   page.on('request', request => { if (/^https?:/i.test(request.url())) requests.push(request.url()); });
   assert.match(await page.locator('#open-button').textContent(), /打开文档/);
   assert.match(await page.locator('#file-input').getAttribute('accept'), /\.docx/); assert.match(await page.locator('#file-input').getAttribute('accept'), /\.json/);
   await open(page, source); await frame(page).locator('body').filter({hasText: '正文与定位'}).waitFor();
   assert.equal(await page.locator('[data-mode=page]').isVisible(), false);
   assert.equal(await frame(page).locator('h1').filter({hasText: '正文与定位'}).count(), 1);
+  assert.equal(await frame(page).locator('h1').filter({hasText: 'DOCX 审阅测试 Review fixture'}).count(), 1, 'Word Title maps to a heading');
+  assert.equal(await frame(page).locator('p').filter({hasText: '副标题 Subtitle mapping'}).count(), 1, 'Word Subtitle remains a paragraph');
+  assert.equal(await frame(page).locator('p').filter({hasText: '图 1：图注 Caption mapping'}).count(), 1, 'Word Caption remains a paragraph');
   assert.equal(await frame(page).locator('p').filter({hasText: /^重复段落 Duplicate paragraph$/}).count(), 2);
   assert(await frame(page).locator('ol li').count() >= 2); assert(await frame(page).locator('ul li').count() >= 1);
   assert(await frame(page).locator('table table').count() >= 1);
@@ -70,6 +83,25 @@ try {
   assert.match(bodyText, /Footnote content/); assert.match(bodyText, /Endnote content/); assert.match(bodyText, /Inserted revision/);
   assert(!bodyText.includes('Deleted revision'));
   assert.equal(await frame(page).locator('a[href^="javascript:"]').count(), 0);
+  const footnote = frame(page).locator('[data-html-review-owned] a[href^="#footnote-"]').first();
+  assert.equal(await footnote.count(), 1, 'Footnote marker is tool-owned and cannot become an annotation target');
+  const previewDocumentURL = await frame(page).locator('body').evaluate(() => location.href);
+  await footnote.evaluate(link => {
+    const target = document.getElementById(link.getAttribute('href').slice(1));
+    const spacer = document.createElement('div'); spacer.setAttribute('data-html-review-owned', 'true'); spacer.style.height = '1800px';
+    target.parentElement.insertBefore(spacer, target); window.scrollTo(0, 0);
+  });
+  await footnote.evaluate(link => link.click());
+  const afterFootnote = await frame(page).locator('body').evaluate(() => ({url: location.href, scrollY: window.scrollY, scrollTop: document.scrollingElement.scrollTop, rootTop: document.documentElement.scrollTop, bodyTop: document.body.scrollTop, frameTop: document.getElementById('footnote-1').getBoundingClientRect().top}));
+  assert.equal(afterFootnote.url, previewDocumentURL, 'A DOCX footnote click must not navigate out of the iframe document');
+  assert(afterFootnote.scrollY > 0 || afterFootnote.scrollTop > 0 || afterFootnote.rootTop > 0 || afterFootnote.bodyTop > 0, 'Footnote click scrolls within the current preview document: ' + JSON.stringify(afterFootnote));
+  const footnoteBack = frame(page).locator('a[href="#footnote-ref-1"]').first();
+  assert.equal(await footnoteBack.count(), 1, 'Footnote includes a tool-owned return link');
+  await footnoteBack.evaluate(link => link.click());
+  const afterBack = await frame(page).locator('body').evaluate(() => ({url: location.href, scrollY: window.scrollY}));
+  assert.equal(afterBack.url, previewDocumentURL, 'Footnote return must remain inside the current preview document');
+  assert(afterBack.scrollY < afterFootnote.scrollY, 'Footnote return link scrolls back to its marker');
+  console.log('PASS DOCX footnote navigation remains in the preview document');
   const sourceMap = await frame(page).locator('script[data-docx-map]').textContent();
   assert(sourceMap); const map = JSON.parse(sourceMap);
   const mapped = await frame(page).locator('[data-docx-id]').evaluateAll(nodes => nodes.map(n => n.getAttribute('data-docx-id')));
@@ -117,12 +149,22 @@ try {
   await frame(offline).locator('body').filter({hasText: '正文与定位'}).waitFor(); assert.equal(await offline.locator('#annotation-count').textContent(), '3');
   const restored = await newPage(); await open(restored, first.output);
   await restored.locator('#pair-source').waitFor({state:'visible'});
-  await open(restored, source); await ready(restored);
+  const pairCompatibleChooser = restored.waitForEvent('filechooser'); await restored.locator('#pair-compatible').click();
+  await (await pairCompatibleChooser).setFiles(source); await ready(restored);
   await frame(restored).locator('body').filter({hasText:'正文与定位'}).waitFor();
   assert.equal(await restored.locator('#annotation-count').textContent(), '3');
   assert.deepEqual((await annotations(restored, 'paired.json')).data.annotations, first.data.annotations);
   const task = await restored.evaluate(data => window.HRCore.createAgentTask(data), embedded);
   assert.match(task, /DOCX|docx/); assert.match(task, /word\/document\.xml/); assert.match(task, /第二个重复段落/);
+  assert.match(task, /只有原 DOCX 与以下批注也可以完成核对、修改和回报/);
+  assert.match(task, /"format":"html-review-results","schemaVersion":1/);
+  await restored.evaluate(() => Object.defineProperty(navigator, 'clipboard', {configurable:true, value:{writeText:async()=>{throw new Error('clipboard blocked');}}}));
+  await restored.locator('#copy-agent-task').click(); await restored.locator('#agent-task-dialog').waitFor({state:'visible'});
+  assert.match(await restored.locator('#agent-task-help').textContent(), /原始 DOCX/);
+  assert.doesNotMatch(await restored.locator('#agent-task-help').textContent(), /原始 HTML/);
+  assert.match(await restored.locator('#agent-task-text').inputValue(), /"annotationUpdatedAt":"对应批注 updatedAt"/);
+  await restored.locator('[data-close="agent-task-dialog"]').click();
+  console.log('PASS DOCX pairing compatibility and self-contained task');
   if (process.env.DOCX_ARTIFACT_DIR) {
     const artifacts = path.resolve(process.env.DOCX_ARTIFACT_DIR); await mkdir(artifacts, {recursive:true});
     await Promise.all([
@@ -139,8 +181,24 @@ try {
   await runPython([path.join(root, 'scripts/update_review.py'), first.output, '--id', first.data.annotations[0].id, '--status', 'resolved', '--summary', '已更新第二段', '--output', resultsPath]);
   await restored.locator('#results-input').setInputFiles(resultsPath); await ready(restored);
   assert.equal(await restored.locator(`.annotation-card[data-annotation-id="${first.data.annotations[0].id}"]`).getAttribute('data-review-state'), 'completed');
+  const feedbackPath = path.join(temp, 'review.pending-results.json');
+  const feedbackSummary = '原生 Word 批注需确认：随段删除，还是移锚后保留？ <img src=x onerror="window.__feedbackExecuted=true">';
+  await runPython([path.join(root, 'scripts/update_review.py'), first.output, '--id', first.data.annotations[0].id, '--status', 'open', '--summary', feedbackSummary, '--output', feedbackPath]);
+  await restored.locator('#results-input').setInputFiles(feedbackPath); await ready(restored);
+  const feedbackCard = restored.locator(`.annotation-card[data-annotation-id="${first.data.annotations[0].id}"]`);
+  await feedbackCard.locator('.annotation-feedback').waitFor({state:'visible'});
+  assert.equal(await feedbackCard.getAttribute('data-review-state'), 'pending');
+  assert.equal(await feedbackCard.locator('.annotation-feedback').textContent(), '处理反馈' + feedbackSummary, 'Pending agent feedback is visible without expanding history');
+  assert.equal(await feedbackCard.locator('.annotation-feedback img, .annotation-feedback script, .annotation-feedback svg').count(), 0, 'Agent feedback is rendered as text, never as markup');
+  assert.equal(await restored.evaluate(() => window.__feedbackExecuted), undefined, 'Feedback text cannot execute code');
+  await feedbackCard.locator('[data-action=edit]').click(); await restored.locator('#comment-input').fill('更新意见后需要重新处理'); await restored.locator('#save-button').click();
+  assert.equal(await restored.locator(`.annotation-card[data-annotation-id="${first.data.annotations[0].id}"] .annotation-feedback`).count(), 0, 'Editing an annotation hides feedback from an older revision');
+  console.log('PASS DOCX pending feedback is visible and safely cleared by an edit');
   await restored.locator('#comment-input').fill('保留这条未保存草稿');
-  const reloadPicker = restored.waitForEvent('filechooser'); await restored.locator('#reload-preview').click(); await (await reloadPicker).setFiles(changedSource); await ready(restored);
+  await restored.locator('#settings-button').click(); await restored.locator('#help-button').click();
+  if (!await restored.locator('details.help-details').evaluate(details => details.open)) await restored.locator('details.help-details summary').click();
+  assert.equal(await restored.locator('#compatible-reload').isDisabled(), false, 'A loaded non-example document exposes compatible reload');
+  const reloadPicker = restored.waitForEvent('filechooser'); await restored.locator('#compatible-reload').click(); await (await reloadPicker).setFiles(changedSource); await ready(restored);
   await frame(restored).locator('body').filter({hasText:'Inserted paragraph'}).waitFor();
   assert.equal(await restored.locator('#annotation-count').textContent(), '3'); assert.equal(await restored.locator('#comment-input').inputValue(), '保留这条未保存草稿');
   const beforeFailure = await frame(restored).locator('body').textContent();
@@ -174,8 +232,21 @@ try {
   await frame(mappedPage).locator('body').filter({hasText:'Inserted paragraph'}).waitFor();
   await mappedPage.locator(`.annotation-card[data-annotation-id="${extra.annotations[1].id}"] [data-action=locate]`).click();
   await mappedPage.locator(`.annotation-card[data-annotation-id="${extra.annotations[1].id}"] .location-status.missing`).waitFor();
+  const blockedPicker = await newBlockedPickerPage();
+  await blockedPicker.locator('#open-button').click();
+  await blockedPicker.locator('#status').filter({hasText:'此环境无法使用系统选择器'}).waitFor();
+  const statusFallback = blockedPicker.locator('#status').getByRole('button', {name:'改用兼容文件选择'});
+  const fallbackChooser = blockedPicker.waitForEvent('filechooser'); await statusFallback.click(); await fallbackChooser;
+  await blockedPicker.locator('#settings-button').click(); await blockedPicker.locator('#help-button').click();
+  if (!await blockedPicker.locator('details.help-details').evaluate(details => details.open)) await blockedPicker.locator('details.help-details summary').click();
+  assert.equal(await blockedPicker.locator('#compatible-reload').isDisabled(), true, 'Compatible reload remains unavailable before a document is opened');
+  const compatibleOpenChooser = blockedPicker.waitForEvent('filechooser'); await blockedPicker.locator('#compatible-open').click(); await compatibleOpenChooser;
+  await blockedPicker.locator('#settings-button').click(); await blockedPicker.locator('#help-button').click();
+  if (!await blockedPicker.locator('details.help-details').evaluate(details => details.open)) await blockedPicker.locator('details.help-details summary').click();
+  const compatibleFolderChooser = blockedPicker.waitForEvent('filechooser'); await blockedPicker.locator('#compatible-folder').click(); await compatibleFolderChooser;
+  console.log('PASS DOCX compatible open, folder and reload entry points');
   assert.deepEqual(requests, [], 'DOCX preview must never fetch external relationships or conversion services');
-  console.log('PASS DOCX: deterministic fixture, conversion, original XML locations, three annotation scopes, lightweight pair restore, offline HTML, task/results, refresh and failure preservation');
+  console.log('PASS DOCX: deterministic fixture, Word styles and footnote navigation, original XML locations, pair compatibility, self-contained agent task, fallback chooser, task/results, refresh and failure preservation');
 } finally {
   await Promise.allSettled(contexts.map(context => context.close())); await browser?.close(); await rm(temp, {recursive:true,force:true});
   console.log('PROCESS_CLEANUP_COMPLETE');

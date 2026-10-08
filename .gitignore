@@ -4,6 +4,7 @@ test-results/
 .DS_Store
 output/playwright/
 output/docx-review/
+output/docx-user-test/
 .playwright-cli/
 __pycache__/
 *.pyc

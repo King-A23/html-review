@@ -485,7 +485,22 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   }, true);
   document.addEventListener('click', function (event) {
     const element = event.target && (event.target.nodeType === 1 ? event.target : event.target.parentElement);
-    if (!element || own(element)) return;
+    if (!element) return;
+    if (own(element)) {
+      // Note references are excluded from text offsets, but their links must
+      // still stay inside the isolated preview rather than navigate srcdoc.
+      const link = docxHash && element.closest('a[href^="#"]');
+      if (link) {
+        event.preventDefault();
+        if (mode === 'browse') {
+          let id = link.getAttribute('href').slice(1);
+          try { id = decodeURIComponent(id); } catch (_) { /* Keep a literal invalid fragment. */ }
+          const anchor = document.getElementById(id) || document.getElementsByName(id)[0];
+          if (anchor) anchor.scrollIntoView();
+        }
+      }
+      return;
+    }
     if(docxHash && mode==='browse') {
       const link=element.closest('a[href]');
       if(link && /^(https?:|mailto:)/i.test(link.getAttribute('href'))) {

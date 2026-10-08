@@ -395,6 +395,9 @@ kbd{color:#4d6040;font-size:12px}
 .annotation-history summary::before{content:'＋';margin-right:5px}
 .annotation-history[open] summary::before{content:'−'}
 .annotation-history p{margin:7px 0;white-space:pre-wrap;overflow-wrap:anywhere;padding-left:10px;border-left:2px solid #dce3d1}
+.annotation-feedback{margin:12px 0;padding:10px 12px;background:#f3f4ee;border-radius:8px;color:#526045;font-size:11px;line-height:1.7}
+.annotation-feedback strong{font-weight:600}
+.annotation-feedback p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 
 .mode-tabs.is-docx{grid-template-columns:repeat(4,1fr)}
 .mode-tabs.is-docx .mode-indicator{width:calc((100% - 16px)/4)}

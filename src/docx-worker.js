@@ -161,7 +161,8 @@ export async function convertDocx(bytes) {
   }
   if (entries.some(e=>/^word\/(header|footer)\d*\.xml$/.test(e.name))) warnings.push('内容预览不呈现页眉页脚。');
   const transformed = await zip.generateAsync({type:'arraybuffer'});
-  const result = await mammoth.convertToHtml({arrayBuffer:transformed},{externalFileAccess:false,includeEmbeddedStyleMap:false,ignoreEmptyParagraphs:false});
+  const result = await mammoth.convertToHtml({arrayBuffer:transformed},{externalFileAccess:false,includeEmbeddedStyleMap:false,ignoreEmptyParagraphs:false,
+    styleMap:['p.Title => h1:fresh', 'p.Subtitle => p:fresh', 'p.Caption => p:fresh']});
   for (const message of result.messages) warnings.push('DOCX 转换提示：'+message.message);
   return {html:result.value,map,markerPrefix,warnings:[...new Set(warnings)]};
 }

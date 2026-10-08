@@ -128,7 +128,7 @@
   }
   function markDirty() { autosavePaused = false; dirty = true; data.updatedAt = new Date().toISOString(); updateSaveState(); }
   function updateSaveState() {
-    const saved = {html: '当前无未下载的修改；HTML 副本可继续编辑', gzip: '已请求下载压缩副本，解压后可继续编辑', annotations: '已请求导出轻量批注，请连同原文件保留'};
+    const saved = {html: '当前无未下载的修改；HTML 副本可继续编辑', gzip: '当前无未下载的修改；压缩副本解压后可继续编辑', annotations: '轻量批注需与原始文档一起交付'};
     $('save-state').textContent = dirty ? '● 有未下载的修改，请下载保存' : (data ? saved[lastExportFormat] : '批注保存在下载的副本中');
   }
   function view() {
@@ -185,6 +185,7 @@
     updateEditor();
   }
   function updateEditor() {
+    $('compatible-reload').disabled = busy || !data || exampleWorkspace;
     $('undo-button').disabled = busy || !undoStack.length;
     $('redo-button').disabled = busy || !redoStack.length;
     $('copy-agent-task').disabled = busy || !data || !data.annotations.length || draftDirty();
@@ -282,6 +283,12 @@
       card.append(textNode('div', 'annotation-quote', targetText(annotation.target).slice(0, 180)));
       const location = locations.get(annotation.id);
       if (location && !resolved) { const line = textNode('div', 'location-status ' + location.status, location.message); card.append(line); }
+      const latest = annotation.history?.[annotation.history.length - 1];
+      if (state === 'pending' && latest?.summary) {
+        const feedback = textNode('div', 'annotation-feedback', '');
+        feedback.append(textNode('strong', '', '处理反馈'), textNode('p', '', latest.summary));
+        card.append(feedback);
+      }
       const actions = document.createElement('div'); actions.className = 'annotation-actions';
       for (const [action, label] of [['locate', '定位'], ['edit', '编辑'], ['status', resolved ? '重新待处理' : '标记完成'], ['delete', '删除']]) {
         const button = textNode('button', 'text-button' + (action === 'delete' ? ' delete-button' : ''), label);
@@ -507,9 +514,22 @@
       queueAutosave();
     }
   }
-  function pickerError(error) {
-    if (error.name === 'AbortError') { note('已取消选择，当前页面、批注和草稿已保留。'); return; }
+  function pickerError(error, reloading, directory = false) {
+    if (['AbortError', 'SecurityError', 'NotSupportedError'].includes(error.name)) {
+      note(error.name === 'AbortError' ? '已取消选择，当前页面、批注和草稿已保留。' : '此环境无法使用系统选择器，当前工作区已保留。');
+      const fallback = document.createElement('button');
+      fallback.type = 'button'; fallback.className = 'text-button';
+      fallback.textContent = directory ? '改用兼容文件夹选择' : '改用兼容文件选择';
+      fallback.title = '兼容方式不能建立持续读取关联；重载时需重新选择原文件。';
+      fallback.addEventListener('click', () => openCompatible(reloading, directory));
+      $('status').append(' ', fallback); return;
+    }
     throw error;
+  }
+  function openCompatible(reloading = false, directory = false) {
+    if (busy) return;
+    reloadSelection = reloading ? (directory ? 'directory' : 'file') : null;
+    $(directory ? 'folder-input' : 'file-input').click();
   }
   function openHTML(reloading = false) {
     if (busy) return;
@@ -519,7 +539,7 @@
     const selected = local.pickFile();
     return run(async () => {
       try { const [handle] = await selected; await importSelectedFile(await handle.getFile(), handle, reloading); }
-      catch (error) { pickerError(error); }
+      catch (error) { pickerError(error, reloading); }
     });
   }
   async function importDirectory(files, directory = null, reloading = false) {
@@ -565,7 +585,7 @@
     const selected = local.pickDirectory();
     return run(async () => {
       try { const directory = await selected; await importDirectory(await local.directoryFiles(directory), directory, reloading); }
-      catch (error) { pickerError(error); }
+      catch (error) { pickerError(error, reloading, true); }
     });
   }
   function reloadSource() {
@@ -618,7 +638,7 @@
       recordResultsChange(data, merged.data); data = merged.data;
       markDirty(); renderAnnotations(); updateEditor(); queueAutosave();
     }
-    note(merged.applied ? `已更新 ${merged.applied} 条处理记录；原批注和草稿已保留，可撤销。` : '该批处理结果已导入，无需重复更新。');
+    note(merged.applied ? `已更新 ${merged.applied} 条处理记录；原批注和草稿已保留，可撤销。结果只更新处理状态，请重载 agent 修改后的原文档查看新内容。` : '该批处理结果已导入，无需重复更新。');
   }
   function toggleStatus(annotation) {
     if (busy) return;
@@ -858,7 +878,7 @@
       localAccess = local.valid(record.localAccess);
       exampleWorkspace = Boolean(record.exampleWorkspace);
       if (localAccess?.directoryHandle) {
-        const entries = Array.isArray(localAccess.entries) ? localAccess.entries.filter(path => typeof path === 'string' && /\.html?$/i.test(path)) : [];
+        const entries = Array.isArray(localAccess.entries) ? localAccess.entries.filter(path => typeof path === 'string' && /\.(html?|xhtml|docx)$/i.test(path)) : [];
         if (!entries.includes(localAccess.entryPath)) entries.push(localAccess.entryPath);
         showFolderEntries(entries, localAccess.entryPath);
       }
@@ -951,7 +971,9 @@
     if (!data || !data.annotations.length || busy) return;
     if (draftDirty()) { note('编辑框中有未保存的意见，请先保存或取消编辑，再复制任务。', true); return; }
     const task = core.createAgentTask(data);
-    try { await navigator.clipboard.writeText(task); note('修改任务已复制，请连同原 HTML 和资源交给 agent。'); }
+    const handoff = isDocx(data) ? '请同时提供原始 DOCX。预览排版仅供阅读，agent 应根据原文和文档定位核对修改目标。' : '请同时提供原始 HTML 和相关资源。';
+    $('agent-task-help').textContent = handoff + ' 下方包含已保存批注与定位信息，省略文件快照。';
+    try { await navigator.clipboard.writeText(task); note(isDocx(data) ? '修改任务已复制，请连同原始 DOCX 交给 agent。' : '修改任务已复制，请连同原 HTML 和资源交给 agent。'); }
     catch (_) { $('agent-task-text').value = task; $('copy-agent-status').textContent = '可选中下方内容并复制。'; window.HRUI.openDialog($('agent-task-dialog')); $('agent-task-text').focus(); $('agent-task-text').select(); }
     delivered = true; updateGuide();
   }
@@ -1041,8 +1063,16 @@
   });
   $('cancel-conversion').addEventListener('click',()=>window.HRDocx.cancel());
   $('pair-source-button').addEventListener('click',()=>openHTML());
+  $('pair-compatible').addEventListener('click',()=>openCompatible());
   $('cancel-pair').addEventListener('click',()=>{pendingLight=null;$('pair-source').hidden=true;note('已取消恢复，当前工作区已保留。');});
   $('open-button').addEventListener('click', () => openHTML());
+  $('compatible-open').addEventListener('click', () => { window.HRUI.closeDialog($('settings-dialog')); openCompatible(); });
+  $('compatible-folder').addEventListener('click', () => { window.HRUI.closeDialog($('settings-dialog')); openCompatible(false, true); });
+  $('compatible-reload').addEventListener('click', () => {
+    if (!data || busy || exampleWorkspace) return;
+    window.HRUI.closeDialog($('settings-dialog'));
+    openCompatible(true, Boolean(folderFiles || data.resources.length || localAccess?.directoryHandle));
+  });
   $('folder-button').addEventListener('click', () => openDirectory());
   $('file-input').addEventListener('change', async event => {
     const file = event.target.files[0]; event.target.value = '';
@@ -1078,7 +1108,7 @@
   $('clear-target').addEventListener('click', clearTarget);
   $('export-format').addEventListener('change', () => {
     updateExportFormat();
-    if ($('export-format').value === 'annotations') note('轻量批注不包含原文件快照或编辑界面，请与原始 HTML 和相关资源一起保留、交给 agent。');
+    if ($('export-format').value === 'annotations') note(isDocx(data) ? '轻量批注不含原文件快照，请将 JSON 与原始 DOCX 一起保留、交给 agent；原文件匹配后可恢复批注。' : '轻量批注不包含原文件快照或编辑界面，请与原始 HTML 和相关资源一起保留、交给 agent。');
     else if ($('export-format').value === 'gzip') note('压缩副本保留完整快照和批注，解压后可继续编辑。');
   });
   $('download-button').addEventListener('click', () => run(download));
@@ -1122,7 +1152,7 @@
   });
   $('onboarding-dismiss').addEventListener('click', () => { guideDismissed = true; try { localStorage.setItem(guideKey, 'true'); } catch (_) {} updateGuide(); });
   $('restart-guide').addEventListener('click', () => { guideDismissed = false; try { localStorage.removeItem(guideKey); } catch (_) {} window.HRUI.closeDialog($('settings-dialog')); updateGuide(); });
-  $('recover-session').addEventListener('click', () => run(async () => { const record = cachedSession; if (record && confirmDiscard()) await restoreSession(record); }));
+  $('recover-session').addEventListener('click', () => run(async () => { const record = cachedSession; if (record && (!data || confirmDiscard())) await restoreSession(record); }));
   $('discard-session').addEventListener('click', () => run(clearRecovery));
   $('clear-recovery').addEventListener('click', () => run(clearRecovery));
   $('retry-recovery').addEventListener('click', () => run(retryRecovery));

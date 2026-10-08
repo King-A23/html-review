@@ -41,9 +41,11 @@ try {
     window.__cancelPick=false;window.showOpenFilePicker=async()=>{++window.__pickerCounts.file;if(window.__cancelPick)throw new DOMException('cancelled','AbortError');return[await(await navigator.storage.getDirectory()).getFileHandle('review.docx')];};
     window.showDirectoryPicker=async()=>{++window.__pickerCounts.directory;return navigator.storage.getDirectory();};
   });
-  const page=await native.newPage();page.on('dialog',d=>d.accept());await page.goto(url);await ready(page);
+  let recoveryConfirms=0;
+  const page=await native.newPage();page.setDefaultTimeout(8000);page.on('dialog',d=>{if(d.type()==='confirm')recoveryConfirms++;d.accept();});await page.goto(url);await ready(page);
   const base=await createDocxFixture();const inserted=await createDocxFixture('inserted');const changed=await createDocxFixture('changed');
-  await nativeWrite(page,'review.docx',base);await page.locator('#open-button').click();await ready(page);await frame(page).locator('body').filter({hasText:'正文与定位'}).waitFor();
+  await nativeWrite(page,'review.docx',base);await nativeWrite(page,'companion.xhtml',Buffer.from('<!doctype html><title>Companion</title><p>兼容 XHTML 文件</p>'));
+  await page.locator('#open-button').click();await ready(page);await frame(page).locator('body').filter({hasText:'正文与定位'}).waitFor();
   await page.locator('[data-mode=whole]').click();await page.locator('#comment-input').fill('完整文档的保存批注');await page.locator('#save-button').click();
   const first=await exported(page,'annotations','first.review.json');const firstData=JSON.parse(await readFile(first,'utf8'));
   await page.locator('#comment-input').fill('原生重载保留草稿');await nativeWrite(page,'review.docx',inserted);
@@ -53,6 +55,7 @@ try {
   console.log('PASS native DOCX file: fresh handle reads changed bytes with no second picker, keeping annotations and draft');
   await page.locator('#folder-button').click();await ready(page);await page.locator('#entry-select').filter({has:page.locator('option[value="review.docx"]')}).waitFor({state:'attached'});
   assert.equal(await page.locator('#entry-select').inputValue(),'review.docx');assert.equal(await page.locator('#annotation-count').textContent(),'1');
+  assert.deepEqual(await page.locator('#entry-select option').evaluateAll(options=>options.map(option=>option.value)),['companion.xhtml','review.docx'],'Directory entries retain DOCX and XHTML candidates');
   const resultFile=path.join(temp,'review.review-results.json');
   await runPython([path.join(root,'scripts/update_review.py'),first,'--id',firstData.annotations[0].id,'--status','resolved','--summary','已核对并完成整份文档','--output',resultFile]);
   await nativeWrite(page,'review.review-results.json',await readFile(resultFile));await nativeWrite(page,'review.docx',changed);
@@ -61,8 +64,12 @@ try {
   assert(!(await frame(page).locator('body').textContent()).includes('Delete this paragraph'));
   assert.equal(await page.locator('#comment-input').inputValue(),'原生重载保留草稿');
   assert.deepEqual(await page.evaluate(()=>window.__pickerCounts),{file:1,directory:1});
-  await stableSave(page,'原生重载保留草稿');await page.reload();await ready(page);if(await page.locator('#recovery-banner').isVisible()){await page.locator('#recover-session').click();await ready(page);}try {await frame(page).locator('body').filter({hasText:'Inserted paragraph'}).waitFor({timeout:5000});} catch(e){console.error('session recovery',await page.locator('#status').textContent(),await page.locator('#autosave-state').textContent(),await page.locator('#source-name').textContent());throw e;}
+  await stableSave(page,'原生重载保留草稿');
+  await page.evaluate(key=>sessionStorage.removeItem(key),'html-review.resume:'+url);recoveryConfirms=0;
+  await page.reload();await ready(page);await page.locator('#recovery-banner').waitFor({state:'visible'});await page.locator('#recover-session').click();await ready(page);try {await frame(page).locator('body').filter({hasText:'Inserted paragraph'}).waitFor({timeout:5000});} catch(e){console.error('session recovery',await page.locator('#status').textContent(),await page.locator('#autosave-state').textContent(),await page.locator('#source-name').textContent());throw e;}
+  assert.equal(recoveryConfirms,0,'Recovering into an empty workspace must not ask to discard anything');
   assert.equal(await page.locator('#entry-select').inputValue(),'review.docx');assert.equal(await page.locator('#annotation-count').textContent(),'1');assert.equal(await page.locator('#comment-input').inputValue(),'原生重载保留草稿');
+  assert.deepEqual(await page.locator('#entry-select option').evaluateAll(options=>options.map(option=>option.value)),['companion.xhtml','review.docx'],'Same-tab restore keeps all supported directory entry extensions');
   await nativeWrite(page,'review.docx',base);await page.locator('#reload-preview').click();await ready(page);await frame(page).locator('body').filter({hasText:'Delete this paragraph'}).waitFor();
   assert.deepEqual(await page.evaluate(()=>window.__pickerCounts),{file:0,directory:0});
   assert.equal(await page.locator('#comment-input').inputValue(),'原生重载保留草稿');

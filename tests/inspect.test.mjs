@@ -63,6 +63,14 @@ test('inspect_review accepts full HTML, gzip HTML and lightweight JSON without p
   } finally { await rm(dir, {recursive: true, force: true}); }
 });
 
+test('inspect_review --help documents usage and exits successfully', async t => {
+  if (!await requirePython(t)) return;
+  const {stdout} = await inspect('--help');
+  assert.match(stdout, /^用法：python inspect_review\.py /);
+  assert.match(stdout, /批注副本\.review\.html\|\.review\.html\.gz\|\.review\.json/);
+  assert.match(stdout, /原始\.html\|原始\.docx/);
+});
+
 test('inspect_review reports version mismatch and rejects a corrupt embedded snapshot', async t => {
   if (!await requirePython(t)) return;
   const dir = await mkdtemp(path.join(tmpdir(), 'html-review-inspect-'));
