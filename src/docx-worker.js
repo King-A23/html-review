@@ -6,7 +6,7 @@ const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const A = 'http://schemas.openxmlformats.org/drawingml/2006/main';
 const MAX = 100 * 1024 * 1024;
-const elements = node => Array.from(node.childNodes || []).filter(n => n.nodeType === 1);
+const elements = node => Array.from(node?.childNodes || []).filter(n => n.nodeType === 1);
 const descendants = (node, ns, name) => Array.from(node.getElementsByTagNameNS(ns, name));
 function path(node) {
   const pieces = [];
@@ -34,6 +34,37 @@ function mediaPath(part, target) {
     if (piece === '..') items.pop(); else if (piece && piece !== '.') items.push(piece);
   }
   return items.join('/');
+}
+// Preserve extra list indentation without changing Mammoth's list structure or markers.
+function listIndentResolver(styles, numbering) {
+  const child = (node, name) => elements(node).find(n=>n.namespaceURI===W && n.localName===name);
+  const value = (node, name) => child(node,name)?.getAttributeNS(W,'val');
+  const styleMap = new Map(elements(styles?.documentElement).map(n=>[n.getAttributeNS(W,'styleId'),n]));
+  const numbers = new Map(elements(numbering?.documentElement).filter(n=>n.localName==='num').map(n=>[n.getAttributeNS(W,'numId'),n]));
+  const abstracts = new Map(elements(numbering?.documentElement).filter(n=>n.localName==='abstractNum').map(n=>[n.getAttributeNS(W,'abstractNumId'),n]));
+  return paragraph => {
+    const properties=[child(paragraph,'pPr')];
+    const visited=new Set();let styleId=value(properties[0],'pStyle');
+    while(styleId && !visited.has(styleId)) {
+      visited.add(styleId);const style=styleMap.get(styleId);
+      properties.push(child(style,'pPr'));styleId=value(style,'basedOn');
+    }
+    const numberProperties=properties.map(p=>child(p,'numPr')).filter(Boolean);
+    const numId=numberProperties.map(p=>value(p,'numId')).find(v=>v!==undefined && v!=='');
+    const number=numbers.get(numId);if(!number || numId==='0') return null;
+    const levelText=numberProperties.map(p=>value(p,'ilvl')).find(v=>v!==undefined && v!=='') || '0';
+    const level=Number(levelText);if(!Number.isInteger(level) || level<0 || level>8) return null;
+    const override=elements(number).find(n=>n.localName==='lvlOverride' && n.getAttributeNS(W,'ilvl')===levelText);
+    const abstract=abstracts.get(value(number,'abstractNumId'));
+    const definition=elements(abstract).find(n=>n.localName==='lvl' && n.getAttributeNS(W,'ilvl')===levelText);
+    properties.push(child(child(override,'lvl'),'pPr'),child(definition,'pPr'));
+    const indent=properties.map(p=>child(p,'ind')).find(n=>n && (n.hasAttributeNS(W,'start') || n.hasAttributeNS(W,'left')));
+    if(!indent) return null;
+    const raw=indent.getAttributeNS(W,indent.hasAttributeNS(W,'start')?'start':'left');
+    if(!/^-?\d+$/.test(raw)) return null;
+    // HTML already indents each list level; twips beyond its standard 360 add spacing.
+    return Math.min(192,Math.max(0,(Number(raw)-360*(level+1))/15));
+  };
 }
 async function hash(bytes) {
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), b=>b.toString(16).padStart(2,'0')).join('');
@@ -100,7 +131,9 @@ export async function convertDocx(bytes) {
     zip.file(item.name, raw);
   }
   if (!zip.file('[Content_Types].xml') || !zip.file('word/document.xml')) throw new Error('请选择 .docx 文档；此文件没有有效的 Word 文档结构。');
-  const map = {}, warnings = ['DOCX 为内容预览，不还原 Word 字体、页码和完整排版。'];
+  const map = {}, listIndents = {}, warnings = ['DOCX 为内容预览，不还原 Word 字体、页码和完整排版。'];
+  const readOptional = async name => zip.file(name) ? xml(await zip.file(name).async('string')) : null;
+  const listIndent = listIndentResolver(await readOptional('word/styles.xml'),await readOptional('word/numbering.xml'));
   let counter = 0;
   const markerPrefix = 'hrdx_' + (await hash(bytes)).slice(0, 12) + '_';
   function mark(doc, node, locator, image = false) {
@@ -112,6 +145,7 @@ export async function convertDocx(bytes) {
     end.setAttributeNS(W,'w:name',markerPrefix+id+'_e'); end.setAttributeNS(W,'w:id',String(100000001+counter*2));
     if (image) { node.parentNode.insertBefore(start,node); node.parentNode.insertBefore(end,node.nextSibling); }
     else { const first = elements(node).find(n=>!(n.namespaceURI===W && n.localName==='pPr')); node.insertBefore(start, first || null); node.appendChild(end); }
+    return id;
   }
   for (const part of ['word/document.xml','word/footnotes.xml','word/endnotes.xml']) {
     if (!zip.file(part)) continue;
@@ -151,7 +185,9 @@ export async function convertDocx(bytes) {
         delete imageLocator.paraId;
         images.push({node:drawing,locator:imageLocator});
       }
-      mark(doc,paragraph,locator);
+      const paragraphId=mark(doc,paragraph,locator);
+      const indent=listIndent(paragraph);
+      if(indent!==null) listIndents[paragraphId]=indent;
       for (const image of images) mark(doc,image.node,image.locator,true);
     }
     if (descendants(doc,W,'commentRangeStart').length) warnings.push('原生 Word 批注不转为本工具的任务。');
@@ -164,7 +200,7 @@ export async function convertDocx(bytes) {
   const result = await mammoth.convertToHtml({arrayBuffer:transformed},{externalFileAccess:false,includeEmbeddedStyleMap:false,ignoreEmptyParagraphs:false,
     styleMap:['p.Title => h1:fresh', 'p.Subtitle => p:fresh', 'p.Caption => p:fresh']});
   for (const message of result.messages) warnings.push('DOCX 转换提示：'+message.message);
-  return {html:result.value,map,markerPrefix,warnings:[...new Set(warnings)]};
+  return {html:result.value,map,listIndents,markerPrefix,warnings:[...new Set(warnings)]};
 }
 if (typeof self !== 'undefined' && typeof self.postMessage === 'function' && typeof window === 'undefined') {
   self.onmessage = async event => {

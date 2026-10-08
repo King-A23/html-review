@@ -59,6 +59,11 @@
       }
       map[id]=locator;
     }
+    for(const [id,indent] of Object.entries(result.listIndents || {})) {
+      const anchor=doc.querySelector(`span[data-docx-id="${id}"]`);
+      const item=anchor?.closest('li');
+      if(item && Number.isFinite(indent) && indent>=0 && indent<=192) item.style.marginLeft=indent+'px';
+    }
     // Source paths for table/row/cell targets are derived from explicit paragraph anchors.
     for(const element of doc.body.querySelectorAll('table,tr,td,th')) {
       const kind=element.localName==='table'?'table':element.localName==='tr'?'tr':'td,th';
