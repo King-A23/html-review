@@ -464,3 +464,27 @@ kbd{color:#4d6040;font-size:12px}
 .preview-stage:has(.pdf-preview:not([hidden])){padding:0;align-items:stretch;justify-content:flex-start;overflow:hidden}
 .select-field[hidden]{display:none}
 .preview-stage:has(.pdf-preview:not([hidden])) iframe{display:none}
+/* A single handoff route, with workspace backups kept in a quiet disclosure. */
+.header-actions .handoff-button.primary{background:#44573a;border-color:#44573a;color:#fffef8;padding:11px 18px}
+.backup-menu{position:relative;font-size:12px}
+.backup-menu>summary{display:flex;align-items:center;gap:7px;list-style:none;cursor:pointer;padding:10px 13px;color:#66715f;border:1px solid #e0e5d8;border-radius:9px;background:#fffefa;user-select:none}
+.backup-menu>summary::-webkit-details-marker{display:none}
+.backup-menu>summary:focus-visible{outline:3px solid #c77a5b55;outline-offset:2px}
+.backup-menu[open]>summary{background:#f1f4ea;border-color:#cdd7be}
+.backup-panel{position:absolute;right:0;top:calc(100% + 10px);z-index:80;width:300px;padding:20px;background:#fffefa;border:1px solid #e0e5d8;border-radius:14px;box-shadow:0 15px 50px #26302125;animation:backup-open .22s ease-out}
+.backup-panel>strong{font-size:15px}.backup-panel>p{font-size:12px;line-height:1.8;color:#78826e;margin:10px 0 16px}.backup-panel .select-field{width:100%;margin:0 0 12px}.header-actions .backup-panel .download-button{width:100%;padding:11px;font-size:12px;background:#f0f3e9;color:#465c38;border-color:#d7e0cb}
+@keyframes backup-open{from{opacity:0;transform:translateY(-6px) scale(.98);transform-origin:top right}to{opacity:1;transform:none}}
+.handoff-dialog{width:min(700px,calc(100vw - 28px))}.handoff-source-line{font-size:12px;color:#7d866f}.handoff-source-line .handoff-source{display:inline;background:transparent;border:0;padding:0;color:#364531}
+.handoff-choices{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0 12px}.handoff-choice{display:flex;flex-direction:column;align-items:flex-start;padding:20px;border:1px solid #e2e6d9;border-radius:13px;background:#fafbf5}.handoff-choice h3{font-size:19px;margin:10px 0}.handoff-choice p{font-size:12px;line-height:1.8;color:#748066;flex:1}.handoff-choice button{margin-top:14px;width:100%;font-size:12px}
+#agent-task-help{font-size:12px;color:#77826c;line-height:1.8}
+.location-dialog{width:min(960px,calc(100vw - 28px))}.location-opinion{font-size:15px;color:#34432d;line-height:1.8;background:#f1f4e9;padding:12px 16px;border-radius:10px}.location-comparison{display:grid;grid-template-columns:1fr 1.2fr;gap:18px;margin:18px 0}.location-comparison>section{min-width:0;background:#fafaf5;border:1px solid #e3e7dc;padding:18px;border-radius:12px}.location-comparison h3{font-size:15px;margin:10px 0}.location-comparison p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.8}.location-context{font-size:11px!important;color:#87907d}.location-candidate{padding:12px 0;border-bottom:1px solid #dfe5d6}.location-candidate:last-child{border-bottom:0}.location-candidate label{display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:12px;line-height:1.7}.location-candidate input{margin-top:4px;accent-color:#50683e}.location-candidate .text-button{font-size:12px;padding:5px 0}.location-dialog .editor-actions{flex-wrap:wrap}#location-review-status,#location-confirm-help{font-size:12px;line-height:1.8;color:#738266}
+.location-preview-bar,.pdf-search-bar,.pdf-scan-guide{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 18px;background:#f4f6ed;border-bottom:1px solid #e1e6d6;font-size:12px;color:#586b47}.location-preview-bar>span,.pdf-scan-guide>span{flex:1}.location-preview-bar button,.pdf-search-bar button,.pdf-scan-guide button{font-size:11px;padding:7px 10px}.pdf-search-bar #pdf-search-position{min-width:100px}.pdf-scan-guide{background:#fff7e8;color:#85663e}
+#pdf-thumbnails{flex:0 0 152px;width:152px;min-height:0;height:100%;padding:12px 10px;background:#f4f5ef;border-right:1px solid #dfe5d7;scrollbar-width:thin}
+.preview-stage #pdf-preview{flex:1;min-width:0;width:auto}
+@media(max-width:700px){.handoff-choices,.location-comparison{grid-template-columns:1fr}.backup-panel{width:min(300px,calc(100vw - 28px));right:-36px}#pdf-thumbnails{flex-basis:120px;width:120px;padding:8px}.location-dialog .dialog-body{padding:16px}.header-actions .backup-menu>summary{font-size:11px;padding:8px}.header-actions .backup-menu{margin-left:auto}}
+@media(prefers-reduced-motion:reduce){.backup-panel{animation:none}}
+.app-header{position:relative;z-index:20}
+.app-header:has(~.workspace:not(.has-document)) .backup-menu{display:none}
+.location-comparison del{background:#f8e4db;color:#965540;text-decoration-thickness:1px;border-radius:3px}.location-comparison ins{background:#e4efda;color:#426334;text-decoration:none;border-radius:3px}.location-comparison>section{max-height:48dvh;overflow:auto;scrollbar-width:thin}
+.handoff-next-step{font-size:12px;line-height:1.8;color:#69795b;padding:12px 0;margin:12px 0 0;border-top:1px solid #e2e7da}#pdf-search-position{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.location-context{font-size:12px!important;color:#69765c}#location-review-status,#location-confirm-help{color:#657256}.handoff-choice p,#agent-task-help{color:#66735b}

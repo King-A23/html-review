@@ -28,7 +28,10 @@
     "test:pdf-errors": "node tests/pdf-errors.browser.mjs",
     "test:pdf-lifecycle": "node tests/pdf-lifecycle.browser.mjs",
     "test:pdf-visual": "node tests/pdf-visual.browser.mjs",
-    "test:pdf-copy": "node tests/pdf-copy.browser.mjs"
+    "test:pdf-copy": "node tests/pdf-copy.browser.mjs",
+    "test:pdf-reading": "node tests/pdf-reading.browser.mjs",
+    "test:location-candidates": "node tests/location-candidates.browser.mjs",
+    "test:ux-flow": "node tests/ux-flow.browser.mjs"
   },
   "engines": {
     "node": ">=22.13.0"

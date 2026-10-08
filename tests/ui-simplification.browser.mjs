@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 /* User-facing workflow regression: welcome, recoverable pickers, handoff and DOCX reading. */
 import assert from 'node:assert/strict';
 import {readFile, writeFile, mkdtemp, rm, stat} from 'node:fs/promises';
@@ -33,7 +34,7 @@ async function download(page, button, filename) {
   const output=path.join(temp,filename); await (await pending).saveAs(output); return output;
 }
 async function exportJSON(page, filename) {
-  await page.locator('#export-format').selectOption('annotations');
+  await ensureBackup(page); await page.locator('#export-format').selectOption('annotations');
   const output=await download(page,'#download-button',filename); return JSON.parse(await readFile(output,'utf8'));
 }
 async function draftSnapshot(page) {
@@ -54,7 +55,7 @@ try {
   assert.match(await page.locator('#welcome-open').textContent(),/打开/);
   assert.match(await page.locator('#welcome-open').evaluate(n=>n.closest('section').textContent),/HTML.*Word/);
   assert(await page.locator('#example-button').isVisible());
-  for(const id of ['#comment-input','#save-button','#import-results','#copy-agent-task','#undo-button','#annotation-filter']) assert.equal(await page.locator(id).isVisible(),false,`Empty workspace hides later-stage control ${id}`);
+  for(const id of ['#comment-input','#save-button','#import-results','#handoff-button','#undo-button','#annotation-filter']) assert.equal(await page.locator(id).isVisible(),false,`Empty workspace hides later-stage control ${id}`);
   assert.equal(await page.locator('.workspace').evaluate(n=>n.classList.contains('has-document')),false);
   const chooser=page.waitForEvent('filechooser'); await page.locator('#welcome-open').click(); await (await chooser).setFiles(source); await ready(page);
   await frame(page).locator('h1').filter({hasText:'正文与定位'}).waitFor();
@@ -93,20 +94,21 @@ try {
   const id=review.annotations[1].id;
   await page.locator(`.annotation-card[data-annotation-id="${id}"] [data-action=edit]`).click();
   await page.locator('#comment-input').fill('修改已处理的意见'); await page.locator('#save-button').click();
+  await ensureBackup(page); await page.locator('#export-format').selectOption('html');
   await page.locator('#handoff-button').click();
   assert.match(await page.locator('#handoff-source').textContent(),/reading\.docx/);
   assert.match(await page.locator('#agent-task-dialog').textContent(),/附上原文档/);
   const summary=await page.locator('#handoff-summary').textContent();
   for(const state of ['新增','更新','待处理','已完成']) assert.match(summary,new RegExp(`(?:${state}\\s*1|1\\s*(?:条)?\\s*${state})`),`Handoff summarizes ${state}: ${summary}`);
   assert.equal(await page.locator('#task-details').evaluate(n=>n.open),false);
-  await page.locator('#export-format').selectOption('html');
+  await page.locator('#handoff-export-json').locator('..').locator('summary').click();
   const jsonPath=await download(page,'#handoff-export-json','handoff.json');
   assert.equal(await page.locator('#export-format').inputValue(),'html','Handoff JSON does not mutate the main export choice');
   assert.equal(JSON.parse(await readFile(jsonPath,'utf8')).annotations.length,4);
   await page.evaluate(()=>window.__clipboardFail=true); await page.locator('#copy-agent-text').click();
   assert.equal(await page.locator('#task-details').evaluate(n=>n.open),true);
   assert(await page.locator('#agent-task-text').evaluate(n=>document.activeElement===n&&n.selectionStart===0&&n.selectionEnd===n.value.length),'Failed clipboard selects the full manual-copy task');
-  await page.locator('[data-close="agent-task-dialog"]').click(); await page.locator('#copy-agent-task').click();
+  await page.locator('[data-close="agent-task-dialog"]').click(); await page.locator('#handoff-button').click(); await page.locator('#copy-agent-text').click();
   await page.locator('#agent-task-dialog').waitFor({state:'visible'}); assert.equal(await page.locator('#task-details').evaluate(n=>n.open),true);
   await page.locator('[data-close="agent-task-dialog"]').click();
   console.log('PASS handoff preserves export preferences, summarizes all task states, and handles unavailable clipboard');
@@ -121,7 +123,7 @@ try {
   await page.locator('#document-nav-button').click(); await page.locator('#document-search').fill('Duplicate');
   await page.waitForFunction(()=>document.querySelectorAll('#document-search-results button').length>0); await page.locator('[data-close="document-nav-dialog"]').click();
   await page.locator('#handoff-button').click(); await page.locator('[data-close="agent-task-dialog"]').click();
-  await page.locator('#export-format').selectOption('html'); const full=await download(page,'#download-button','offline.html');
+  await ensureBackup(page); await page.locator('#export-format').selectOption('html'); const full=await download(page,'#download-button','offline.html');
   const fullText=await readFile(full,'utf8');
   const snapshot=(await readFile(source)).toString('base64');
   assert.equal(fullText.split(snapshot).length-1,1,'Full review carries exactly one original DOCX snapshot');

@@ -20,8 +20,10 @@
   function destroy(session) {
     if(!session || session.destroyed) return;
     session.destroyed=true;session.selectionSerial++;session.searchSerial++;session.checkSerial++;
-    session.events?.abort();session.resize?.disconnect();clearTimeout(session.scrollTimer);
+    session.events?.abort();session.resize?.disconnect();session.thumbnailObserver?.disconnect();clearTimeout(session.scrollTimer);
     for(const slot of session.slots || []) { slot.renderTask?.cancel();slot.textLayer?.cancel();if(slot.canvas){slot.canvas.width=0;slot.canvas.height=0;} }
+    for(const thumb of session.thumbnails || []) clearThumbnail(thumb);
+    session.thumbnailGeneration++;session.thumbnailContainer?.replaceChildren();
     session.passwordCancel?.();session.passwordCancel=null;
     // Give PDF.js a short chance to release document fonts and filters before force termination.
     let stopped=false;
@@ -37,6 +39,8 @@
     finally {clearTimeout(timer);}
   }
   function askPassword(session,updatePassword,reason) {
+    // A Worker may deliver a password retry after cancellation. Only the active import owns this dialog.
+    if(session.destroyed || importing!==session) return;
     const dialog=document.getElementById('pdf-password-dialog'),input=document.getElementById('pdf-password-input');
     session.passwordCancel?.();session.passwordWaiting=true;
     const passwordStarted=performance.now();let clockResumed=false;
@@ -66,7 +70,7 @@
     const syncAssets={};
     for(const [name,encoded] of Object.entries(assets)) if(name.startsWith('iccs/') || name==='wasm/qcms_bg.wasm') syncAssets['offline:'+name]=core.base64ToBytes(encoded);
     worker.postMessage({hrOfflineSync:syncAssets});
-    const session={data,workerUrl,worker,importStarted,passwordPausedMs:0,destroyed:false,contents:new Map(),fingerprints:new Map(),slots:[],selectionSerial:0,searchSerial:0,checkSerial:0,mode:'browse',zoom:'fit',pageNumber:1,renderQueue:Promise.resolve()};
+    const session={data,workerUrl,worker,importStarted,passwordPausedMs:0,destroyed:false,contents:new Map(),fingerprints:new Map(),slots:[],selectionSerial:0,searchSerial:0,checkSerial:0,mode:'browse',zoom:'fit',pageNumber:1,renderQueue:Promise.resolve(),searchMatches:[],thumbnailGeneration:0,thumbnailQueue:Promise.resolve()};
     importing=session;
     worker.addEventListener('error',event=>{const error=new Error('PDF Worker 无法运行，当前工作区已保留。'+(event.message ? ' '+event.message : ''));session.rejectImport?.(error);destroy(session);});
     try {
@@ -177,7 +181,7 @@
       slot.texts.forEach((node,index)=>{node.dataset.pdfItem=String(index);node.dataset.pdfPage=String(slot.number);});
       slot.node.dataset.noText=String(!c.stream.trim());
       await links(session,slot,page,generation);
-      slot.node.dataset.rendered='true';slot.renderTask=null;paintFocus(session);
+      slot.node.dataset.rendered='true';slot.renderTask=null;paintFocus(session);paintSearch(session);guideScan(session);
     } catch(error) {if(error.name!=='RenderingCancelledException' && error.name!=='AbortException') throw error;}
   }
   async function links(session,slot,page,generation) {
@@ -239,7 +243,7 @@
       const top=container.getBoundingClientRect().top;
       let number=1,distance=Infinity;
       for(const slot of session.slots){const rect=slot.node.getBoundingClientRect(),d=Math.abs(rect.top-top);if(rect.bottom>top && d<distance){number=slot.number;distance=d;}}
-      if(number!==session.pageNumber){session.pageNumber=number;emit(session,'pdf-view',{pageNumber:number,pageCount:session.doc.numPages,zoom:session.zoom});scheduleRender(session);}
+      if(number!==session.pageNumber){session.pageNumber=number;updateThumbnails(session);guideScan(session);emit(session,'pdf-view',{pageNumber:number,pageCount:session.doc.numPages,zoom:session.zoom});scheduleRender(session);}
     },80);};
     container.addEventListener('scroll',scroll,{signal});
     container.addEventListener('pointerdown',event=>pointerDown(session,event),{signal});
@@ -254,8 +258,8 @@
       else if(captured && selection?.rangeCount) {const next=selection.getRangeAt(0);if(next.startContainer!==captured.startContainer || next.startOffset!==captured.startOffset || next.endContainer!==captured.endContainer || next.endOffset!==captured.endOffset){session.selectionSerial++;session.selectionRange=null;}}
     },{signal});
     container.addEventListener('keyup',event=>{if(session.mode==='text' && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key))captureSelection(session).catch(error=>warning(session,error));},{signal});
-    session.resize=new ResizeObserver(()=>{if(session.zoom==='fit'){const width=container.clientWidth;if(width!==session.lastWidth){session.lastWidth=width;layout(session);scheduleRender(session,true);}}});session.lastWidth=container.clientWidth;session.resize.observe(container);
-    container.dataset.pdfMode='browse';layout(session);await scheduleRender(session);alive(session);
+    session.resize=new ResizeObserver(()=>{if(session.zoom==='fit'){const width=container.clientWidth;if(width!==session.lastWidth){session.lastWidth=width;const anchor=readingAnchor(session);layout(session);restoreAnchor(session,anchor);scheduleRender(session,true);}}});session.lastWidth=container.clientWidth;session.resize.observe(container);
+    mountThumbnails(session);container.dataset.pdfMode='browse';layout(session);await scheduleRender(session);alive(session);
     emit(session,'pages',{pages:session.geometry.map(geom=>({index:geom.pageNumber,title:'第 '+geom.pageNumber+' 页'+(geom.label!==String(geom.pageNumber)?' · '+geom.label:'')}))});
     const outline=[];
     async function walk(items,level){for(const item of items || []){if(outline.length>=1000) return;const number=await destination(session,item.dest);if(number) outline.push({index:number-1,level:Math.min(level,6),text:String(item.title).slice(0,160)});await walk(item.items,level+1);}}
@@ -340,12 +344,12 @@
   }
   function goToPage(number) {
     const session=current;if(!session || session.destroyed || !Number.isInteger(number)) return;
-    number=Math.max(1,Math.min(session.slots.length,number));session.pageNumber=number;session.slots[number-1].node.scrollIntoView({block:'start',behavior:'auto'});emit(session,'pdf-view',{pageNumber:number,pageCount:session.slots.length,zoom:session.zoom});scheduleRender(session);
+    number=Math.max(1,Math.min(session.slots.length,number));session.pageNumber=number;updateThumbnails(session);guideScan(session);session.slots[number-1].node.scrollIntoView({block:'start',behavior:'auto'});emit(session,'pdf-view',{pageNumber:number,pageCount:session.slots.length,zoom:session.zoom});scheduleRender(session);
   }
   function setZoom(value) {
     const session=current;if(!session || session.destroyed)return;
     if(value!=='fit' && (!Number.isFinite(value) || value<.25 || value>2))return;
-    session.zoom=value;layout(session);scheduleRender(session,true);session.slots[session.pageNumber-1].node.scrollIntoView({block:'start'});
+    const anchor=readingAnchor(session);session.zoom=value;layout(session);restoreAnchor(session,anchor);scheduleRender(session,true);
   }
   function fingerprintEqual(a,b) {return a?.textSha256===b?.textSha256 && a?.visualSha256===b?.visualSha256;}
   function geometricallyEqual(a,b) {return JSON.stringify(a.viewBox)===JSON.stringify(b.viewBox) && a.rotation===b.rotation && a.userUnit===b.userUnit;}
@@ -408,26 +412,153 @@
     const resolved=clone(target);resolved.pdf.pages=mapped;
     return {status:same?'exact':'fallback',reason:same?'原文件与选区已核对。':'已在新版本找到唯一位置，请核对；原定位记录未修改。',target:resolved};
   }
+  function readingAnchor(session) {
+    const frame=session.container.getBoundingClientRect(),top=frame.top+session.container.clientTop;
+    const slot=session.slots.find(slot=>slot.node.getBoundingClientRect().bottom>top) || session.slots.at(-1);
+    const rect=slot.node.getBoundingClientRect();
+    return {number:slot.number,point:slot.viewport.convertToPdfPoint(top<rect.top?0:Math.max(0,frame.left+session.container.clientLeft-rect.left),Math.max(0,top-rect.top)),gap:Math.max(0,rect.top-top)};
+  }
+  function restoreAnchor(session,anchor) {
+    const slot=session.slots[anchor.number-1],frame=session.container.getBoundingClientRect(),rect=slot.node.getBoundingClientRect(),point=slot.viewport.convertToViewportPoint(...anchor.point);
+    session.container.scrollTop+=rect.top-(frame.top+session.container.clientTop)+point[1]-anchor.gap;
+    session.container.scrollLeft+=rect.left-(frame.left+session.container.clientLeft)+point[0];
+    session.pageNumber=anchor.number;
+  }
+  function guideScan(session) {
+    if(session.mode!=='text') {session.scanGuidancePage=null;return;}
+    const slot=session.slots[session.pageNumber-1];
+    if(slot?.node.dataset.noText==='true' && session.scanGuidancePage!==slot.number) {
+      session.scanGuidancePage=slot.number;emit(session,'scan-text-guidance',{pageNumber:slot.number,message:'这一页没有可选文字。请切换到「区域」，框选需要批注的位置。'});
+    } else if(slot?.node.dataset.noText==='false')session.scanGuidancePage=null;
+  }
+  function clearThumbnail(thumb) {thumb.task?.cancel();thumb.task=null;if(thumb.canvas){thumb.canvas.width=0;thumb.canvas.height=0;thumb.canvas.remove();thumb.canvas=null;}}
+  function mountThumbnails(session) {
+    const container=document.getElementById('pdf-thumbnails');if(!container)return;
+    session.thumbnailContainer=container;session.thumbnails=[];container.replaceChildren();
+    for(const geom of session.geometry) {
+      const button=document.createElement('button');button.type='button';button.className='pdf-thumbnail';button.dataset.pageNumber=String(geom.pageNumber);button.setAttribute('aria-label','跳转到第 '+geom.pageNumber+' 页');
+      const label=document.createElement('span');label.textContent='第 '+geom.pageNumber+' 页';button.append(label);container.append(button);
+      const thumb={number:geom.pageNumber,node:button,visible:false};session.thumbnails.push(thumb);
+      button.addEventListener('click',()=>goToPage(geom.pageNumber),{signal:session.events.signal});
+    }
+    container.addEventListener('scroll',()=>scheduleThumbnails(session),{signal:session.events.signal});
+    session.thumbnailObserver=new ResizeObserver(()=>scheduleThumbnails(session));session.thumbnailObserver.observe(container);
+    updateThumbnails(session);scheduleThumbnails(session);
+  }
+  function updateThumbnails(session) {
+    for(const thumb of session.thumbnails || []) {const selected=thumb.number===session.pageNumber;thumb.node.setAttribute('aria-current',selected?'page':'false');}
+  }
+  function scheduleThumbnails(session) {
+    const container=session.thumbnailContainer;if(!container || session.destroyed)return;
+    const frame=container.getBoundingClientRect(),visible=container.getClientRects().length>0 && !container.hidden;
+    const wanted=visible ? session.thumbnails.filter(thumb=>{const rect=thumb.node.getBoundingClientRect();return rect.bottom>frame.top-160 && rect.top<frame.bottom+160;}).slice(0,12) : [];
+    const generation=++session.thumbnailGeneration;
+    for(const thumb of session.thumbnails)if(!wanted.includes(thumb))clearThumbnail(thumb);
+    session.thumbnailQueue=session.thumbnailQueue.catch(()=>{}).then(async()=>{
+      for(const thumb of wanted) {
+        if(session.destroyed || generation!==session.thumbnailGeneration)return;if(thumb.canvas)continue;
+        const page=session.pageProxies[thumb.number-1],natural=page.getViewport({scale:1}),viewport=page.getViewport({scale:Math.min(1,112/natural.width,144/natural.height)});
+        const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);canvas.setAttribute('aria-hidden','true');thumb.canvas=canvas;thumb.node.prepend(canvas);
+        thumb.task=page.render({canvasContext:canvas.getContext('2d'),viewport,annotationMode:lib.AnnotationMode.ENABLE});
+        try {await thumb.task.promise;if(session.destroyed || generation!==session.thumbnailGeneration){clearThumbnail(thumb);continue;}await nativeNotes(page,canvas,viewport);thumb.task=null;}
+        catch(error){clearThumbnail(thumb);if(error.name!=='RenderingCancelledException')warning(session,error);}
+      }
+    });
+  }
+  function paintSearch(session) {
+    session.container.querySelectorAll('.pdf-search-highlight').forEach(node=>node.remove());
+    for(const slot of session.slots) {
+      if(!slot.texts || slot.node.dataset.rendered!=='true')continue;const box=slot.node.getBoundingClientRect();
+      const pageMatches=session.searchMatches.filter(match=>match.index===slot.number-1),visibleMatches=pageMatches.slice(0,500),active=pageMatches.find(match=>match.id===session.activeSearchId);if(active && !visibleMatches.includes(active))visibleMatches.push(active);
+      for(const match of visibleMatches) {
+        for(let index=0;index<slot.texts.length;index++) {
+          const span=slot.texts[index],item=slot.content.value.items[index],start=Math.max(0,match.start-slot.content.starts[index]),end=Math.min(item.str.length,match.end-slot.content.starts[index]);
+          if(end<=start || !span.firstChild)continue;
+          const range=document.createRange();range.setStart(span.firstChild,start);range.setEnd(span.firstChild,end);
+          for(const rect of range.getClientRects()) {
+            if(!rect.width || !rect.height)continue;const node=document.createElement('div');node.className='pdf-search-highlight'+(match.id===session.activeSearchId?' active':'');node.dataset.searchId=match.id;
+            node.style.left=rect.left-box.left+'px';node.style.top=rect.top-box.top+'px';node.style.width=rect.width+'px';node.style.height=rect.height+'px';slot.node.append(node);
+          }
+        }
+      }
+    }
+  }
+  async function navigateSearch(session,match) {
+    if(!match)return;session.activeSearchId=match.id;goToPage(match.index+1);await session.renderQueue;
+    if(session.destroyed || session.activeSearchId!==match.id)return;paintSearch(session);
+    const node=session.container.querySelector('.pdf-search-highlight.active');node?.scrollIntoView({block:'center',inline:'nearest',behavior:'auto'});
+    emit(session,'pdf-search-position',{current:session.searchMatches.indexOf(match)+1,total:session.searchMatches.length,id:match.id});
+  }
   async function search(session,query) {
-    const serial=++session.searchSerial, items=[];let total=0;
+    const serial=++session.searchSerial,items=[],matches=[],pattern=new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'giu');let total=0;session.searchMatches=[];session.activeSearchId=null;paintSearch(session);
     for(const geom of session.geometry) {
       alive(session);if(serial!==session.searchSerial)return;
       emit(session,'search-progress',{message:'查找第 '+geom.pageNumber+' / '+session.slots.length+' 页…'});
-      const c=await timed(session,content(session,geom.pageNumber),'文字搜索');let index=0;
-      while((index=c.stream.toLocaleLowerCase().indexOf(query.toLocaleLowerCase(),index))!==-1){total++;if(items.length<50)items.push({index:geom.pageNumber-1,text:('第 '+geom.pageNumber+' 页 · '+c.stream.slice(Math.max(0,index-30),index+query.length+80)).slice(0,220)});index+=Math.max(1,query.length);}
+      const c=await timed(session,content(session,geom.pageNumber),'文字搜索');let found;pattern.lastIndex=0;
+      while((found=pattern.exec(c.stream))!==null){const index=found.index;total++;
+        const match={id:serial+':'+geom.pageNumber+':'+index,index:geom.pageNumber-1,start:index,end:index+found[0].length};
+        if(matches.length<10000)matches.push(match);
+        if(items.length<50)items.push({...match,text:('第 '+geom.pageNumber+' 页 · '+c.stream.slice(Math.max(0,index-30),index+query.length+80)).slice(0,220)});
+      }
     }
-    if(serial===session.searchSerial)emit(session,'document-search',{query,total,items});
+    if(serial===session.searchSerial){session.searchMatches=matches;paintSearch(session);emit(session,'document-search',{query,total,items,navigableTotal:matches.length});emit(session,'pdf-search-position',{current:0,total:matches.length});}
+  }
+  async function reviewCandidates(session,target,token) {
+    core.validatePdfTarget(target);const candidates=[];
+    const add=(candidate,label,text)=>{candidate=clone(candidate);candidate.pdf.sourceSha256=session.data.source.sha256;core.validatePdfTarget(candidate);candidates.push({target:candidate,label,text:String(text || candidate.quote?.exact || candidate.text || '').slice(0,1600)});};
+    const result=await resolveTarget(session,target,token);
+    if(result.target && ['exact','fallback'].includes(result.status)) {add(result.target,'第 '+(result.target.pdf.pages[0]?.pageNumber || 1)+' 页 · '+result.reason);return {...result,candidates};}
+    // Cross-page anchors need a unique ordered match; do not manufacture a partial selection.
+    if(target.pdf.pages.length!==1)return {...result,candidates};
+    const old=target.pdf.pages[0];
+    if(target.kind==='text') {
+      for(const geom of session.geometry) {
+        if(token!==session.checkSerial)throw abortError();const c=await content(session,geom.pageNumber);let offset=0;
+        while(candidates.length<6 && (offset=c.stream.indexOf(old.quote,offset))!==-1) {
+          const endOffset=offset+old.quote.length,segments=[],rects=[],meta=await pageMeta(session,geom.pageNumber);
+          for(let index=0;index<c.value.items.length;index++) {
+            const item=c.value.items[index],start=Math.max(0,offset-c.starts[index]),end=Math.min(item.str.length,endOffset-c.starts[index]);if(end<=start)continue;
+            segments.push({itemIndex:index,start,end,text:item.str.slice(start,end)});
+            const [a,b,cc,d,x,y]=item.transform,h=Math.hypot(cc,d)||item.height||1,w=item.width||1,angle=Math.atan2(b,a),dx=Math.cos(angle)*w,dy=Math.sin(angle)*w,hx=-Math.sin(angle)*h,hy=Math.cos(angle)*h;
+            const points=[[x+dx*start/item.str.length,y+dy*start/item.str.length],[x+dx*end/item.str.length,y+dy*end/item.str.length],[x+dx*end/item.str.length+hx,y+dy*end/item.str.length+hy],[x+dx*start/item.str.length+hx,y+dy*start/item.str.length+hy]];
+            const xs=points.map(p=>Math.min(meta.viewBox[2],Math.max(meta.viewBox[0],p[0]))),ys=points.map(p=>Math.min(meta.viewBox[3],Math.max(meta.viewBox[1],p[1]))),rect=[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];if(rect[2]>rect[0] && rect[3]>rect[1])rects.push(rect);
+          }
+          if(rects.length) {
+            const prefix=c.stream.slice(Math.max(0,offset-72),offset),suffix=c.stream.slice(endOffset,endOffset+72),candidate=clone(target);
+            candidate.pdf.pages=[{...meta,segments,rects,quote:old.quote,prefix,suffix}];candidate.quote={exact:old.quote,prefix,suffix};
+            add(candidate,'第 '+geom.pageNumber+' 页 · 文字位置 '+(offset+1)+'，请核对上下文',prefix+'【'+old.quote+'】'+suffix);
+          }
+          offset++;if(candidates.length>=6)break;
+        }
+        if(candidates.length>=6)break;
+      }
+    } else {
+      for(const geom of session.geometry) {
+        if(token!==session.checkSerial)throw abortError();if(!geometricallyEqual(old,geom))continue;
+        const meta=await pageMeta(session,geom.pageNumber),identical=fingerprintEqual(old.fingerprint,meta.fingerprint);
+        if(!identical && geom.pageNumber!==old.pageNumber)continue;
+        const candidate=clone(target);candidate.pdf.pages=[{...meta,rects:clone(old.rects)}];
+        if(candidate.kind==='page'){candidate.pageIndex=geom.pageNumber;candidate.pageCount=session.slots.length;candidate.pageTitle='PDF 第 '+geom.pageNumber+' 页';}
+        add(candidate,'第 '+geom.pageNumber+' 页 · '+(identical?'相同页面内容，请核对':'原页码对应页面，内容已变化，请核对'));
+        if(candidates.length>=6)break;
+      }
+    }
+    return {...result,candidates};
   }
   async function command(name,extra={}) {
     const session=current;if(!session || session.destroyed)return;
     try {
-      if(name==='set-mode') {session.selectionSerial++;session.mode=extra.mode==='element'?'region':extra.mode;session.container.dataset.pdfMode=session.mode;}
+      if(name==='set-mode') {session.selectionSerial++;session.mode=extra.mode==='element'?'region':extra.mode;session.container.dataset.pdfMode=session.mode;guideScan(session);}
       else if(name==='clear-focus' || name==='clear-selection') {session.selectionSerial++;session.focus=null;session.selectedText=false;if(name==='clear-selection')global.getSelection()?.removeAllRanges();paintFocus(session);}
       else if(name==='select-page') {if(session.mode==='page'){goToPage(extra.index);await selectPage(session,extra.index);}}
-      else if(name==='navigate-document') goToPage(extra.index+1);
+      else if(name==='navigate-document') {const match=session.searchMatches.find(match=>extra.id ? match.id===extra.id : match.index===extra.index && match.start===extra.start);if(match)await navigateSearch(session,match);else goToPage(extra.index+1);}
+      else if(name==='search-step') {const index=session.searchMatches.findIndex(match=>match.id===session.activeSearchId),count=session.searchMatches.length;if(count)await navigateSearch(session,session.searchMatches[(index<0?(extra.direction===-1?count-1:0):(index+(extra.direction===-1?-1:1)+count)%count)]);}
+      else if(name==='set-thumbnails') {if(session.thumbnailContainer){session.thumbnailContainer.hidden=!extra.visible;scheduleThumbnails(session);}}
       else if(name==='search-document') {if(typeof extra.query==='string' && extra.query.length && extra.query.length<=200)await search(session,extra.query);}
-      else if(name==='cancel-search') session.searchSerial++;
+      else if(name==='cancel-search') {session.searchSerial++;session.searchMatches=[];session.activeSearchId=null;paintSearch(session);emit(session,'pdf-search-position',{current:0,total:0});}
       else if(name==='cancel-operations') cancelOperations();
+      else if(name==='preview-candidate') {core.validatePdfTarget(extra.target);session.focus=clone(extra.target);goToPage(extra.target.pdf.pages[0]?.pageNumber||1);paintFocus(session);}
+      else if(name==='review-candidates') {const token=session.checkSerial,result=await timed(session,reviewCandidates(session,extra.target,token),'候选位置核对');if(token===session.checkSerial)emit(session,'review-candidates',{requestId:extra.requestId,locationToken:extra.locationToken,status:result.status,reason:result.reason,candidates:result.candidates});emit(session,'operation-complete');}
       else if(name==='locate') {
         const token=session.checkSerial;
         const result=await timed(session,resolveTarget(session,extra.target,token),'批注定位');

@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 /* Real Chromium DOCX import, annotation, offline export and source-refresh acceptance. */
 import assert from 'node:assert/strict';
 import {readFile, writeFile, mkdtemp, mkdir, rm, stat} from 'node:fs/promises';
@@ -32,8 +33,8 @@ const ready = page => page.waitForFunction(() => !document.getElementById('open-
 const frame = page => page.frameLocator('#preview-frame');
 async function open(page, filename) { await page.locator('#file-input').setInputFiles(filename); await ready(page); }
 async function download(page, format, filename) {
-  await page.locator('#export-format').selectOption(format);
-  const pending = page.waitForEvent('download'); await page.locator('#download-button').click();
+  await ensureBackup(page); await page.locator('#export-format').selectOption(format);
+  const pending = page.waitForEvent('download'); await ensureBackup(page); await page.locator('#download-button').click();
   const output = path.join(temp, filename); await (await pending).saveAs(output); return output;
 }
 async function annotations(page, filename = 'review.json') { const output = await download(page, 'annotations', filename); return {output, data: JSON.parse(await readFile(output, 'utf8'))}; }
@@ -159,7 +160,7 @@ try {
   assert.match(task, /只有原 DOCX 与以下批注也可以完成核对、修改和回报/);
   assert.match(task, /"format":"html-review-results","schemaVersion":1/);
   await restored.evaluate(() => Object.defineProperty(navigator, 'clipboard', {configurable:true, value:{writeText:async()=>{throw new Error('clipboard blocked');}}}));
-  await restored.locator('#copy-agent-task').click(); await restored.locator('#agent-task-dialog').waitFor({state:'visible'});
+  await restored.locator('#handoff-button').click(); await restored.locator('#copy-agent-text').click(); await restored.locator('#agent-task-dialog').waitFor({state:'visible'});
   assert.match(await restored.locator('#agent-task-help').textContent(), /原始 DOCX/);
   assert.doesNotMatch(await restored.locator('#agent-task-help').textContent(), /原始 HTML/);
   assert.match(await restored.locator('#agent-task-text').inputValue(), /"annotationUpdatedAt":"对应批注 updatedAt"/);

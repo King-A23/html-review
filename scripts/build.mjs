@@ -7,6 +7,8 @@ const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const read = name => readFile(path.join(root, name), 'utf8');
 const script = (id, content) => `<script id="${id}">\n${content.replace(/<\/script/gi, '<\\/script')}\n</script>`;
 const worker = await build({entryPoints:[path.join(root,'src/docx-worker.js')],bundle:true,platform:'browser',format:'iife',write:false,minify:true,legalComments:'inline',metafile:true});
+const handoffLibrary = await build({entryPoints:[path.join(root,'src/handoff-lib.js')],bundle:true,platform:'browser',format:'iife',write:false,minify:true,legalComments:'inline'});
+const handoff = await read('src/handoff.js');
 const pdfLibrary = await build({entryPoints:[path.join(root,'src/pdf-lib.js')],bundle:true,platform:'browser',format:'iife',write:false,minify:true,legalComments:'inline'});
 const pdfAssets = {};
 const pdfAssetLicenses = [];
@@ -48,7 +50,7 @@ const awaitPdfCss = await read('src/pdf-text-layer.css');
 const output = template
   .replace('<!-- HR_STYLES -->', () => `<style>\n${css}\n${awaitPdfCss}\n</style>`)
   .replace('<!-- HR_EXAMPLE -->', () => `<script type="application/json" id="html-review-example">${JSON.stringify({ name: 'demo.html', base64: example.toString('base64') })}</script>`)
-  .replace('<!-- HR_SCRIPTS -->', () => [licenseBlock,'<script id="hr-docx-worker" type="text/plain">'+Buffer.from(worker.outputFiles[0].text).toString('base64')+'</script>',script('hr-core', core),script('hr-docx',docx), ...pdfBlocks, script('hr-session', session), script('hr-local-files', localFiles), script('hr-shortcuts', shortcuts), script('hr-bridge', bridge), script('hr-ui', ui), script('hr-app', app)].join('\n'));
+  .replace('<!-- HR_SCRIPTS -->', () => [licenseBlock,'<script id="hr-docx-worker" type="text/plain">'+Buffer.from(worker.outputFiles[0].text).toString('base64')+'</script>',script('hr-core', core),script('hr-docx',docx), ...pdfBlocks, script('hr-handoff-library',handoffLibrary.outputFiles[0].text),script('hr-handoff',handoff), script('hr-session', session), script('hr-local-files', localFiles), script('hr-shortcuts', shortcuts), script('hr-bridge', bridge), script('hr-ui', ui), script('hr-app', app)].join('\n'));
 if (process.argv.includes('--check')) {
   if (await read('index.html') !== output) throw new Error('index.html is out of date. Run node scripts/build.mjs and commit the generated file.');
   console.log('Generated index.html matches the current source.');

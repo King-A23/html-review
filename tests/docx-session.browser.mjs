@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 /* Native OPFS handles, persisted DOCX sessions, directory feedback, gzip and CLI pairing. */
 import assert from 'node:assert/strict';
 import {readFile, writeFile, mkdtemp, rm, stat} from 'node:fs/promises';
@@ -6,6 +7,7 @@ import os from 'node:os';
 import {createServer} from 'node:http';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {gunzipSync} from 'node:zlib';
+import {createHash} from 'node:crypto';
 import {createDocxFixture} from './docx-fixtures.mjs';
 import {prepareReview} from '../bin/html-review.mjs';
 import {runPython} from '../scripts/python.mjs';
@@ -28,11 +30,25 @@ async function nativeWrite(page,name,bytes) {
   },{name,base64:Buffer.from(bytes).toString('base64')});
 }
 async function exported(page,format,name) {
-  await page.locator('#export-format').selectOption(format);const pending=page.waitForEvent('download');await page.locator('#download-button').click();
+  await ensureBackup(page); await page.locator('#export-format').selectOption(format);const pending=page.waitForEvent('download');await ensureBackup(page); await page.locator('#download-button').click();
   const output=path.join(temp,name);await(await pending).saveAs(output);return output;
 }
-async function stableSave(page,comment) {
-  await page.waitForFunction(async({key,comment})=>{const r=await window.HRSession.load(key);return r?.draft?.comment===comment&&r?.localAccess?.directoryHandle?.kind==='directory';},{key:'workspace:'+url,comment});
+async function stableSave(page,comment,sourceHash,completedId) {
+  // Unchanged draft text and directory access also match the preceding source
+  // snapshot. Wait for this reload and its feedback before opening a new tab.
+  // waitForFunction treats this asynchronous IndexedDB predicate as a truthy
+  // Promise. Explicitly await each read so the barrier observes persisted data.
+  await page.evaluate(async({key,comment,sourceHash,completedId})=>{
+    const deadline=performance.now()+8000;
+    while(performance.now()<deadline) {
+      const r=await window.HRSession.load(key);
+      if(r?.draft?.comment===comment && r?.localAccess?.directoryHandle?.kind==='directory' &&
+        r?.data?.source?.sha256===sourceHash &&
+        r.data.annotations.some(annotation=>annotation.id===completedId && window.HRCore.annotationStatus(annotation)==='resolved')) return;
+      await new Promise(resolve=>setTimeout(resolve,50));
+    }
+    throw new Error('Latest DOCX source, feedback and draft were not persisted before recovery');
+  },{key:'workspace:'+url,comment,sourceHash,completedId});
 }
 try {
   const native=await chromium.launchPersistentContext('',{headless:true,acceptDownloads:true,viewport:{width:1440,height:1000},...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});contexts.push(native);
@@ -64,7 +80,7 @@ try {
   assert(!(await frame(page).locator('body').textContent()).includes('Delete this paragraph'));
   assert.equal(await page.locator('#comment-input').inputValue(),'原生重载保留草稿');
   assert.deepEqual(await page.evaluate(()=>window.__pickerCounts),{file:1,directory:1});
-  await stableSave(page,'原生重载保留草稿');
+  await stableSave(page,'原生重载保留草稿',createHash('sha256').update(changed).digest('hex'),firstData.annotations[0].id);
   // A new tab is genuinely empty; changing sessionStorage before a reload can
   // race with a pending autosave and does not model this user action reliably.
   const recoveryPage=await native.newPage();recoveryConfirms=0;recoveryPage.setDefaultTimeout(8000);

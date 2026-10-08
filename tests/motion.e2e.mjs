@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 /* Inspect intermediate frames and interruption, not only final visibility. */
 import assert from 'node:assert/strict';
 import {mkdir, readFile, stat} from 'node:fs/promises';
@@ -14,7 +15,7 @@ try {
  const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true}); page.on('pageerror',e=>errors.push(e.message));
  await page.goto(pathToFileURL(path.join(root,'index.html')).href); await page.waitForFunction(()=>!document.querySelector('#open-button').disabled);
  await page.locator('#file-input').setInputFiles(path.join(root,'examples/pages.html')); await page.waitForFunction(()=>!document.querySelector('#open-button').disabled); await page.locator('#preview-frame').waitFor({state:'visible'});
- await page.locator('#export-format-trigger').click();
+ await ensureBackup(page); await page.locator('#export-format-trigger').click();
  const frames=[];
  for(const time of [35,120,300]) {
   const sample=await page.locator('.select-popover').evaluate((popup,time)=>{for(const a of popup.getAnimations({subtree:true})){a.pause();a.currentTime=time;}const style=getComputedStyle(popup); return {opacity:Number(style.opacity),transform:style.transform,clip:style.clipPath,options:Array.from(popup.querySelectorAll('.select-option'),e=>Number(getComputedStyle(e).opacity))};},time); frames.push(sample);
@@ -29,7 +30,7 @@ try {
  }); assert.equal(menuReverse.before,menuReverse.closing); assert.equal(menuReverse.closing,menuReverse.opening); assert(menuReverse.same); assert.equal(menuReverse.count,1); assert.equal(menuReverse.expanded,'true');
  await page.waitForFunction(()=>document.querySelector('.select-popover')?.dataset.motion==='open');
  await page.keyboard.press('End'); await page.keyboard.press('Enter'); assert.equal(await page.locator('#export-format').inputValue(),'annotations');
- await page.evaluate(()=>document.querySelector('#export-format-trigger').click()); await page.waitForFunction(()=>document.querySelector('.select-popover')?.dataset.motion==='open'); assert.equal(await page.getByRole('option',{selected:true}).getAttribute('data-value'),'annotations');
+ await ensureBackup(page); await page.evaluate(()=>document.querySelector('#export-format-trigger').click()); await page.waitForFunction(()=>document.querySelector('.select-popover')?.dataset.motion==='open'); assert.equal(await page.getByRole('option',{selected:true}).getAttribute('data-value'),'annotations');
  await page.keyboard.press('Tab'); assert.equal(await page.locator('#download-button').evaluate(e=>e===document.activeElement),true,'loaded document exposes the next download action in keyboard order'); await page.keyboard.press('Tab'); assert.equal(await page.locator('#settings-button').evaluate(e=>e===document.activeElement),true);
  await page.locator('.select-popover').waitFor({state:'detached'});
  console.log('PASS anchored unfolding, staggered options, reverse without a jump, selected state and Tab focus');
@@ -60,13 +61,13 @@ try {
  await page.locator('#file-input').setInputFiles(path.join(root,'examples/pages.html')); await page.waitForFunction(()=>!document.querySelector('#open-button').disabled); await page.locator('#comment-input').fill('动效测试的整体意见'); await page.locator('#save-button').click();
  await page.locator('.save-confirmation').waitFor({state:'attached'}); assert.equal(await page.locator('.annotation-card').count(),1);
  // Export while confirmation is still visible; temporary motion must never become part of a copy.
- const pending=page.waitForEvent('download'); await page.locator('#download-button').click(); const item=await pending; const file=path.join(output,'motion-export.review.json'); await item.saveAs(file); const json=JSON.parse(await readFile(file,'utf8')); assert.equal(json.annotations.length,1);
- await page.locator('#export-format-trigger').click(); await page.getByRole('option',{name:/HTML 副本/}).click();
+ await ensureBackup(page); await page.locator('#export-format').selectOption('annotations'); const pending=page.waitForEvent('download'); await page.locator('#download-button').click(); const item=await pending; const file=path.join(output,'motion-export.review.json'); await item.saveAs(file); const json=JSON.parse(await readFile(file,'utf8')); assert.equal(json.annotations.length,1);
+ await ensureBackup(page); await page.locator('#export-format-trigger').click(); await page.getByRole('option',{name:/完整工作区/}).click();
  await page.locator('#comment-input').fill('第二条意见'); await page.locator('#save-button').click();
- const fullPending=page.waitForEvent('download'); await page.locator('#download-button').click(); const full=await fullPending; const fullPath=path.join(output,'motion-export.review.html'); await full.saveAs(fullPath);
+ const fullPending=page.waitForEvent('download'); await ensureBackup(page); await page.locator('#download-button').click(); const full=await fullPending; const fullPath=path.join(output,'motion-export.review.html'); await full.saveAs(fullPath);
  const source=await readFile(fullPath,'utf8'); assert(!/<[^>]+data-ui-transient=/.test(source)); assert(!/<[^>]+data-motion=/.test(source));
  await page.goto(pathToFileURL(fullPath).href); await page.waitForFunction(()=>!document.querySelector('#open-button').disabled); assert.equal(await page.locator('.annotation-card').count(),2); await page.locator('#settings-button').click(); await page.keyboard.press('Escape'); await page.locator('#settings-dialog').waitFor({state:'hidden'});
- await page.emulateMedia({reducedMotion:'reduce'}); await page.locator('#export-format-trigger').click(); assert.equal(await page.locator('.select-popover').evaluate(e=>e.getAnimations({subtree:true}).length),0); await page.keyboard.press('Escape'); assert.equal(await page.locator('.select-popover').count(),0);
+ await page.emulateMedia({reducedMotion:'reduce'}); await ensureBackup(page); await page.locator('#export-format-trigger').click(); assert.equal(await page.locator('.select-popover').evaluate(e=>e.getAnimations({subtree:true}).length),0); await page.keyboard.press('Escape'); assert.equal(await page.locator('.select-popover').count(),0);
  await page.locator('#settings-button').click(); assert.equal(await page.locator('#settings-dialog').evaluate(e=>e.getAnimations({subtree:true}).length),0); await page.keyboard.press('Escape'); assert.equal(await page.locator('.modal-scrim').count(),0);
  assert.deepEqual(errors,[]); console.log('PASS save feedback, transient-free export/reopen and reduced motion');
 } finally {if(browser)await browser.close();console.log('PROCESS_CLEANUP_COMPLETE');}

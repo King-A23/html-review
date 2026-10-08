@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
@@ -56,7 +57,7 @@ async function waitCount(page, count) {
 }
 async function download(page, filename, expectedName) {
   const pending = page.waitForEvent('download');
-  await page.locator('#download-button').click();
+  await ensureBackup(page); await page.locator('#download-button').click();
   const downloaded = await pending;
   if (expectedName) assert.equal(downloaded.suggestedFilename(), expectedName);
   const destination = path.join(resultDir, filename);
@@ -273,7 +274,7 @@ try {
     const stored = await extract(fullPath);
     assert.match(fullBytes.toString('utf8'), /id="html-review-example">null<\/script>/);
     assert(!fullBytes.toString('utf8').match(dataPattern)[2].includes('\n'));
-    await formats.locator('#export-format').selectOption('gzip');
+    await ensureBackup(formats); await formats.locator('#export-format').selectOption('gzip');
     const packedPath = await download(formats, 'exports.review.html.gz', 'demo.review.html.gz');
     const packed = await readFile(packedPath);
     const unpackedPath = path.join(resultDir, 'exports.unpacked.review.html');
@@ -284,7 +285,7 @@ try {
     await frameFor(unpacked); await waitCount(unpacked, 1);
     assert.equal(await unpacked.locator('.annotation-comment').textContent(), comment);
     assert.equal(await unpacked.evaluate(() => window.__exportXss), undefined);
-    await formats.locator('#export-format').selectOption('annotations');
+    await ensureBackup(formats); await formats.locator('#export-format').selectOption('annotations');
     const lightPath = await download(formats, 'exports.review.json', 'demo.review.json');
     const lightBytes = await readFile(lightPath);
     const light = JSON.parse(lightBytes);
@@ -367,7 +368,7 @@ try {
     assert.equal(await reopened.locator('#comment-input').inputValue(), (await reopened.locator('.annotation-comment').first().textContent()));
     await selectText(reopened, '#cross-node-text');
     await reopened.locator('#comment-input').fill('改为：具体的建议，让修改位置与要求一目了然。');
-    await reopened.locator('#download-button').click();
+    await ensureBackup(reopened); await reopened.locator('#download-button').click();
     await reopened.waitForFunction(() => document.querySelector('#status').textContent.includes('尚未保存') || document.querySelector('#status').textContent.includes('未保存'));
     await reopened.locator('#save-button').click();
     await waitCount(reopened, 3);
@@ -463,7 +464,7 @@ try {
     const stored = await extract(assetCopy);
     assert.equal(stored.annotations[0].target.attributes.src, 'images/landscape.svg');
     assert.equal(stored.resources.length, 5);
-    await assets.locator('#export-format').selectOption('annotations');
+    await ensureBackup(assets); await assets.locator('#export-format').selectOption('annotations');
     const light = JSON.parse(await readFile(await download(assets, 'with-assets.review.json'), 'utf8'));
     assert.equal(light.resources.length, 5);
     assert(light.resources.every((resource, index) => resource.sha256 === stored.resources[index].sha256 && resource.base64 === undefined));

@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 /* Independent OOXML edge cases for mapped boundaries, notes, tables and source changes. */
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
@@ -38,7 +39,7 @@ try {
    const range=document.createRange();range.setStart(start,2);range.setEnd(end,4);getSelection().removeAllRanges();getSelection().addRange(range);last.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));
  });
  await page.locator('#target-text').filter({hasText:'合并 Vertical右侧单元'}).waitFor();await save('跨两个单元格的原文');
- await page.locator('#export-format').selectOption('annotations');let pending=page.waitForEvent('download');await page.locator('#download-button').click();const json=path.join(temp,'review.json');await (await pending).saveAs(json);const data=JSON.parse(await readFile(json,'utf8'));
+ await ensureBackup(page); await page.locator('#export-format').selectOption('annotations');let pending=page.waitForEvent('download');await ensureBackup(page); await page.locator('#download-button').click();const json=path.join(temp,'review.json');await (await pending).saveAs(json);const data=JSON.parse(await readFile(json,'utf8'));
  assert.equal(data.annotations[0].target.docx.start.offset,'脚注与尾注 Notes'.length);
  assert.equal(data.annotations[0].target.quote.exact,'引用后的文字');
  const image=data.annotations[1].target.docx.blocks.find(b=>b.image);assert.equal(image.image.mediaPath,'word/media/image1.png');assert.equal(image.paraId,undefined);

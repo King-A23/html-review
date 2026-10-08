@@ -16,8 +16,8 @@ const temp=await mkdtemp(path.join(os.tmpdir(),'html-review-pdf-lifecycle-'));
 const output=path.join(root,'output/pdf-review/lifecycle-verification.json');
 await mkdir(path.dirname(output),{recursive:true});
 const executablePath=process.env.BROWSER_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const contexts=[],errors=[],network=[],checks=[];let browser,server;
-const evidence={hostOS:os.platform(),browserExecutable:executablePath,nativeHandleMethod:'Chrome native OPFS handles; picker UI stubbed. This is not a Windows filesystem test.',checks,errors,network};
+const contexts=[],errors=[],network=[],checks=[];let browser,server,cleaningUp=false;
+const evidence={nativeProfileMode:'temporary persistent regular Chrome profile (not incognito)',browserEvents:[],hostOS:os.platform(),browserExecutable:executablePath,nativeHandleMethod:'Chrome native OPFS handles; picker UI stubbed. This is not a Windows filesystem test.',checks,errors,network};
 const ready=page=>page.waitForFunction(()=>!document.getElementById('open-button').disabled);
 async function rendered(page,n=1){
   const step=page.__lifecycleStep||'PDF page '+n+' render'; const start=performance.now();
@@ -27,7 +27,7 @@ async function rendered(page,n=1){
   }
 }
 async function phase(name,action){const start=performance.now();try{const detail=await action();checks.push({name,status:'passed',elapsedMs:performance.now()-start,...detail});console.log('PASS '+name);}catch(error){checks.push({name,status:'failed',elapsedMs:performance.now()-start,error:error.stack});console.error('FAIL '+name+': '+error.message);}}
-function observe(page){page.setDefaultTimeout(20000);page.on('dialog',dialog=>dialog.accept());page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(/^https?:/.test(request.url())&&!request.url().startsWith('http://127.0.0.1:'))network.push(request.url());});}
+function observe(page){page.on('crash',()=>evidence.browserEvents.push({event:'page-crash',step:page.__lifecycleStep||null,url:page.url(),duringCleanup:cleaningUp}));page.on('close',()=>{if(!cleaningUp)evidence.browserEvents.push({event:'unexpected-page-close',step:page.__lifecycleStep||null,url:page.url()});});page.setDefaultTimeout(20000);page.on('dialog',dialog=>dialog.accept());page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(/^https?:/.test(request.url())&&!request.url().startsWith('http://127.0.0.1:'))network.push(request.url());});}
 async function freshPage(){const context=await browser.newContext({viewport:{width:1440,height:1000},acceptDownloads:true});contexts.push(context);await context.addInitScript(()=>{window.showOpenFilePicker=undefined;window.showDirectoryPicker=undefined;});const page=await context.newPage();observe(page);await page.goto(pathToFileURL(path.join(root,'index.html')).href);await ready(page);return page;}
 async function open(page,filename){await page.locator('#file-input').setInputFiles(filename);await ready(page);await rendered(page);await page.waitForFunction(()=>!document.getElementById('document-nav-button').disabled);}
 async function goto(page,n){await page.evaluate(n=>window.HRPdf.goToPage(n),n);await rendered(page,n);}
@@ -57,7 +57,7 @@ w=PdfWriter()
 for n in range(1000):w.add_blank_page(612,792)
 with open(sys.argv[2],'wb') as f:w.write(f)
 `,source,large]);
-  browser=await chromium.launch({headless:true,executablePath});evidence.browserVersion=browser.version();
+  browser=await chromium.launch({headless:true,executablePath});evidence.browserVersion=browser.version();browser.on('disconnected',()=>{if(!cleaningUp)evidence.browserEvents.push({event:'browser-disconnected'});});
   await phase('PDF search, parsed outline and internal link navigation',async()=>{
     const page=await freshPage();await open(page,source);await page.locator('#document-nav-button').click();await page.locator('#document-outline button').filter({hasText:'审阅图表'}).click();await rendered(page,3);assert.equal(await page.locator('#pdf-page-number').inputValue(),'3');
     await page.locator('#document-nav-button').click();await page.locator('#document-search').fill('LEFT column line 12');await page.locator('#document-search-status').filter({hasText:'找到 1 处'}).waitFor();await page.locator('#document-search-results button').click();await rendered(page,2);assert.equal(await page.locator('#pdf-page-number').inputValue(),'2');
@@ -72,7 +72,7 @@ with open(sys.argv[2],'wb') as f:w.write(f)
   });
   await phase('PDF autosave, refresh recovery, native file and folder reload with results',async()=>{
     const app=await readFile(path.join(root,'index.html'));server=createServer((_req,res)=>{res.setHeader('Content-Type','text/html;charset=utf-8');res.end(app);});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const url=`http://127.0.0.1:${server.address().port}/`;
-    const context=await chromium.launchPersistentContext('',{headless:true,executablePath,viewport:{width:1440,height:1000},acceptDownloads:true});contexts.push(context);await context.addInitScript(()=>{window.__pickerCounts={file:0,directory:0};window.showOpenFilePicker=async()=>{window.__pickerCounts.file++;return[await(await navigator.storage.getDirectory()).getFileHandle('review.pdf')];};window.showDirectoryPicker=async()=>{window.__pickerCounts.directory++;return navigator.storage.getDirectory();};});
+    const context=await chromium.launchPersistentContext(path.join(temp,'native-chrome-profile'),{headless:true,executablePath,viewport:{width:1440,height:1000},acceptDownloads:true});contexts.push(context);context.on('close',()=>{if(!cleaningUp)evidence.browserEvents.push({event:'native-persistent-context-closed'});});await context.addInitScript(()=>{window.__pickerCounts={file:0,directory:0};window.showOpenFilePicker=async()=>{window.__pickerCounts.file++;return[await(await navigator.storage.getDirectory()).getFileHandle('review.pdf')];};window.showDirectoryPicker=async()=>{window.__pickerCounts.directory++;return navigator.storage.getDirectory();};});
     const page=await context.newPage();observe(page);await page.goto(url);await ready(page);await nativeWrite(page,'review.pdf',await readFile(source));page.__lifecycleStep='Native initial file open';await page.locator('#open-button').click();await ready(page);await rendered(page);await page.locator('[data-mode=whole]').click();await save(page,'整份 PDF 的意见');const first=await report(page);
     await page.locator('#comment-input').fill('PDF 自动保存的未提交草稿');await stableSave(page,url,'PDF 自动保存的未提交草稿');page.__lifecycleStep='Refresh restoring file-handle PDF and draft';await page.reload();await ready(page);await rendered(page);assert.equal(await page.locator('#annotation-count').textContent(),'1');assert.equal(await page.locator('#comment-input').inputValue(),'PDF 自动保存的未提交草稿');
     // Picker counters reset on refresh. A real restored native file handle must avoid any picker.
@@ -89,6 +89,6 @@ with open(sys.argv[2],'wb') as f:w.write(f)
   });
   assert.deepEqual(errors,[],'No runtime page errors');assert.deepEqual(network,[],'No external network requests');
 }finally{
-  for(const context of contexts)await context.close().catch(()=>{});await browser?.close();if(server)await new Promise(resolve=>server.close(resolve));await rm(temp,{recursive:true,force:true});evidence.processCleanup='PROCESS_CLEANUP_COMPLETE';await writeFile(output,JSON.stringify(evidence,null,2));console.log('PROCESS_CLEANUP_COMPLETE');
+  cleaningUp=true;for(const context of contexts)await context.close().catch(()=>{});await browser?.close();if(server)await new Promise(resolve=>server.close(resolve));await rm(temp,{recursive:true,force:true});evidence.processCleanup='PROCESS_CLEANUP_COMPLETE';await writeFile(output,JSON.stringify(evidence,null,2));console.log('PROCESS_CLEANUP_COMPLETE');
 }
 assert(checks.every(check=>check.status==='passed'),'One or more PDF lifecycle checks failed; see lifecycle-verification.json');

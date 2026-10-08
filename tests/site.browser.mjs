@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 /* Verify the deployed subpath, actual downloads and trial persistence in a real browser. */
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -121,7 +122,7 @@ try {
   assert.equal((await snapshotData(other)).annotations.find(a=>a.id===saved.id).comment,comment);
   await other.close();
   report.push('A newly opened trial preserves pending recovery instead of overwriting it');
-  const review = await download(page,page.locator('#download-button'),'demo.review.html');
+  await ensureBackup(page); const review = await download(page,page.locator('#download-button'),'demo.review.html');
   const copy = await readFile(review,'utf8');
   assert(!/<(?:style|nav)[^>]*data-site-only/.test(copy)); assert(!copy.includes('class="online-bar"'));
   const offline = await context.newPage(); await offline.goto(pathToFileURL(review).href);

@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 /* Real-browser acceptance for custom controls, settings and semantic page targets. */
 import assert from 'node:assert/strict';
 import {mkdir, readFile, stat, writeFile} from 'node:fs/promises';
@@ -16,10 +17,10 @@ async function fresh(options = {}) {
  await page.goto(url); await page.waitForFunction(()=>!document.querySelector('#open-button').disabled);
  return {context,page};
 }
-async function choose(page, id, label) {await page.locator('#'+id+'-trigger').click(); await page.getByRole('option', {name:label}).click();}
+async function choose(page, id, label) {if(id==='export-format') await ensureBackup(page); await page.locator('#'+id+'-trigger').click(); await page.getByRole('option', {name:label}).click();}
 async function save(page, text) {await page.locator('#comment-input').fill(text); await page.locator('#save-button').click();}
 async function data(page) {await page.locator('#data-button').click(); const value = JSON.parse(await page.locator('#data-preview').textContent()); await page.keyboard.press('Escape'); await page.locator('#data-dialog').waitFor({state:'hidden'}); return value;}
-async function download(page, filename) {const pending=page.waitForEvent('download'); await page.locator('#download-button').click(); const item=await pending; const destination=path.join(output,filename); await item.saveAs(destination); assert.equal(await item.failure(),null); return destination;}
+async function download(page, filename) {const pending=page.waitForEvent('download'); await ensureBackup(page); await page.locator('#download-button').click(); const item=await pending; const destination=path.join(output,filename); await item.saveAs(destination); assert.equal(await item.failure(),null); return destination;}
 try {
  browser = await chromium.launch({headless:true,...(process.env.BROWSER_PATH ? {executablePath:process.env.BROWSER_PATH}: {})});
  {
@@ -29,10 +30,10 @@ try {
   assert.equal(await page.locator('.welcome-shortcut kbd').first().textContent(), process.platform === 'darwin' ? '⌘' : 'Ctrl');
   assert.equal(await page.locator('#export-format-trigger').isVisible(),false,'Export controls appear only after opening a document');
   await page.locator('#file-input').setInputFiles(path.join(root,'examples/pages.html')); await page.locator('#preview-frame').waitFor({state:'visible'}); await page.waitForFunction(()=>!document.querySelector('#open-button').disabled);
-  await page.locator('#export-format-trigger').focus(); await page.keyboard.press('ArrowDown'); await page.keyboard.press('End'); await page.keyboard.press('Enter');
+  await ensureBackup(page); await page.locator('#export-format-trigger').focus(); await page.keyboard.press('ArrowDown'); await page.keyboard.press('End'); await page.keyboard.press('Enter');
   assert.equal(await page.locator('#export-format').inputValue(),'annotations'); assert.equal(await page.locator('#export-format-trigger').getAttribute('aria-expanded'),'false'); assert.equal(await page.locator('#export-format-trigger').evaluate(e=>e===document.activeElement),true);
-  await page.locator('#export-format-trigger').click(); await page.keyboard.press('Escape'); await page.locator('.select-popover').waitFor({state:'detached'}); assert.equal(await page.locator('.select-popover').count(),0);
-  await page.locator('#export-format-trigger').click(); await page.locator('.brand').click(); await page.locator('.select-popover').waitFor({state:'detached'}); assert.equal(await page.locator('.select-popover').count(),0);
+  await ensureBackup(page); await page.locator('#export-format-trigger').click(); await page.keyboard.press('Escape'); await page.locator('.select-popover').waitFor({state:'detached'}); assert.equal(await page.locator('.select-popover').count(),0);
+  await ensureBackup(page); await page.locator('#export-format-trigger').click(); await page.locator('.brand').click(); await page.locator('.select-popover').waitFor({state:'detached'}); assert.equal(await page.locator('.select-popover').count(),0);
   await page.locator('#settings-button').click(); await page.locator('[data-sidebar-choice="right"]').click();
   assert.equal(await page.locator('.workspace').getAttribute('data-sidebar-position'),'right'); assert.equal(await page.locator('[data-sidebar-choice="right"]').getAttribute('aria-pressed'),'true');
   await page.locator('#help-button').click(); assert(await page.locator('#help-dialog').isVisible()); await page.locator('#workspace-settings').waitFor({state:'hidden'});
@@ -66,10 +67,10 @@ try {
   await page.locator('[data-mode="whole"]').click(); await save(page,'全篇统一标题与页码样式。');
   let stored=await data(page); assert.equal(stored.annotations.length,2);
   const target=stored.annotations[0].target; assert.equal(target.scope,'page'); assert.equal(target.pageIndex,2); assert.equal(target.pageCount,3); assert.equal(target.selector,'#page-feedback'); assert.equal(target.tag,'section'); assert(target.textFingerprint); assert(target.domPath); assert.equal(stored.annotations[1].target.scope,'whole-document');
-  await choose(page,'export-format',/轻量批注/); const json=JSON.parse(await readFile(await download(page,'pages.review.json'),'utf8')); assert.deepEqual(json.annotations[0].target,target); assert.equal(json.source.base64,undefined);
-  await choose(page,'export-format',/HTML 副本/); const copy=await download(page,'pages.review.html');
+  await choose(page,'export-format',/单独批注/); const json=JSON.parse(await readFile(await download(page,'pages.review.json'),'utf8')); assert.deepEqual(json.annotations[0].target,target); assert.equal(json.source.base64,undefined);
+  await choose(page,'export-format',/完整工作区/); const copy=await download(page,'pages.review.html');
   await page.goto(pathToFileURL(copy).href); await page.locator('#preview-frame').waitFor({state:'visible'}); await page.waitForFunction(()=>!document.querySelector('#open-button').disabled);
-  assert.equal(await page.locator('#export-format-trigger').count(),1); await choose(page,'export-format',/压缩副本/); assert.equal(await page.locator('#export-format').inputValue(),'gzip');
+  assert.equal(await page.locator('#export-format-trigger').count(),1); await choose(page,'export-format',/压缩工作区/); assert.equal(await page.locator('#export-format').inputValue(),'gzip');
   await page.locator('.annotation-card').first().locator('[data-action="locate"]').click(); await page.locator('.location-status.exact').waitFor();
   await page.locator('.annotation-card').first().locator('[data-action="edit"]').click(); assert.equal(await page.locator('[data-mode="page"]').getAttribute('aria-pressed'),'true');
   await page.locator('#comment-input').fill('第二页的三个步骤，请改为纵向排列。'); await page.locator('#save-button').click(); stored=await data(page); assert.equal(stored.annotations[0].target.selector,'#page-feedback');

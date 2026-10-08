@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 /* DOCX rejection and worker lifecycle tests with genuine ZIP files and native workers. */
 import assert from 'node:assert/strict';
 import {readFile, writeFile, mkdtemp, rm, stat} from 'node:fs/promises';
@@ -17,8 +18,8 @@ const frame = page => page.frameLocator('#preview-frame');
 async function fixture(name, bytes) { const file = path.join(temp,name); await writeFile(file,bytes); return file; }
 async function open(page, file) { await page.locator('#file-input').setInputFiles(file); await ready(page); }
 async function lightweight(page, name) {
-  await page.locator('#export-format').selectOption('annotations'); const pending=page.waitForEvent('download');
-  await page.locator('#download-button').click(); const file=path.join(temp,name); await (await pending).saveAs(file); return file;
+  await ensureBackup(page); await page.locator('#export-format').selectOption('annotations'); const pending=page.waitForEvent('download');
+  await ensureBackup(page); await page.locator('#download-button').click(); const file=path.join(temp,name); await (await pending).saveAs(file); return file;
 }
 async function fresh() {
   const context=await browser.newContext({acceptDownloads:true});contexts.push(context);

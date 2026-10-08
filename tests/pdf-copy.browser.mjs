@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 /* Refresh the demo shell without changing saved opinions, then exercise actual HTML/gzip downloads. */
 import assert from 'node:assert/strict';
 import {readFile,writeFile,mkdtemp,rm} from 'node:fs/promises';
@@ -31,7 +32,7 @@ try {
   assert.equal(await page.locator('#annotation-count').textContent(),'4');
   const downloaded={};
   for(const format of ['html','gzip']) {
-    await page.locator('#export-format').selectOption(format);const waiting=page.waitForEvent('download');await page.locator('#download-button').click();
+    await ensureBackup(page); await page.locator('#export-format').selectOption(format);const waiting=page.waitForEvent('download');await ensureBackup(page); await page.locator('#download-button').click();
     const file=path.join(out,'demo.review.html'+(format==='gzip'?'.gz':''));await(await waiting).saveAs(file);
     const bytes=await readFile(file),html=(format==='gzip'?gunzipSync(bytes):bytes).toString('utf8');
     assert.deepEqual(extract(html),saved);assert.equal(Buffer.from(extract(html).source.base64,'base64').equals(sourceBefore),true);

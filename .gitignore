@@ -12,3 +12,4 @@ __pycache__/
 *.pyc
 dist/
 _site/
+output/ux-review/

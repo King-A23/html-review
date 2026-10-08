@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 /* Invalid PDF, cancellation, password privacy and text range boundaries. */
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
@@ -12,7 +13,7 @@ const ready=page=>page.waitForFunction(()=>!document.getElementById('open-button
 const rendered=(page,n=1)=>page.locator(`.pdf-page[data-page-number="${n}"][data-rendered="true"]`).waitFor();
 async function newPage(init){const context=await browser.newContext({viewport:{width:1440,height:1000},acceptDownloads:true});contexts.push(context);if(init)await context.addInitScript(init);const page=await context.newPage();page.on('dialog',d=>d.accept());page.on('pageerror',e=>errors.push(e.message));await page.goto(pathToFileURL(path.join(root,'index.html')).href);await ready(page);return page;}
 async function open(page,file){await page.locator('#file-input').setInputFiles(file);}
-async function exportData(page,format='annotations'){await page.locator('#export-format').selectOption(format);const pending=page.waitForEvent('download');await page.locator('#download-button').click();const file=path.join(temp,format+'-'+Date.now()+'.'+(format==='html'?'html':'json'));await(await pending).saveAs(file);return await readFile(file,'utf8');}
+async function exportData(page,format='annotations'){await ensureBackup(page); await page.locator('#export-format').selectOption(format);const pending=page.waitForEvent('download');await ensureBackup(page); await page.locator('#download-button').click();const file=path.join(temp,format+'-'+Date.now()+'.'+(format==='html'?'html':'json'));await(await pending).saveAs(file);return await readFile(file,'utf8');}
 async function save(page,comment){await page.locator('#comment-input').fill(comment);await page.locator('#save-button').click();}
 try {
   browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||undefined,headless:true});

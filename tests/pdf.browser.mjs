@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 /* Real offline PDF workflow, selections, revision checks and restored workspaces. */
 import assert from 'node:assert/strict';
 import {readFile,writeFile,mkdir,mkdtemp,rm,copyFile} from 'node:fs/promises';
@@ -22,7 +23,7 @@ async function newPage(url=pathToFileURL(path.join(root,'index.html')).href) {
   await page.goto(url);await ready(page);return page;
 }
 async function open(page,filename){await page.locator('#file-input').setInputFiles(filename);await ready(page);}
-async function download(page,format,name){await page.locator('#export-format').selectOption(format);const promise=page.waitForEvent('download');await page.locator('#download-button').click();const filename=path.join(temp,name);await(await promise).saveAs(filename);return filename;}
+async function download(page,format,name){await ensureBackup(page); await page.locator('#export-format').selectOption(format);const promise=page.waitForEvent('download');await ensureBackup(page); await page.locator('#download-button').click();const filename=path.join(temp,name);await(await promise).saveAs(filename);return filename;}
 async function data(page,name='review.json'){return JSON.parse(await readFile(await download(page,'annotations',name),'utf8'));}
 async function save(page,comment){await page.locator('#comment-input').fill(comment);assert(await page.locator('#save-button').isEnabled(),'Selecting a target must survive moving to the comment input');await page.locator('#save-button').click();}
 async function goto(page,number){await page.locator('#pdf-page-number').fill(String(number));await page.locator('#pdf-page-number').press('Enter');await page.locator('#pdf-page-number').blur();await rendered(page,number);}

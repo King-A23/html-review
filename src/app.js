@@ -31,6 +31,7 @@
   let mode = 'browse';
   let channel = '';
   let previewReady = false;
+  let latestSelectionSerial = 0;
   let pendingTarget = null;
   let editingId = null;
   let draftBaseline = '';
@@ -54,6 +55,7 @@
   let locationReview = null;
   let locationRequest = null;
   let locationTimer = null;
+  let locationInspection = null;
   const needsLocationReview = annotation => core.annotationStatus(annotation) === 'open' && ['missing','ambiguous','fallback'].includes(locations.get(annotation.id)?.status);
   const undoStack = [];
   const redoStack = [];
@@ -180,6 +182,7 @@
     if (next === 'page' && isDocx(data)) return;
     autosavePaused = false;
     mode = next;
+    if(next!=='text')$('pdf-scan-guide').hidden=true;
     for (const button of document.querySelectorAll('[data-mode]')) button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
     send('set-mode', {mode: mode === 'whole' ? 'browse' : mode});
     if (data && (mode === 'whole' || (mode === 'browse' && !editingId))) {
@@ -228,8 +231,7 @@
     $('compatible-reload').disabled = busy || !data || exampleWorkspace;
     $('undo-button').disabled = busy || !undoStack.length;
     $('redo-button').disabled = busy || !redoStack.length;
-    $('copy-agent-task').disabled = busy || !data || !data.annotations.length || draftDirty();
-    $('copy-agent-task').title = draftDirty() ? '先保存或取消编辑框中的意见，再复制任务' : '复制已保存批注和定位信息，连同原文件交给 agent';
+
     $('retry-recovery').disabled = busy;
     $('import-results').disabled = busy || !data;
     $('clear-target').hidden = !pendingTarget || pendingTarget.scope === 'whole-document';
@@ -245,7 +247,7 @@
     updateGuide();
     if (persistDraft) queueAutosave();
   }
-  function clearEditor() {
+  function clearEditor(afterSave = false) {
     pendingTarget = null;
     $('page-select').value = ''; window.HRUI.syncSelect('page-select');
     editingId = null;
@@ -253,7 +255,7 @@
     draftTargetChanged = false;
     $('comment-input').value = '';
     $('target-preview').hidden = true;
-    send('clear-selection');
+    send('clear-selection',afterSave && !isPdf(data) ? {throughSelectionSerial:latestSelectionSerial} : {});
     if (data && ['browse', 'whole'].includes(mode)) setTarget(pageTarget());
     draftTargetChanged = false;
     updateEditor();
@@ -345,6 +347,7 @@
         actions.append(button);
       }
       if (needsLocationReview(annotation)) {
+        const review = textNode('button','text-button','查看对照'); review.type='button'; review.dataset.action='review-location'; review.dataset.id=annotation.id; actions.prepend(review);
         const button = textNode('button', 'text-button reselect-button', '重新选择位置');
         button.type = 'button'; button.dataset.action = 'reselect'; button.dataset.id = annotation.id;
         actions.prepend(button);
@@ -424,7 +427,10 @@
     return {...result, channel: nextChannel};
   }
   function installPreview(result) {
-    previewReady = false;
+    previewReady = false;latestSelectionSerial=0;
+    locationInspection=null; window.HRUI.closeDialog($('location-dialog')); $('location-preview-bar').hidden=true;
+    $('pdf-thumbnails').hidden=true; $('pdf-thumbnails').replaceChildren(); $('pdf-thumbnail-toggle').setAttribute('aria-expanded','false');
+    $('pdf-search-bar').hidden=true; $('pdf-scan-guide').hidden=true;
     frame.setAttribute('aria-busy',String(!result.pdf));pdfPreview.setAttribute('aria-busy',String(Boolean(result.pdf)));
     documentOutline = []; clearTimeout(searchTimer);
     $('document-search').value = ''; renderDocumentNavigation();
@@ -815,7 +821,7 @@
     locations.delete(annotation.id);
     manualLocationRequests.delete(annotation.id);
     guideAnnotated = true;
-    markDirty(); clearEditor(); renderAnnotations(); window.HRUI.saved($('save-button'));
+    markDirty(); clearEditor(true); renderAnnotations(); window.HRUI.saved($('save-button'));
     startLocationReview();
     note(targetChanged ? '新位置已保存，原定位保留作记录；交给 agent 时会使用新的位置。' : existing ? '批注已更新。准备好后，点击「交给 agent」交付本轮意见。' : '批注已添加。准备好后，点击「交给 agent」；下载副本可留作备份。');
   }
@@ -857,6 +863,95 @@
     const token = id();
     manualLocationRequests.set(annotation.id, {token,revision:core.annotationRevision(annotation),target:JSON.stringify(annotation.target)});
     send('locate', {target: annotation.target, requestId: annotation.id,locationToken:token});
+  }
+  function inspectLocation(annotation) {
+    if(busy || !previewReady || core.annotationStatus(annotation)!=='open')return;
+    locationInspection={id:annotation.id,revision:core.annotationRevision(annotation),target:JSON.stringify(annotation.target),sourceHash:data.source.sha256,token:id(),originalText:targetText(annotation.target),candidates:[],selected:-1,viewed:false};
+    $('location-preview-bar').hidden=true;
+    $('location-opinion').textContent=annotation.comment;
+    $('location-original').textContent=targetText(annotation.target);
+    const quote=annotation.target.quote || {};
+    $('location-original-context').textContent=[quote.prefix,quote.suffix].filter(Boolean).join(' … ');
+    $('location-review-status').textContent='正在读取当前文档中的候选位置…';
+    $('location-candidates').replaceChildren();$('confirm-location').disabled=true;
+    window.HRUI.openDialog($('location-dialog'));
+    send('review-candidates',{target:annotation.target,requestId:annotation.id,locationToken:locationInspection.token});
+  }
+  function inspectionAnnotation() {
+    const state=locationInspection,annotation=data?.annotations.find(item=>item.id===state?.id);
+    return annotation && core.annotationRevision(annotation)===state.revision && JSON.stringify(annotation.target)===state.target && data.source.sha256===state.sourceHash ? annotation : null;
+  }
+  function candidateNeedsViewing(candidate) {return candidate.target.kind==='region' || (candidate.target.kind==='page' && !wholeTarget(candidate.target)) || candidate.target.tag==='img';}
+  function showTextDifference(node,oldText,newText,previous) {
+    const a=Array.from(oldText.slice(0,1600)),b=Array.from(newText.slice(0,1600));let start=0,end=0;
+    while(start<Math.min(a.length,b.length) && a[start]===b[start])start++;
+    while(end<Math.min(a.length,b.length)-start && a[a.length-1-end]===b[b.length-1-end])end++;
+    const value=previous?a:b;node.replaceChildren(document.createTextNode(value.slice(0,start).join('')));
+    const changed=value.slice(start,value.length-end).join('');
+    if(changed)node.append(textNode(previous?'del':'ins','',changed));
+    node.append(document.createTextNode(end?value.slice(-end).join(''):''));
+  }
+  function chooseLocation(index) {
+    if(!inspectionAnnotation() || !locationInspection.candidates[index])return;
+    locationInspection.selected=index;locationInspection.viewed=false;
+    for(const node of $('location-candidates').querySelectorAll('input'))node.checked=Number(node.value)===index;
+    const selected=locationInspection.candidates[index];
+    showTextDifference($('location-original'),locationInspection.originalText,selected.text,true);
+    const copy=$('location-candidates').querySelector(`[data-candidate-copy="${index}"]`);if(copy)showTextDifference(copy,locationInspection.originalText,selected.text,false);
+    const needsView=candidateNeedsViewing(selected);
+    $('confirm-location').disabled=needsView;
+    $('location-confirm-help').textContent=needsView ? '先在文档中查看区域或页面，再确认。原定位记录会保留，意见仍待处理。' : '确认位置会保留原定位记录；修改意见仍是待处理。';
+  }
+  function previewLocation(index) {
+    chooseLocation(index);const candidate=locationInspection?.candidates[index];if(!candidate)return;
+    locationInspection.viewed=true;
+    $('location-preview-label').textContent=candidate.label;
+    $('location-preview-bar').hidden=false;$('confirm-preview-location').disabled=false;
+    $('confirm-location').disabled=false;
+    window.HRUI.closeDialog($('location-dialog'));send('preview-candidate',{target:candidate.target});
+  }
+  function receiveLocationCandidates(message) {
+    if(!inspectionAnnotation() || message.requestId!==locationInspection.id || message.locationToken!==locationInspection.token)return;
+    const candidates=[];
+    for(const candidate of Array.isArray(message.candidates)?message.candidates.slice(0,6):[]) {
+      try {
+        if(JSON.stringify(candidate.target).length>250000)continue;
+        core.validateTarget(candidate.target,candidate.target.kind);
+        if(candidate.target.kind!==inspectionAnnotation().kind)continue;
+        if(isPdf(data) && candidate.target.pdf?.sourceSha256!==data.source.sha256)continue;
+        if(isDocx(data) && candidate.target.docx?.sourceSha256!==data.source.sha256)continue;
+        candidates.push({target:structuredClone(candidate.target),label:String(candidate.label || '候选位置').slice(0,160),text:String(candidate.text || targetText(candidate.target)).slice(0,1600),prefix:String(candidate.prefix || '').slice(0,160),suffix:String(candidate.suffix || '').slice(0,160)});
+      }catch(_) { /* Invalid or stale evidence never becomes a confirmation target. */ }
+    }
+    locationInspection.candidates=candidates;
+    $('location-review-status').textContent=candidates.length ? (candidates.length===1 ? '找到一个可核对的位置，请检查原文与当前位置。' : '找到多个候选，请根据上下文选择，不会自动绑定。') : '没有找到可靠的候选；原文可能已删除。请在文档中重新选择，或保留批注记录。';
+    const list=$('location-candidates');list.replaceChildren();
+    candidates.forEach((candidate,index)=>{
+      const card=textNode('section','location-candidate','');
+      const label=document.createElement('label');const radio=document.createElement('input');radio.type='radio';radio.name='review-location';radio.value=String(index);radio.addEventListener('change',()=>chooseLocation(index));
+      label.append(radio,textNode('strong','',candidate.label));
+      const copy=textNode('p','',candidate.text);copy.dataset.candidateCopy=String(index);card.append(label,copy);
+      if(candidate.prefix || candidate.suffix)card.append(textNode('p','location-context',[candidate.prefix,candidate.suffix].filter(Boolean).join(' … ')));
+      const viewButton=textNode('button','text-button','在文档中查看');viewButton.type='button';viewButton.addEventListener('click',()=>previewLocation(index));card.append(viewButton);list.append(card);
+    });
+    if(!candidates.length)list.append(textNode('p','navigation-empty','无可靠候选。不猜测新原文，也不自动更换目标。'));
+    if(candidates.length===1)chooseLocation(0);
+  }
+  function confirmLocation() {
+    const annotation=inspectionAnnotation(),state=locationInspection,candidate=state?.candidates[state.selected];
+    if(!annotation || !candidate || busy)return;
+    if(candidateNeedsViewing(candidate) && !state.viewed)return;
+    if(draftDirty()){note('先保存或取消编辑框中的意见，再确认位置；草稿仍保留。',true);return;}
+    if((annotation.targetHistory?.length || 0)>=100){note('此批注已保存 100 次定位记录，请新建批注。',true);return;}
+    const now=new Date().toISOString(),next=structuredClone(annotation);
+    next.revision=core.annotationRevision(annotation)+1;next.updatedAt=now;next.status='open';next.target=structuredClone(candidate.target);next.view=view();
+    next.targetHistory=[...(next.targetHistory || []),{revision:core.annotationRevision(annotation),target:structuredClone(annotation.target),...(annotation.view?{view:structuredClone(annotation.view)}:{}),at:now}];
+    core.normalizeAnnotation(next);core.validateTarget(next.target,next.kind);
+    const index=data.annotations.indexOf(annotation);recordChange(annotation,next,index);data.annotations[index]=next;
+    locations.set(next.id,{status:'exact',message:'你已确认当前位置；原定位保留在历史记录中。'});manualLocationRequests.delete(next.id);
+    if(editingId===next.id){pendingTarget=structuredClone(next.target);draftTargetChanged=false;setTarget(pendingTarget);}
+    locationInspection=null;$('location-preview-bar').hidden=true;window.HRUI.closeDialog($('location-dialog'));
+    markDirty();renderAnnotations();updateEditor();note('已确认新位置，原定位保留为记录。修改意见仍待处理，可撤销。');
   }
   function edit(annotation) {
     if (draftDirty() && !confirm('编辑框中有未保存的修改。确定切换到这条批注吗？')) return;
@@ -903,6 +998,10 @@
     for (const node of copy.querySelectorAll('[data-motion],[inert]')) { node.removeAttribute('data-motion'); node.removeAttribute('inert'); }
     for (const panel of copy.querySelectorAll('[data-settings-panel]')) panel.removeAttribute('aria-hidden');
     copy.querySelector('#pdf-preview').replaceChildren(); copy.querySelector('#pdf-preview').hidden=true;
+    copy.querySelector('#pdf-thumbnails').replaceChildren(); copy.querySelector('#pdf-thumbnails').hidden=true; copy.querySelector('#pdf-thumbnail-toggle').setAttribute('aria-expanded','false');
+    for(const selector of ['#pdf-search-bar','#pdf-scan-guide','#location-preview-bar'])copy.querySelector(selector).hidden=true;
+    for(const selector of ['#location-candidates','#location-original','#location-original-context','#location-opinion','#location-review-status','#location-preview-label'])copy.querySelector(selector).replaceChildren();
+    copy.querySelector('#backup-menu').removeAttribute('open');
     copy.querySelector('#pdf-controls').hidden=true; copy.querySelector('#pdf-cancel-search').hidden=true;
     copy.querySelector('#preview-width').closest('.select-field')?.removeAttribute('hidden');
     copy.querySelector('#pdf-page-number').value='1'; copy.querySelector('#pdf-page-number').setAttribute('value','1'); copy.querySelector('#pdf-page-number').removeAttribute('max');
@@ -953,13 +1052,14 @@
     setTimeout(() => URL.revokeObjectURL(url), 30000);
   }
   function finishDownload(format, message) {
+    $('backup-menu').open=false;
     dirty = false; lastExportFormat = format; updateSaveState(); note(message);
     delivered = true; updateGuide(); queueAutosave();
   }
   function updateExportFormat() {
     autosavePaused = false;
     const format = $('export-format').value;
-    $('download-button').textContent = {html: '↓ 下载批注副本', gzip: '↓ 下载压缩副本', annotations: '↓ 导出轻量批注'}[format];
+    $('download-button').textContent = {html: '保存完整工作区', gzip: '保存压缩工作区', annotations: '导出单独批注 JSON'}[format];
     window.HRUI.syncSelect('export-format');
     queueAutosave();
   }
@@ -1156,12 +1256,14 @@
     for (const annotation of data.annotations) ++counts[core.taskState(annotation)];
     const categories = [['new','新增'], ['updated','已更新'], ['pending','已回报仍待处理']].filter(([key]) => counts[key]).map(([key,label]) => `${label} ${counts[key]}`);
     $('handoff-summary').textContent = `待完成 ${data.annotations.length-counts.completed} · 已完成 ${counts.completed}\n` + (categories.join(' · ') || '所有意见已完成，新想法可以继续添加批注。');
+    const attention=data.annotations.filter(needsLocationReview).length;
+    if(attention)$('handoff-summary').textContent+='\n'+attention+' 条位置需确认，可先返回批注列表查看对照。';
     $('handoff-source').textContent = data.source.name;
     $('agent-task-help').textContent = isPdf(data) ? '附上这份原始 PDF 和批注 JSON。工具只做预览和批注，保留页面位置与原文。' : isDocx(data) ? '附上这份原始 DOCX（Word 文件），不需要另存 HTML。工具只做预览和批注。' : '附上原始 HTML；若有本地图片、样式或脚本，请一起提供。';
     $('agent-task-text').value = core.createAgentTask(data);
     $('task-details').open = false;
     $('copy-agent-status').textContent = '复制后，粘贴到你使用的 agent 对话中。';
-    $('handoff-reload').disabled = busy || !data;
+    $('handoff-reload').disabled = busy || !data; $('handoff-export-package').disabled=busy || draftDirty();
   }
   function openHandoff() {
     if (busy || !data?.annotations.length || draftDirty()) return;
@@ -1177,7 +1279,7 @@
     for (const item of items) {
       const button = textNode('button', 'document-nav-item', item.text); button.type = 'button';
       if (!query) button.style.paddingLeft = (12 + Math.min(item.level - 1, 4) * 12) + 'px';
-      button.addEventListener('click', () => { send('navigate-document', {kind:query ? 'search' : 'outline', index:item.index, query}); window.HRUI.closeDialog($('document-nav-dialog')); });
+      button.addEventListener('click', () => { send('navigate-document', {kind:query ? 'search' : 'outline', index:item.index, query, id:item.id, start:item.start,end:item.end}); window.HRUI.closeDialog($('document-nav-dialog')); });
       list.append(button);
     }
     if (!items.length && (!query || results)) list.append(textNode('p', 'navigation-empty', query ? '没有找到匹配内容，请换一个关键词。' : '这份文档没有标题，可以使用上方查找。'));
@@ -1199,6 +1301,7 @@
   function shortcut(action) {
     if (action === 'escape' && busy) { if (!cancelPicker()) adapters.cancel(); return; }
     if (action === 'escape' && window.HRUI.closeMenu(true)) return;
+    if(action==='escape' && $('backup-menu').open){$('backup-menu').open=false;return;}
     const dialog = document.querySelector('dialog[open]');
     if (dialog) { if (action === 'escape') window.HRUI.closeDialog(dialog); return; }
     if (busy) return;
@@ -1244,6 +1347,10 @@
 
   function handlePreviewMessage(message) {
     if(!message || !data) return;
+    if(message.event==='review-candidates'){receiveLocationCandidates(message);return;}
+    if(isPdf(data) && message.event==='pdf-search-position'){const total=Number(message.total)||0;$('pdf-search-bar').hidden=!total;$('pdf-search-position').textContent=`“${$('document-search').value}” · ${Number(message.current)||0} / ${total}`;return;}
+    if(isPdf(data) && message.event==='scan-text-guidance'){$('pdf-scan-guide').hidden=false;$('pdf-scan-message').textContent=String(message.message || '此页没有可选文字，使用区域框选。').slice(0,250);return;}
+
     if(isPdf(data) && message.event==='operation-complete') { $('pdf-cancel-operation').hidden=true; $('pdf-operation-status').textContent=''; return; }
     if (isPdf(data) && message.event === 'pdf-view') {
       if(Number.isInteger(message.pageNumber) && message.pageNumber > 0) $('pdf-page-number').value=String(message.pageNumber);
@@ -1297,6 +1404,7 @@
         const target = JSON.parse(serialized);
         if (!target || target.kind !== (isPdf(data) && mode === 'element' ? 'region' : mode) || typeof target.selector !== 'string' || target.selector.length > 4096) return;
         core.validateTarget(target, target.kind);
+        if(Number.isSafeInteger(message.selectionSerial) && message.selectionSerial>=0)latestSelectionSerial=message.selectionSerial;
         setTarget(target); note(editingId ? '新位置已选中，点击「更新批注」保存；原位置会保留作记录。' : '目标已选中，请填写修改意见。');
       } catch (error) { note(error.message, true); }
     } else if (message.event === 'located') {
@@ -1312,6 +1420,18 @@
   }
   window.addEventListener('message', event => { const message=event.data; if(!isPdf(data) && event.source===frame.contentWindow && message?.hr===true && message.channel===channel) handlePreviewMessage(message); });
   $('cancel-conversion').addEventListener('click',()=>{ if (!cancelPicker()) adapters.cancel(); });
+  $('pdf-thumbnail-toggle').addEventListener('click',()=>{const visible=$('pdf-thumbnail-toggle').getAttribute('aria-expanded')!=='true';$('pdf-thumbnail-toggle').setAttribute('aria-expanded',String(visible));send('set-thumbnails',{visible});});
+  $('pdf-search-edit').addEventListener('click',()=>{renderDocumentNavigation();window.HRUI.openDialog($('document-nav-dialog'));$('document-search').focus();$('document-search').select();});
+  $('pdf-search-prev').addEventListener('click',()=>send('search-step',{direction:-1}));
+  $('pdf-search-next').addEventListener('click',()=>send('search-step',{direction:1}));
+  $('pdf-search-close').addEventListener('click',()=>{$('document-search').value='';clearTimeout(searchTimer);send('cancel-search');$('pdf-search-bar').hidden=true;renderDocumentNavigation();});
+  $('pdf-use-region').addEventListener('click',()=>{setMode('element');$('pdf-scan-guide').hidden=true;});
+  $('confirm-location').addEventListener('click',confirmLocation);$('confirm-preview-location').addEventListener('click',confirmLocation);
+  $('return-location-comparison').addEventListener('click',()=>{if(inspectionAnnotation())window.HRUI.openDialog($('location-dialog'));});
+  $('reselect-location').addEventListener('click',()=>{const annotation=inspectionAnnotation();window.HRUI.closeDialog($('location-dialog'));$('location-preview-bar').hidden=true;locationInspection=null;if(annotation)reselect(annotation);});
+  $('handoff-export-package').addEventListener('click',()=>run(async()=>{if(!data || draftDirty())return;const result=await window.HRHandoff.create(data);downloadBlob(result.blob,result.filename);delivered=true;updateGuide();queueAutosave();$('copy-agent-status').textContent='交接包已下载。将 ZIP 附给 agent，让它读取包内任务说明。';}));
+  $('backup-menu').querySelector('summary').addEventListener('click',()=>{if(!$('backup-menu').open && $('export-format').value==='annotations'){$('export-format').value='html';updateExportFormat();}});
+  document.addEventListener('click',event=>{if(!$('backup-menu').contains(event.target) && !event.target.closest('.select-popover'))$('backup-menu').open=false;});
   $('pdf-prev-page').addEventListener('click',()=>window.HRPdf.goToPage(Math.max(1,Number($('pdf-page-number').value)-1)));
   $('pdf-next-page').addEventListener('click',()=>window.HRPdf.goToPage(Math.min(Number($('pdf-page-number').max)||1,Number($('pdf-page-number').value)+1)));
   $('pdf-page-number').addEventListener('change',()=>window.HRPdf.goToPage(Number($('pdf-page-number').value)));
@@ -1391,7 +1511,8 @@
     if (!button || !data) return;
     const annotation = data.annotations.find(item => item.id === button.dataset.id);
     if (!annotation) return;
-    if (button.dataset.action === 'locate') locate(annotation);
+    if (button.dataset.action === 'review-location') inspectLocation(annotation);
+    else if (button.dataset.action === 'locate') locate(annotation);
     else if (button.dataset.action === 'edit') edit(annotation);
     else if (button.dataset.action === 'reselect') reselect(annotation);
     else if (button.dataset.action === 'status') { try { toggleStatus(annotation); } catch (error) { note(error.message, true); } }
@@ -1411,7 +1532,7 @@
   });
   $('undo-button').addEventListener('click', () => reverseChange());
   $('redo-button').addEventListener('click', () => reverseChange(true));
-  $('copy-agent-task').addEventListener('click', copyAgentTask);
+
   $('annotation-filter').addEventListener('change', renderAnnotations);
   $('import-results').addEventListener('click', () => $('results-input').click());
   $('results-input').addEventListener('change', async event => {

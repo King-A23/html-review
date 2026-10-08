@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 /* High-priority usability acceptance checks. Run after `npm run build`.
  * Uses real file:// pages, IndexedDB and the sandboxed preview iframe.
  */
@@ -259,13 +260,13 @@ try {
       await page.screenshot({path: path.join(resultDir, 'usability-recovered-draft.png'), fullPage: true});
       const downloads = [];
       page.on('download', download => downloads.push(download));
-      await page.locator('#download-button').click();
+      await ensureBackup(page); await page.locator('#download-button').click();
       await page.waitForTimeout(150);
       assert.equal(downloads.length, 0, 'a pending draft must block export instead of silently omitting it');
       await page.locator('#save-button').click();
       await waitAutosaved(page);
       const pending = page.waitForEvent('download');
-      await page.locator('#download-button').click();
+      await ensureBackup(page); await page.locator('#download-button').click();
       const download = await pending;
       assert.equal(download.suggestedFilename(), 'index.review.html');
       await waitAutosaved(page);
@@ -351,7 +352,7 @@ try {
         window.HRSession = window.HRSession;
         Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText: async text => { window.__agentTask = text; }}});
       });
-      await page.locator('#copy-agent-task').click();
+      await page.locator('#handoff-button').click(); await page.locator('#copy-agent-text').click();
       assert.equal(await page.locator('#save-state').textContent(), saveStateBeforeCopy, 'copying must not alter download-dirty state');
       const copied = await page.evaluate(() => window.__agentTask);
       assert.match(copied, /用于撤销和 agent 任务的整体意见/);
@@ -360,14 +361,15 @@ try {
       assert.equal(copiedExport.resources.some(resource => 'base64' in resource), false);
       assert.equal(copiedExport.annotations[0].comment, '用于撤销和 agent 任务的整体意见。');
       assert.equal(typeof copiedExport.annotations[0].target.context, 'object');
+      await page.locator('[data-close="agent-task-dialog"]').click(); await page.locator('#agent-task-dialog').waitFor({state:'hidden'});
       await page.locator('#comment-input').fill('这条草稿不能泄露给 agent。');
-      assert.equal(await page.locator('#copy-agent-task').isDisabled(), true, 'pending editor text must block task copy');
+      assert.equal(await page.locator('#handoff-button').isDisabled(), true, 'pending editor text must block task copy');
       await page.locator('#cancel-edit').click();
 
       await page.evaluate(() => {
         Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText: async () => { throw new Error('denied'); }}});
       });
-      await page.locator('#copy-agent-task').click();
+      await page.locator('#handoff-button').click(); await page.locator('#copy-agent-text').click();
       await page.locator('#agent-task-dialog').waitFor({state: 'visible'});
       const task = await page.locator('#agent-task-text').inputValue();
       assert.match(task, /finance\/index\.html|index\.html/);
