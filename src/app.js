@@ -56,6 +56,8 @@
   let locationRequest = null;
   let locationTimer = null;
   let locationInspection = null;
+  let resultReviewDismissed = false;
+  let resultReviewQueue = null;
   const needsLocationReview = annotation => core.annotationStatus(annotation) === 'open' && ['missing','ambiguous','fallback'].includes(locations.get(annotation.id)?.status);
   const undoStack = [];
   const redoStack = [];
@@ -225,6 +227,7 @@
   function updateEditor(persistDraft = true) {
     $('handoff-button').hidden = !data?.annotations.length;
     $('handoff-button').disabled = busy || !data?.annotations.length || draftDirty();
+    renderResultReview();
     $('handoff-button').title = draftDirty() ? '先保存或取消编辑框中的意见' : '查看需要交给 agent 的文件与任务';
     $('document-nav-button').hidden = !hasSearch(data);
     $('document-nav-button').disabled = busy || !previewReady;
@@ -319,7 +322,7 @@
     if (!annotations.length) { list.append(textNode('p', 'empty-list', '还没有批注。直接填写整体意见，或选择具体内容后批注。')); return; }
     annotations.forEach((annotation, index) => {
       const resolved = core.annotationStatus(annotation) === 'resolved';
-      if (filter === 'attention' ? !needsLocationReview(annotation) : filter !== 'all' && (resolved ? 'resolved' : 'open') !== filter) return;
+      if (filter === 'attention' ? !needsLocationReview(annotation) : filter === 'new' ? !['new','updated'].includes(core.taskState(annotation)) : filter !== 'all' && (resolved ? 'resolved' : 'open') !== filter) return;
       const state = core.taskState(annotation);
       const stateLabels = {new: '新增意见', updated: '已更新', pending: '待处理', completed: '已完成'};
       const card = document.createElement('article');
@@ -334,9 +337,9 @@
       const location = locations.get(annotation.id);
       if (location && !resolved) { const line = textNode('div', 'location-status ' + location.status, location.message); card.append(line); }
       const latest = annotation.history?.[annotation.history.length - 1];
-      if (state === 'pending' && latest?.summary) {
+      if (['pending','completed'].includes(state) && latest?.summary) {
         const feedback = textNode('div', 'annotation-feedback', '');
-        feedback.append(textNode('strong', '', '处理反馈'), textNode('p', '', latest.summary));
+        feedback.append(textNode('strong', '', resolved ? '完成说明' : '未完成说明'), textNode('p', '', latest.summary));
         card.append(feedback);
       }
       const actions = document.createElement('div'); actions.className = 'annotation-actions';
@@ -346,6 +349,7 @@
         if (action === 'locate' && resolved) { button.disabled = true; button.title = '已完成批注保留为记录，无需再次定位'; }
         actions.append(button);
       }
+      if(resolved) { const review=textNode('button','text-button','复核处理结果');review.type='button';review.dataset.action='review-result';review.dataset.id=annotation.id;actions.prepend(review); }
       if (needsLocationReview(annotation)) {
         const review = textNode('button','text-button','查看对照'); review.type='button'; review.dataset.action='review-location'; review.dataset.id=annotation.id; actions.prepend(review);
         const button = textNode('button', 'text-button reselect-button', '重新选择位置');
@@ -370,8 +374,9 @@
       }
       list.append(card);
     });
-    if (!list.childElementCount) list.append(textNode('p', 'empty-list', filter === 'attention' ? '目前没有需要确认位置的批注。' : filter === 'open' ? '目前没有待处理意见。' : '还没有已完成的处理记录。'));
+    if (!list.childElementCount) list.append(textNode('p', 'empty-list', filter === 'attention' ? '目前没有需要确认位置的批注。' : filter === 'new' ? '目前没有新增或更新的意见。' : filter === 'open' ? '目前没有待处理意见。' : '还没有已完成的处理记录。'));
     renderLocationReview();
+    renderResultReview();
     window.HRUI.enterCards(list);
   }
   function locationDescription(status, reason = '') {
@@ -379,6 +384,7 @@
     return description + (reason ? ' · ' + reason.slice(0,500) : '');
   }
   function renderLocationReview() {
+    renderResultReview();
     if (!locationReview || !data) { $('reload-review').hidden = true; return; }
     $('reload-review').hidden = locationReview.dismissed;
     const pending = data.annotations.filter(annotation => core.annotationStatus(annotation) === 'open');
@@ -394,6 +400,30 @@
     $('review-attention').hidden = !attention;
     $('review-retry').hidden = locationReview.checking || checked === pending.length;
     $('review-retry').disabled = busy || !previewReady;
+  }
+  function renderResultReview() {
+    const annotations=data?.annotations || [],hasFeedback=annotations.some(item=>item.history?.length);
+    $('result-review').hidden=!hasFeedback || resultReviewDismissed;
+    const done=annotations.filter(item=>core.annotationStatus(item)==='resolved').length;
+    const fresh=annotations.filter(item=>['new','updated'].includes(core.taskState(item))).length;
+    const attention=annotations.filter(needsLocationReview).length;
+    $('result-review-summary').textContent=`完成记录 ${done} · 待处理 ${annotations.length-done} · 新增 / 已更新 ${fresh} · 需确认位置 ${attention}`;
+    $('result-review-reload').disabled=busy || !data;
+    $('result-review-start').disabled=busy || !previewReady || !annotations.length;
+    $('result-review-help').textContent=locationReview?.changed ? '当前已读取新版本。完成记录可逐条核对；确认位置不会标记任务完成。' : '处理结果只更新记录。请先读取修改后的文档，再核对完成项与待处理意见。';
+  }
+  function startResultReview(annotationId) {
+    if(busy || !previewReady || !data)return;
+    const annotations=data.annotations.slice().sort((a,b)=>Number(needsLocationReview(b))-Number(needsLocationReview(a)));
+    resultReviewQueue=annotations.map(item=>item.id);
+    const annotation=data.annotations.find(item=>item.id===annotationId) || annotations[0];
+    if(annotation)inspectLocation(annotation,{review:true});
+  }
+  function moveResultReview(step) {
+    const annotation=inspectionAnnotation();if(!annotation || !resultReviewQueue)return;
+    const index=resultReviewQueue.indexOf(annotation.id),next=data.annotations.find(item=>item.id===resultReviewQueue[index+step]);
+    if(next)inspectLocation(next,{review:true});
+    else if(step>0){resultReviewQueue=null;locationInspection=null;$('location-preview-bar').hidden=true;window.HRUI.closeDialog($('location-dialog'));note('已结束本轮复核。意见与处理状态未被更改；新想法可以继续添加批注。');}
   }
   function startLocationReview() {
     if (!locationReview || !previewReady || !data) return;
@@ -428,7 +458,7 @@
   }
   function installPreview(result) {
     previewReady = false;latestSelectionSerial=0;
-    locationInspection=null; window.HRUI.closeDialog($('location-dialog')); $('location-preview-bar').hidden=true;
+    locationInspection=null;resultReviewQueue=null;resultReviewDismissed=false; window.HRUI.closeDialog($('location-dialog')); $('location-preview-bar').hidden=true;
     $('pdf-thumbnails').hidden=true; $('pdf-thumbnails').replaceChildren(); $('pdf-thumbnail-toggle').setAttribute('aria-expanded','false');
     $('pdf-search-bar').hidden=true; $('pdf-scan-guide').hidden=true;
     frame.setAttribute('aria-busy',String(!result.pdf));pdfPreview.setAttribute('aria-busy',String(Boolean(result.pdf)));
@@ -779,7 +809,7 @@
     const merged = core.applyAgentResults(data, await readResultFile(file));
     await core.validateData(merged.data);
     if (merged.applied) {
-      recordResultsChange(data, merged.data); data = merged.data;
+      recordResultsChange(data, merged.data); data = merged.data;resultReviewDismissed=false;
       markDirty(); renderAnnotations(); updateEditor(); queueAutosave();
       startLocationReview();
     }
@@ -864,22 +894,37 @@
     manualLocationRequests.set(annotation.id, {token,revision:core.annotationRevision(annotation),target:JSON.stringify(annotation.target)});
     send('locate', {target: annotation.target, requestId: annotation.id,locationToken:token});
   }
-  function inspectLocation(annotation) {
-    if(busy || !previewReady || core.annotationStatus(annotation)!=='open')return;
-    locationInspection={id:annotation.id,revision:core.annotationRevision(annotation),target:JSON.stringify(annotation.target),sourceHash:data.source.sha256,token:id(),originalText:targetText(annotation.target),candidates:[],selected:-1,viewed:false};
+  function inspectLocation(annotation,options={}) {
+    if(busy || !previewReady)return;
+    const readOnly=core.annotationStatus(annotation)==='resolved';
+    if(readOnly && !options.review)return;
+    locationInspection={id:annotation.id,revision:core.annotationRevision(annotation),target:JSON.stringify(annotation.target),sourceHash:data.source.sha256,status:core.annotationStatus(annotation),history:JSON.stringify(annotation.history || []),readOnly,review:Boolean(options.review),token:id(),originalText:targetText(annotation.target),candidates:[],selected:-1,viewed:false};
     $('location-preview-bar').hidden=true;
+    $('location-dialog-title').textContent=options.review ? '复核处理结果' : '确认批注位置';
+    $('location-current-title').textContent=readOnly ? '当前内容对照' : '选择并核对当前位置';
+    const feedback=annotation.history?.at(-1);
+    $('location-feedback').hidden=!feedback;
+    $('location-feedback').textContent=feedback ? `${feedback.revision<core.annotationRevision(annotation)?'上一版处理说明':readOnly?'完成说明':'未完成说明'} · 第 ${feedback.revision} 版 · ${feedback.by==='user'?'你':feedback.by}：${feedback.summary || '未附说明'}` : '';
+    $('confirm-location').hidden=readOnly || wholeTarget(annotation.target);$('reselect-location').hidden=readOnly || wholeTarget(annotation.target);
+    $('review-current-document').hidden=!options.review;
+    const inQueue=Boolean(options.review && resultReviewQueue),queueIndex=resultReviewQueue?.indexOf(annotation.id) ?? -1;
+    $('result-review-position').hidden=!inQueue;$('result-review-position').textContent=inQueue ? `第 ${queueIndex+1} / ${resultReviewQueue.length} 条 · ${readOnly?'完成记录，核对不会改变状态':core.taskState(annotation)==='new'?'新增意见':'待处理意见'}` : '';
+    $('review-previous').hidden=!inQueue;$('review-previous').disabled=queueIndex<=0;
+    $('review-next').hidden=!inQueue;$('review-next').textContent=queueIndex===resultReviewQueue?.length-1 ? '结束复核' : '下一条';
     $('location-opinion').textContent=annotation.comment;
+    $('location-confirm-help').textContent=readOnly ? '完成记录仅供复核，不自动匹配相似原文，也不更换旧定位。' : '确认位置会保留原定位记录；修改意见仍是待处理。';
     $('location-original').textContent=targetText(annotation.target);
     const quote=annotation.target.quote || {};
     $('location-original-context').textContent=[quote.prefix,quote.suffix].filter(Boolean).join(' … ');
     $('location-review-status').textContent='正在读取当前文档中的候选位置…';
     $('location-candidates').replaceChildren();$('confirm-location').disabled=true;
     window.HRUI.openDialog($('location-dialog'));
-    send('review-candidates',{target:annotation.target,requestId:annotation.id,locationToken:locationInspection.token});
+    if(wholeTarget(annotation.target))receiveLocationCandidates({requestId:annotation.id,locationToken:locationInspection.token,candidates:[]});
+    else send('review-candidates',{target:annotation.target,requestId:annotation.id,locationToken:locationInspection.token});
   }
   function inspectionAnnotation() {
     const state=locationInspection,annotation=data?.annotations.find(item=>item.id===state?.id);
-    return annotation && core.annotationRevision(annotation)===state.revision && JSON.stringify(annotation.target)===state.target && data.source.sha256===state.sourceHash ? annotation : null;
+    return annotation && core.annotationRevision(annotation)===state.revision && JSON.stringify(annotation.target)===state.target && core.annotationStatus(annotation)===state.status && JSON.stringify(annotation.history || [])===state.history && data.source.sha256===state.sourceHash ? annotation : null;
   }
   function candidateNeedsViewing(candidate) {return candidate.target.kind==='region' || (candidate.target.kind==='page' && !wholeTarget(candidate.target)) || candidate.target.tag==='img';}
   function showTextDifference(node,oldText,newText,previous) {
@@ -899,21 +944,23 @@
     showTextDifference($('location-original'),locationInspection.originalText,selected.text,true);
     const copy=$('location-candidates').querySelector(`[data-candidate-copy="${index}"]`);if(copy)showTextDifference(copy,locationInspection.originalText,selected.text,false);
     const needsView=candidateNeedsViewing(selected);
-    $('confirm-location').disabled=needsView;
-    $('location-confirm-help').textContent=needsView ? '先在文档中查看区域或页面，再确认。原定位记录会保留，意见仍待处理。' : '确认位置会保留原定位记录；修改意见仍是待处理。';
+    $('confirm-location').disabled=needsView || locationInspection.readOnly;
+    $('location-confirm-help').textContent=locationInspection.readOnly ? '完成记录仅供复核。原定位和完成说明保留，不更换目标或重新要求 agent 处理。' : needsView ? '先在文档中查看区域或页面，再确认。原定位记录会保留，意见仍待处理。' : '确认位置会保留原定位记录；修改意见仍是待处理。';
   }
   function previewLocation(index) {
     chooseLocation(index);const candidate=locationInspection?.candidates[index];if(!candidate)return;
     locationInspection.viewed=true;
     $('location-preview-label').textContent=candidate.label;
-    $('location-preview-bar').hidden=false;$('confirm-preview-location').disabled=false;
-    $('confirm-location').disabled=false;
+    $('location-preview-bar').hidden=false;$('confirm-preview-location').hidden=locationInspection.readOnly;$('confirm-preview-location').disabled=locationInspection.readOnly;
+    $('confirm-location').disabled=locationInspection.readOnly;
     window.HRUI.closeDialog($('location-dialog'));send('preview-candidate',{target:candidate.target});
   }
   function receiveLocationCandidates(message) {
     if(!inspectionAnnotation() || message.requestId!==locationInspection.id || message.locationToken!==locationInspection.token)return;
     const candidates=[];
-    for(const candidate of Array.isArray(message.candidates)?message.candidates.slice(0,6):[]) {
+    // A deleted completed target is a historical record, not a suggestion to inspect
+    // whatever now occupies its old structural path.
+    for(const candidate of locationInspection.readOnly && message.status==='missing' ? [] : Array.isArray(message.candidates)?message.candidates.slice(0,6):[]) {
       try {
         if(JSON.stringify(candidate.target).length>250000)continue;
         core.validateTarget(candidate.target,candidate.target.kind);
@@ -924,22 +971,24 @@
       }catch(_) { /* Invalid or stale evidence never becomes a confirmation target. */ }
     }
     locationInspection.candidates=candidates;
-    $('location-review-status').textContent=candidates.length ? (candidates.length===1 ? '找到一个可核对的位置，请检查原文与当前位置。' : '找到多个候选，请根据上下文选择，不会自动绑定。') : '没有找到可靠的候选；原文可能已删除。请在文档中重新选择，或保留批注记录。';
+    const whole=wholeTarget(inspectionAnnotation().target);
+    $('location-review-status').textContent=whole ? '这条意见覆盖整个文件。请结合处理说明阅读当前版本。' : locationInspection.readOnly && !candidates.length ? '原定位内容已变化或删除。结合完成说明阅读当前文档，完成记录仍保留。' : candidates.length ? (candidates.length===1 ? '找到一个可核对的位置，请检查原文与当前位置。' : '找到多个候选，请根据上下文选择，不会自动绑定。') : '没有找到可靠的候选；原文可能已删除。请在文档中重新选择，或保留批注记录。';
     const list=$('location-candidates');list.replaceChildren();
     candidates.forEach((candidate,index)=>{
       const card=textNode('section','location-candidate','');
-      const label=document.createElement('label');const radio=document.createElement('input');radio.type='radio';radio.name='review-location';radio.value=String(index);radio.addEventListener('change',()=>chooseLocation(index));
+      const label=document.createElement('label');const radio=document.createElement('input');radio.type='radio';radio.name='review-location';radio.value=String(index);radio.hidden=locationInspection.readOnly;radio.addEventListener('change',()=>chooseLocation(index));
       label.append(radio,textNode('strong','',candidate.label));
       const copy=textNode('p','',candidate.text);copy.dataset.candidateCopy=String(index);card.append(label,copy);
       if(candidate.prefix || candidate.suffix)card.append(textNode('p','location-context',[candidate.prefix,candidate.suffix].filter(Boolean).join(' … ')));
       const viewButton=textNode('button','text-button','在文档中查看');viewButton.type='button';viewButton.addEventListener('click',()=>previewLocation(index));card.append(viewButton);list.append(card);
     });
-    if(!candidates.length)list.append(textNode('p','navigation-empty','无可靠候选。不猜测新原文，也不自动更换目标。'));
+    if(!candidates.length)list.append(textNode('p','navigation-empty',whole ? '整体意见没有单独的位置。当前文件：'+data.source.name : locationInspection.readOnly ? '当前文档中没有可靠的原目标。可查看当前文档，或继续下一条复核。' : '无可靠候选。不猜测新原文，也不自动更换目标。'));
+    if(locationInspection.readOnly)$('location-confirm-help').textContent='完成记录仅供复核，不自动匹配相似原文，也不更换旧定位。';
     if(candidates.length===1)chooseLocation(0);
   }
   function confirmLocation() {
     const annotation=inspectionAnnotation(),state=locationInspection,candidate=state?.candidates[state.selected];
-    if(!annotation || !candidate || busy)return;
+    if(!annotation || !candidate || busy || state.readOnly)return;
     if(candidateNeedsViewing(candidate) && !state.viewed)return;
     if(draftDirty()){note('先保存或取消编辑框中的意见，再确认位置；草稿仍保留。',true);return;}
     if((annotation.targetHistory?.length || 0)>=100){note('此批注已保存 100 次定位记录，请新建批注。',true);return;}
@@ -999,8 +1048,8 @@
     for (const panel of copy.querySelectorAll('[data-settings-panel]')) panel.removeAttribute('aria-hidden');
     copy.querySelector('#pdf-preview').replaceChildren(); copy.querySelector('#pdf-preview').hidden=true;
     copy.querySelector('#pdf-thumbnails').replaceChildren(); copy.querySelector('#pdf-thumbnails').hidden=true; copy.querySelector('#pdf-thumbnail-toggle').setAttribute('aria-expanded','false');
-    for(const selector of ['#pdf-search-bar','#pdf-scan-guide','#location-preview-bar'])copy.querySelector(selector).hidden=true;
-    for(const selector of ['#location-candidates','#location-original','#location-original-context','#location-opinion','#location-review-status','#location-preview-label'])copy.querySelector(selector).replaceChildren();
+    for(const selector of ['#pdf-search-bar','#pdf-scan-guide','#location-preview-bar','#result-review'])copy.querySelector(selector).hidden=true;
+    for(const selector of ['#location-candidates','#location-original','#location-original-context','#location-opinion','#location-review-status','#location-preview-label','#location-feedback','#result-review-position','#result-review-summary'])copy.querySelector(selector).replaceChildren();
     copy.querySelector('#backup-menu').removeAttribute('open');
     copy.querySelector('#pdf-controls').hidden=true; copy.querySelector('#pdf-cancel-search').hidden=true;
     copy.querySelector('#preview-width').closest('.select-field')?.removeAttribute('hidden');
@@ -1427,6 +1476,12 @@
   $('pdf-search-close').addEventListener('click',()=>{$('document-search').value='';clearTimeout(searchTimer);send('cancel-search');$('pdf-search-bar').hidden=true;renderDocumentNavigation();});
   $('pdf-use-region').addEventListener('click',()=>{setMode('element');$('pdf-scan-guide').hidden=true;});
   $('confirm-location').addEventListener('click',confirmLocation);$('confirm-preview-location').addEventListener('click',confirmLocation);
+  $('result-review-start').addEventListener('click',()=>startResultReview());
+  $('result-review-reload').addEventListener('click',reloadSource);
+  $('result-review-dismiss').addEventListener('click',()=>{resultReviewDismissed=true;renderResultReview();});
+  $('review-previous').addEventListener('click',()=>moveResultReview(-1));
+  $('review-next').addEventListener('click',()=>moveResultReview(1));
+  $('review-current-document').addEventListener('click',()=>{if(inspectionAnnotation()){window.HRUI.closeDialog($('location-dialog'));$('location-preview-bar').hidden=false;$('location-preview-label').textContent='正在核对当前文档。返回对照后可以继续下一条。';$('confirm-preview-location').hidden=true;}});
   $('return-location-comparison').addEventListener('click',()=>{if(inspectionAnnotation())window.HRUI.openDialog($('location-dialog'));});
   $('reselect-location').addEventListener('click',()=>{const annotation=inspectionAnnotation();window.HRUI.closeDialog($('location-dialog'));$('location-preview-bar').hidden=true;locationInspection=null;if(annotation)reselect(annotation);});
   $('handoff-export-package').addEventListener('click',()=>run(async()=>{if(!data || draftDirty())return;const result=await window.HRHandoff.create(data);downloadBlob(result.blob,result.filename);delivered=true;updateGuide();queueAutosave();$('copy-agent-status').textContent='交接包已下载。将 ZIP 附给 agent，让它读取包内任务说明。';}));
@@ -1511,7 +1566,8 @@
     if (!button || !data) return;
     const annotation = data.annotations.find(item => item.id === button.dataset.id);
     if (!annotation) return;
-    if (button.dataset.action === 'review-location') inspectLocation(annotation);
+    if (button.dataset.action === 'review-result') startResultReview(annotation.id);
+    else if (button.dataset.action === 'review-location') {resultReviewQueue=null;inspectLocation(annotation);}
     else if (button.dataset.action === 'locate') locate(annotation);
     else if (button.dataset.action === 'edit') edit(annotation);
     else if (button.dataset.action === 'reselect') reselect(annotation);

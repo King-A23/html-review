@@ -2,7 +2,7 @@
 (function (global) {
   'use strict';
   const lib=global.HRPdfLib, core=global.HRCore;
-  const TIMEOUT=30000, MAX_PIXELS=8000000;
+  const TIMEOUT=30000, MAX_PIXELS=8000000, MAX_SEARCH_CHARACTERS=4000000;
   let current=null, importing=null, assets=null;
   const clone=value=>JSON.parse(JSON.stringify(value));
   const abortError=()=>new Error('已取消 PDF 处理，原工作区和批注已保留。');
@@ -30,7 +30,7 @@
     const stop=()=>{if(stopped)return;stopped=true;session.pdfWorker?.destroy();session.worker?.terminate();URL.revokeObjectURL(session.workerUrl);};
     const cleanupTimer=setTimeout(stop,1000);
     Promise.resolve(session.loading?.destroy()).catch(()=>{}).finally(()=>{clearTimeout(cleanupTimer);stop();});
-    session.fingerprints.clear();session.contents.clear();
+    session.fingerprints.clear();session.contents.clear();session.searchStreams.clear();session.searchCharacters=0;
     if(importing===session) importing=null;
   }
   async function timed(session,promise,label,budget=TIMEOUT) {
@@ -70,7 +70,7 @@
     const syncAssets={};
     for(const [name,encoded] of Object.entries(assets)) if(name.startsWith('iccs/') || name==='wasm/qcms_bg.wasm') syncAssets['offline:'+name]=core.base64ToBytes(encoded);
     worker.postMessage({hrOfflineSync:syncAssets});
-    const session={data,workerUrl,worker,importStarted,passwordPausedMs:0,destroyed:false,contents:new Map(),fingerprints:new Map(),slots:[],selectionSerial:0,searchSerial:0,checkSerial:0,mode:'browse',zoom:'fit',pageNumber:1,renderQueue:Promise.resolve(),searchMatches:[],thumbnailGeneration:0,thumbnailQueue:Promise.resolve()};
+    const session={data,workerUrl,worker,importStarted,passwordPausedMs:0,destroyed:false,contents:new Map(),searchStreams:new Map(),searchCharacters:0,fingerprints:new Map(),slots:[],selectionSerial:0,searchSerial:0,checkSerial:0,mode:'browse',zoom:'fit',pageNumber:1,renderQueue:Promise.resolve(),searchMatches:[],thumbnailGeneration:0,thumbnailQueue:Promise.resolve()};
     importing=session;
     worker.addEventListener('error',event=>{const error=new Error('PDF Worker 无法运行，当前工作区已保留。'+(event.message ? ' '+event.message : ''));session.rejectImport?.(error);destroy(session);});
     try {
@@ -124,6 +124,22 @@
     const result={value,stream,starts};
     if(session.contents.size>=12) session.contents.delete(session.contents.keys().next().value);
     session.contents.set(number,result);return result;
+  }
+  async function searchStream(session,number) {
+    alive(session);
+    if(session.searchStreams.has(number)) return session.searchStreams.get(number);
+    const stream=(await content(session,number)).stream;alive(session);
+    if(session.searchStreams.has(number)) return session.searchStreams.get(number);
+    // Reuse only exact extracted strings, keeping PDF item geometry in the existing
+    // small content cache. The separate search cache is bounded to 8 MB of UTF-16.
+    if(stream.length<=MAX_SEARCH_CHARACTERS) {
+      while(session.searchCharacters+stream.length>MAX_SEARCH_CHARACTERS) {
+        const oldest=session.searchStreams.keys().next().value;
+        session.searchCharacters-=session.searchStreams.get(oldest).length;session.searchStreams.delete(oldest);
+      }
+      session.searchStreams.set(number,stream);session.searchCharacters+=stream.length;
+    }
+    return stream;
   }
   async function fingerprint(session,number) {
     alive(session);
@@ -494,11 +510,11 @@
     for(const geom of session.geometry) {
       alive(session);if(serial!==session.searchSerial)return;
       emit(session,'search-progress',{message:'查找第 '+geom.pageNumber+' / '+session.slots.length+' 页…'});
-      const c=await timed(session,content(session,geom.pageNumber),'文字搜索');let found;pattern.lastIndex=0;
-      while((found=pattern.exec(c.stream))!==null){const index=found.index;total++;
+      const stream=await timed(session,searchStream(session,geom.pageNumber),'文字搜索');let found;pattern.lastIndex=0;
+      while((found=pattern.exec(stream))!==null){const index=found.index;total++;
         const match={id:serial+':'+geom.pageNumber+':'+index,index:geom.pageNumber-1,start:index,end:index+found[0].length};
         if(matches.length<10000)matches.push(match);
-        if(items.length<50)items.push({...match,text:('第 '+geom.pageNumber+' 页 · '+c.stream.slice(Math.max(0,index-30),index+query.length+80)).slice(0,220)});
+        if(items.length<50)items.push({...match,text:('第 '+geom.pageNumber+' 页 · '+stream.slice(Math.max(0,index-30),index+query.length+80)).slice(0,220)});
       }
     }
     if(serial===session.searchSerial){session.searchMatches=matches;paintSearch(session);emit(session,'document-search',{query,total,items,navigableTotal:matches.length});emit(session,'pdf-search-position',{current:0,total:matches.length});}

@@ -520,6 +520,14 @@ kbd{color:#4d6040;font-size:12px}
 .handoff-next-step{font-size:12px;line-height:1.8;color:#69795b;padding:12px 0;margin:12px 0 0;border-top:1px solid #e2e7da}#pdf-search-position{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .location-context{font-size:12px!important;color:#69765c}#location-review-status,#location-confirm-help{color:#657256}.handoff-choice p,#agent-task-help{color:#66735b}
 
+/* Keep completion feedback and the next review action visible in the reading workspace. */
+.result-review{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:15px 20px;background:#f3f6ed;border-bottom:1px solid #dfe5d7}
+.result-review>div:first-child{min-width:0}.result-review .eyebrow{display:block;margin-bottom:5px}.result-review strong{font-size:14px}.result-review p{font-size:12px;line-height:1.7;color:#627154;margin:5px 0 0}.result-review-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px}.result-review-actions button{font-size:12px;white-space:nowrap}
+.location-feedback{font-size:13px;line-height:1.8;color:#526748;padding:12px 15px;border-left:3px solid #bbc9a6;background:#f7f9f2;white-space:pre-wrap;overflow-wrap:anywhere}.result-review-position{font-size:12px;color:#68785c}
+.annotation-card.is-resolved .annotation-feedback{display:block;color:#5d7051}.location-dialog .editor-actions #review-next{margin-left:auto}
+.location-dialog .dialog-body{max-height:calc(90dvh - 185px)}.location-review-actions{margin:0;padding:14px 26px 20px;border-top:1px solid #e3e7dc;background:#fffefb}.location-review-actions button{white-space:nowrap}
+@media(max-width:900px){.result-review{align-items:flex-start;flex-direction:column;gap:10px}.result-review-actions{justify-content:flex-start}.result-review p{margin-top:4px}}
+
 /* PDF.js 6.4.299 text layer styles, Apache-2.0; see bundled licenses. */
 #pdf-preview .textLayer {
   color-scheme: only light;
@@ -728,12 +736,13 @@ kbd{color:#4d6040;font-size:12px}
         <textarea id="comment-input" rows="4" maxlength="20000" placeholder="你希望这里如何改进？&#10;例如：缩短这段介绍，并保留核心结论。" disabled></textarea>
         <div class="editor-actions"><button id="save-button" class="primary" type="button" disabled>保存批注</button><span id="draft-status" class="muted"></span><span class="save-key-hint" aria-hidden="true">⌘ ↵</span></div>
       </section>
-      <section class="annotations-section"><div class="section-heading"><h2>批注 <span id="annotation-count" class="count">0</span></h2><button id="data-button" class="text-button" type="button" disabled>查看数据</button></div><div class="list-tools"><div class="history-controls"><button id="undo-button" class="icon-button" type="button" aria-label="撤销" title="撤销（Ctrl/⌘+Z，输入框外）" disabled><span data-icon="undo"></span></button><button id="redo-button" class="icon-button" type="button" aria-label="重做" title="重做（Ctrl/⌘+Shift+Z，输入框外）" disabled><span data-icon="redo"></span></button></div></div><div class="review-progress"><span id="review-progress" aria-live="polite">意见与处理记录</span><select id="annotation-filter" aria-label="筛选批注"><option value="all">全部记录</option><option value="open">待处理</option><option value="resolved">已完成</option><option value="attention">需确认位置</option></select></div><button id="import-results" class="text-button results-import" type="button" disabled>导入 agent 处理结果 <span data-icon="file"></span></button><div id="annotation-list" class="annotation-list"><p class="empty-list">每一次改进，<br>从一条清晰的建议开始。</p></div></section>
+      <section class="annotations-section"><div class="section-heading"><h2>批注 <span id="annotation-count" class="count">0</span></h2><button id="data-button" class="text-button" type="button" disabled>查看数据</button></div><div class="list-tools"><div class="history-controls"><button id="undo-button" class="icon-button" type="button" aria-label="撤销" title="撤销（Ctrl/⌘+Z，输入框外）" disabled><span data-icon="undo"></span></button><button id="redo-button" class="icon-button" type="button" aria-label="重做" title="重做（Ctrl/⌘+Shift+Z，输入框外）" disabled><span data-icon="redo"></span></button></div></div><div class="review-progress"><span id="review-progress" aria-live="polite">意见与处理记录</span><select id="annotation-filter" aria-label="筛选批注"><option value="all">全部记录</option><option value="open">待处理</option><option value="resolved">已完成</option><option value="attention">需确认位置</option><option value="new">新增 / 已更新</option></select></div><button id="import-results" class="text-button results-import" type="button" disabled>导入 agent 处理结果 <span data-icon="file"></span></button><div id="annotation-list" class="annotation-list"><p class="empty-list">每一次改进，<br>从一条清晰的建议开始。</p></div></section>
       <footer class="sidebar-footer"><span id="save-state">下载副本，保留审阅结果</span><span id="autosave-state" role="status" aria-live="polite">自动恢复：等待打开文件</span><div class="recovery-tools"><button id="retry-recovery" class="text-button" type="button" hidden>重试本机保存</button><button id="clear-recovery" class="text-button" type="button" disabled>清除恢复记录</button></div><span class="privacy-dot"><span data-icon="shield"></span> 文件和草稿仅在本机处理</span></footer>
     </aside>
     <section class="preview-section" aria-label="HTML 页面预览">
       <div class="preview-toolbar"><div class="preview-breadcrumb"><span data-icon="layout" aria-hidden="true"></span><span id="preview-label">页面预览</span><span class="preview-live-dot" aria-hidden="true"></span></div><div class="preview-controls"><button id="document-nav-button" class="quiet" type="button" hidden disabled>目录与查找</button><select id="sidebar-position" aria-label="批注栏位置"><option value="left">左侧批注</option><option value="right">右侧批注</option></select><select id="preview-width" aria-label="预览视口"><option value="fluid">自适应</option><option value="390">手机 · 390px</option><option value="768">平板 · 768px</option><option value="1280">桌面 · 1280px</option></select><button id="reload-preview" class="icon-button" type="button" aria-label="重载页面" title="读取最新原文件与资源，保留批注和草稿" disabled><span data-icon="refresh"></span></button></div></div>
       <div id="warnings" class="warnings" hidden></div><div id="status" class="status" role="status" aria-live="polite" hidden></div>
+      <section id="result-review" class="result-review" aria-label="修改后复核" hidden><div><span class="eyebrow">REVIEW THE CHANGES</span><strong>修改后，逐条看一遍。</strong><p id="result-review-summary" role="status" aria-live="polite"></p><p id="result-review-help">处理记录已保留。读取修改后的文档，再核对完成项与待处理意见。</p></div><div class="result-review-actions"><button id="result-review-reload" class="quiet" type="button">读取修改后的文档</button><button id="result-review-start" class="primary" type="button">逐条复核</button><button id="result-review-dismiss" class="icon-button" type="button" aria-label="收起修改复核"><span data-icon="close"></span></button></div></section>
       <section id="reload-review" class="reload-review" aria-label="重载后的批注检查" hidden><div><strong id="reload-review-title">已读取文档，检查批注位置</strong><p id="reload-review-summary" role="status" aria-live="polite"></p><p id="reload-review-detail"></p></div><div class="reload-review-actions"><button id="review-attention" type="button" hidden>查看需确认的批注</button><button id="review-retry" class="text-button" type="button" hidden>重新检查</button><button id="review-dismiss" class="icon-button" type="button" aria-label="收起重载检查"><span data-icon="close"></span></button></div></section>
       <div id="recovery-banner" class="recovery-banner" hidden><span class="recovery-icon" data-icon="history" aria-hidden="true"></span><span id="recovery-description"></span><button id="recover-session" type="button">继续上次审阅 <span data-icon="arrow-right"></span></button><button id="discard-session" class="text-button" type="button">忽略</button></div>
       <div id="pdf-controls" class="pdf-controls" hidden><button id="pdf-thumbnail-toggle" class="quiet" type="button" aria-expanded="false" aria-controls="pdf-thumbnails">缩略图</button><button id="pdf-prev-page" class="quiet" type="button" aria-label="上一页">上一页</button><label for="pdf-page-number">页码</label><input id="pdf-page-number" type="number" min="1" value="1" aria-label="PDF 页码"><span id="pdf-page-count">/ —</span><button id="pdf-next-page" class="quiet" type="button" aria-label="下一页">下一页</button><label for="pdf-zoom">缩放</label><select id="pdf-zoom" aria-label="PDF 缩放"><option value="fit">适合宽度</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option></select><button id="pdf-cancel-operation" class="text-button" type="button" hidden>取消查找 / 检查</button><span id="pdf-operation-status" role="status" aria-live="polite"></span></div>
@@ -751,7 +760,7 @@ kbd{color:#4d6040;font-size:12px}
   </div></dialog>
   <dialog id="agent-task-dialog" class="handoff-dialog" aria-labelledby="agent-task-title"><div class="dialog-heading"><div><span class="eyebrow">HANDOFF</span><h2 id="agent-task-title">交给你使用的 agent</h2></div><button type="button" class="icon-button" data-close="agent-task-dialog" aria-label="关闭修改任务"><span data-icon="close"></span></button></div><div class="dialog-body"><p id="handoff-summary" class="handoff-summary"></p><p class="handoff-source-line">当前文档：<strong id="handoff-source" class="handoff-source"></strong></p><p id="agent-task-help"></p><div class="handoff-choices"><section class="handoff-choice"><span class="eyebrow">复制后粘贴</span><h3>复制任务</h3><p>将任务粘贴到 agent 对话，并附上原文档。</p><button id="copy-agent-text" class="primary" type="button">复制修改任务</button></section><section class="handoff-choice"><span class="eyebrow">一次下载</span><h3>下载交接包</h3><p>原文档、批注和任务说明一起打包。HTML 的本地资源也会附上。</p><button id="handoff-export-package" class="primary" type="button">下载交接包 (.zip)</button></section></div><p id="copy-agent-status" role="status" aria-live="polite"></p><details id="task-details" class="help-details"><summary>查看任务全文 / 手动复制</summary><textarea id="agent-task-text" readonly rows="8" aria-label="agent 修改任务"></textarea></details><p class="handoff-next-step">agent 改完后：读入修改后的原文档，并导入处理结果，继续下一轮审阅。</p><details class="handoff-return"><summary>agent 改完后怎么继续？</summary><p>请 agent 交回修改后的原文档和处理结果 JSON。</p><div class="handoff-return-actions"><button id="handoff-import-results" type="button">1. 导入处理结果</button><button id="handoff-reload" type="button">2. 读取修改后的文档</button></div><p>处理结果更新完成状态；读取新文档后，正文才会更新。原批注和草稿会保留。</p></details><details class="help-details"><summary>只需要批注文件？</summary><p>不包含原文档，需与同一版本的原文档一起交付。</p><button id="handoff-export-json" class="text-button" type="button">下载单独批注 JSON</button></details></div></dialog>
   <dialog id="document-nav-dialog" class="document-nav-dialog" aria-labelledby="document-nav-title"><div class="dialog-heading"><div><span class="eyebrow">READING</span><h2 id="document-nav-title">目录与查找</h2></div><button type="button" class="icon-button" data-close="document-nav-dialog" aria-label="关闭目录与查找"><span data-icon="close"></span></button></div><div class="dialog-body"><label class="field-label" for="document-search">查找文档内容</label><input id="document-search" type="search" maxlength="200" placeholder="输入关键词，例如：预算、上线门槛"><button id="pdf-cancel-search" class="text-button" type="button" hidden>取消查找</button><p id="document-search-status" role="status" aria-live="polite"></p><nav id="document-outline" aria-label="文档目录"></nav><div id="document-search-results" hidden></div></div></dialog>
-  <dialog id="location-dialog" class="location-dialog" aria-labelledby="location-dialog-title"><div class="dialog-heading"><div><span class="eyebrow">REVIEW LOCATION</span><h2 id="location-dialog-title">确认批注位置</h2></div><button class="icon-button" type="button" data-close="location-dialog" aria-label="关闭位置确认"><span data-icon="close"></span></button></div><div class="dialog-body"><p id="location-opinion" class="location-opinion"></p><p id="location-review-status" role="status" aria-live="polite"></p><div class="location-comparison"><section><span class="eyebrow">保存批注时</span><h3>原位置记录</h3><p id="location-original"></p><p id="location-original-context" class="location-context"></p></section><section><span class="eyebrow">当前文档</span><h3>选择并核对当前位置</h3><div id="location-candidates"></div></section></div><p id="location-confirm-help">确认位置会保留原定位记录；修改意见仍是待处理。</p><div class="editor-actions"><button id="confirm-location" class="primary" type="button" disabled>确认此位置</button><button id="reselect-location" class="quiet" type="button">在文档中重新选择</button></div></div></dialog>
+  <dialog id="location-dialog" class="location-dialog" aria-labelledby="location-dialog-title"><div class="dialog-heading"><div><span class="eyebrow">REVIEW LOCATION</span><h2 id="location-dialog-title">确认批注位置</h2></div><button class="icon-button" type="button" data-close="location-dialog" aria-label="关闭位置确认"><span data-icon="close"></span></button></div><div class="dialog-body"><p id="location-opinion" class="location-opinion"></p><p id="location-feedback" class="location-feedback" hidden></p><p id="result-review-position" class="result-review-position" hidden></p><p id="location-review-status" role="status" aria-live="polite"></p><div class="location-comparison"><section><span class="eyebrow">保存批注时</span><h3>原位置记录</h3><p id="location-original"></p><p id="location-original-context" class="location-context"></p></section><section><span class="eyebrow">当前文档</span><h3 id="location-current-title">选择并核对当前位置</h3><div id="location-candidates"></div></section></div><p id="location-confirm-help">确认位置会保留原定位记录；修改意见仍是待处理。</p></div><div class="editor-actions location-review-actions"><button id="confirm-location" class="primary" type="button" disabled>确认此位置</button><button id="reselect-location" class="quiet" type="button">在文档中重新选择</button><button id="review-current-document" class="quiet" type="button" hidden>查看当前文档</button><button id="review-previous" class="quiet" type="button" hidden>上一条</button><button id="review-next" class="primary" type="button" hidden>下一条</button></div></dialog>
   <dialog id="data-dialog" aria-labelledby="data-title"><div class="dialog-heading"><div><span class="eyebrow">ANNOTATIONS</span><h2 id="data-title">结构化批注数据</h2></div><button type="button" class="icon-button" data-close="data-dialog" aria-label="关闭批注数据"><span data-icon="close"></span></button></div><div class="dialog-body"><p>便于核对的摘要，已省略文件与资源快照。</p><pre id="data-preview"></pre></div></dialog>
   <dialog id="pdf-password-dialog" aria-labelledby="pdf-password-title"><div class="dialog-heading"><h2 id="pdf-password-title">打开加密 PDF</h2></div><div class="dialog-body"><label class="field-label" for="pdf-password-input">PDF 密码</label><input id="pdf-password-input" type="password" autocomplete="off"><p id="pdf-password-error" role="alert"></p><p>密码仅用于本次打开，不会保存或导出。</p><div class="editor-actions"><button id="pdf-password-submit" class="primary" type="button">打开 PDF</button><button id="pdf-password-cancel" class="quiet" type="button">取消</button></div></div></dialog>
   <script id="html-review-data" type="application/json">null</script>
@@ -3499,7 +3508,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
 (function (global) {
   'use strict';
   const lib=global.HRPdfLib, core=global.HRCore;
-  const TIMEOUT=30000, MAX_PIXELS=8000000;
+  const TIMEOUT=30000, MAX_PIXELS=8000000, MAX_SEARCH_CHARACTERS=4000000;
   let current=null, importing=null, assets=null;
   const clone=value=>JSON.parse(JSON.stringify(value));
   const abortError=()=>new Error('已取消 PDF 处理，原工作区和批注已保留。');
@@ -3527,7 +3536,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
     const stop=()=>{if(stopped)return;stopped=true;session.pdfWorker?.destroy();session.worker?.terminate();URL.revokeObjectURL(session.workerUrl);};
     const cleanupTimer=setTimeout(stop,1000);
     Promise.resolve(session.loading?.destroy()).catch(()=>{}).finally(()=>{clearTimeout(cleanupTimer);stop();});
-    session.fingerprints.clear();session.contents.clear();
+    session.fingerprints.clear();session.contents.clear();session.searchStreams.clear();session.searchCharacters=0;
     if(importing===session) importing=null;
   }
   async function timed(session,promise,label,budget=TIMEOUT) {
@@ -3567,7 +3576,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
     const syncAssets={};
     for(const [name,encoded] of Object.entries(assets)) if(name.startsWith('iccs/') || name==='wasm/qcms_bg.wasm') syncAssets['offline:'+name]=core.base64ToBytes(encoded);
     worker.postMessage({hrOfflineSync:syncAssets});
-    const session={data,workerUrl,worker,importStarted,passwordPausedMs:0,destroyed:false,contents:new Map(),fingerprints:new Map(),slots:[],selectionSerial:0,searchSerial:0,checkSerial:0,mode:'browse',zoom:'fit',pageNumber:1,renderQueue:Promise.resolve(),searchMatches:[],thumbnailGeneration:0,thumbnailQueue:Promise.resolve()};
+    const session={data,workerUrl,worker,importStarted,passwordPausedMs:0,destroyed:false,contents:new Map(),searchStreams:new Map(),searchCharacters:0,fingerprints:new Map(),slots:[],selectionSerial:0,searchSerial:0,checkSerial:0,mode:'browse',zoom:'fit',pageNumber:1,renderQueue:Promise.resolve(),searchMatches:[],thumbnailGeneration:0,thumbnailQueue:Promise.resolve()};
     importing=session;
     worker.addEventListener('error',event=>{const error=new Error('PDF Worker 无法运行，当前工作区已保留。'+(event.message ? ' '+event.message : ''));session.rejectImport?.(error);destroy(session);});
     try {
@@ -3621,6 +3630,22 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
     const result={value,stream,starts};
     if(session.contents.size>=12) session.contents.delete(session.contents.keys().next().value);
     session.contents.set(number,result);return result;
+  }
+  async function searchStream(session,number) {
+    alive(session);
+    if(session.searchStreams.has(number)) return session.searchStreams.get(number);
+    const stream=(await content(session,number)).stream;alive(session);
+    if(session.searchStreams.has(number)) return session.searchStreams.get(number);
+    // Reuse only exact extracted strings, keeping PDF item geometry in the existing
+    // small content cache. The separate search cache is bounded to 8 MB of UTF-16.
+    if(stream.length<=MAX_SEARCH_CHARACTERS) {
+      while(session.searchCharacters+stream.length>MAX_SEARCH_CHARACTERS) {
+        const oldest=session.searchStreams.keys().next().value;
+        session.searchCharacters-=session.searchStreams.get(oldest).length;session.searchStreams.delete(oldest);
+      }
+      session.searchStreams.set(number,stream);session.searchCharacters+=stream.length;
+    }
+    return stream;
   }
   async function fingerprint(session,number) {
     alive(session);
@@ -3991,11 +4016,11 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
     for(const geom of session.geometry) {
       alive(session);if(serial!==session.searchSerial)return;
       emit(session,'search-progress',{message:'查找第 '+geom.pageNumber+' / '+session.slots.length+' 页…'});
-      const c=await timed(session,content(session,geom.pageNumber),'文字搜索');let found;pattern.lastIndex=0;
-      while((found=pattern.exec(c.stream))!==null){const index=found.index;total++;
+      const stream=await timed(session,searchStream(session,geom.pageNumber),'文字搜索');let found;pattern.lastIndex=0;
+      while((found=pattern.exec(stream))!==null){const index=found.index;total++;
         const match={id:serial+':'+geom.pageNumber+':'+index,index:geom.pageNumber-1,start:index,end:index+found[0].length};
         if(matches.length<10000)matches.push(match);
-        if(items.length<50)items.push({...match,text:('第 '+geom.pageNumber+' 页 · '+c.stream.slice(Math.max(0,index-30),index+query.length+80)).slice(0,220)});
+        if(items.length<50)items.push({...match,text:('第 '+geom.pageNumber+' 页 · '+stream.slice(Math.max(0,index-30),index+query.length+80)).slice(0,220)});
       }
     }
     if(serial===session.searchSerial){session.searchMatches=matches;paintSearch(session);emit(session,'document-search',{query,total,items,navigableTotal:matches.length});emit(session,'pdf-search-position',{current:0,total:matches.length});}
@@ -5474,6 +5499,8 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   let locationRequest = null;
   let locationTimer = null;
   let locationInspection = null;
+  let resultReviewDismissed = false;
+  let resultReviewQueue = null;
   const needsLocationReview = annotation => core.annotationStatus(annotation) === 'open' && ['missing','ambiguous','fallback'].includes(locations.get(annotation.id)?.status);
   const undoStack = [];
   const redoStack = [];
@@ -5643,6 +5670,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   function updateEditor(persistDraft = true) {
     $('handoff-button').hidden = !data?.annotations.length;
     $('handoff-button').disabled = busy || !data?.annotations.length || draftDirty();
+    renderResultReview();
     $('handoff-button').title = draftDirty() ? '先保存或取消编辑框中的意见' : '查看需要交给 agent 的文件与任务';
     $('document-nav-button').hidden = !hasSearch(data);
     $('document-nav-button').disabled = busy || !previewReady;
@@ -5737,7 +5765,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     if (!annotations.length) { list.append(textNode('p', 'empty-list', '还没有批注。直接填写整体意见，或选择具体内容后批注。')); return; }
     annotations.forEach((annotation, index) => {
       const resolved = core.annotationStatus(annotation) === 'resolved';
-      if (filter === 'attention' ? !needsLocationReview(annotation) : filter !== 'all' && (resolved ? 'resolved' : 'open') !== filter) return;
+      if (filter === 'attention' ? !needsLocationReview(annotation) : filter === 'new' ? !['new','updated'].includes(core.taskState(annotation)) : filter !== 'all' && (resolved ? 'resolved' : 'open') !== filter) return;
       const state = core.taskState(annotation);
       const stateLabels = {new: '新增意见', updated: '已更新', pending: '待处理', completed: '已完成'};
       const card = document.createElement('article');
@@ -5752,9 +5780,9 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
       const location = locations.get(annotation.id);
       if (location && !resolved) { const line = textNode('div', 'location-status ' + location.status, location.message); card.append(line); }
       const latest = annotation.history?.[annotation.history.length - 1];
-      if (state === 'pending' && latest?.summary) {
+      if (['pending','completed'].includes(state) && latest?.summary) {
         const feedback = textNode('div', 'annotation-feedback', '');
-        feedback.append(textNode('strong', '', '处理反馈'), textNode('p', '', latest.summary));
+        feedback.append(textNode('strong', '', resolved ? '完成说明' : '未完成说明'), textNode('p', '', latest.summary));
         card.append(feedback);
       }
       const actions = document.createElement('div'); actions.className = 'annotation-actions';
@@ -5764,6 +5792,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
         if (action === 'locate' && resolved) { button.disabled = true; button.title = '已完成批注保留为记录，无需再次定位'; }
         actions.append(button);
       }
+      if(resolved) { const review=textNode('button','text-button','复核处理结果');review.type='button';review.dataset.action='review-result';review.dataset.id=annotation.id;actions.prepend(review); }
       if (needsLocationReview(annotation)) {
         const review = textNode('button','text-button','查看对照'); review.type='button'; review.dataset.action='review-location'; review.dataset.id=annotation.id; actions.prepend(review);
         const button = textNode('button', 'text-button reselect-button', '重新选择位置');
@@ -5788,8 +5817,9 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
       }
       list.append(card);
     });
-    if (!list.childElementCount) list.append(textNode('p', 'empty-list', filter === 'attention' ? '目前没有需要确认位置的批注。' : filter === 'open' ? '目前没有待处理意见。' : '还没有已完成的处理记录。'));
+    if (!list.childElementCount) list.append(textNode('p', 'empty-list', filter === 'attention' ? '目前没有需要确认位置的批注。' : filter === 'new' ? '目前没有新增或更新的意见。' : filter === 'open' ? '目前没有待处理意见。' : '还没有已完成的处理记录。'));
     renderLocationReview();
+    renderResultReview();
     window.HRUI.enterCards(list);
   }
   function locationDescription(status, reason = '') {
@@ -5797,6 +5827,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     return description + (reason ? ' · ' + reason.slice(0,500) : '');
   }
   function renderLocationReview() {
+    renderResultReview();
     if (!locationReview || !data) { $('reload-review').hidden = true; return; }
     $('reload-review').hidden = locationReview.dismissed;
     const pending = data.annotations.filter(annotation => core.annotationStatus(annotation) === 'open');
@@ -5812,6 +5843,30 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     $('review-attention').hidden = !attention;
     $('review-retry').hidden = locationReview.checking || checked === pending.length;
     $('review-retry').disabled = busy || !previewReady;
+  }
+  function renderResultReview() {
+    const annotations=data?.annotations || [],hasFeedback=annotations.some(item=>item.history?.length);
+    $('result-review').hidden=!hasFeedback || resultReviewDismissed;
+    const done=annotations.filter(item=>core.annotationStatus(item)==='resolved').length;
+    const fresh=annotations.filter(item=>['new','updated'].includes(core.taskState(item))).length;
+    const attention=annotations.filter(needsLocationReview).length;
+    $('result-review-summary').textContent=`完成记录 ${done} · 待处理 ${annotations.length-done} · 新增 / 已更新 ${fresh} · 需确认位置 ${attention}`;
+    $('result-review-reload').disabled=busy || !data;
+    $('result-review-start').disabled=busy || !previewReady || !annotations.length;
+    $('result-review-help').textContent=locationReview?.changed ? '当前已读取新版本。完成记录可逐条核对；确认位置不会标记任务完成。' : '处理结果只更新记录。请先读取修改后的文档，再核对完成项与待处理意见。';
+  }
+  function startResultReview(annotationId) {
+    if(busy || !previewReady || !data)return;
+    const annotations=data.annotations.slice().sort((a,b)=>Number(needsLocationReview(b))-Number(needsLocationReview(a)));
+    resultReviewQueue=annotations.map(item=>item.id);
+    const annotation=data.annotations.find(item=>item.id===annotationId) || annotations[0];
+    if(annotation)inspectLocation(annotation,{review:true});
+  }
+  function moveResultReview(step) {
+    const annotation=inspectionAnnotation();if(!annotation || !resultReviewQueue)return;
+    const index=resultReviewQueue.indexOf(annotation.id),next=data.annotations.find(item=>item.id===resultReviewQueue[index+step]);
+    if(next)inspectLocation(next,{review:true});
+    else if(step>0){resultReviewQueue=null;locationInspection=null;$('location-preview-bar').hidden=true;window.HRUI.closeDialog($('location-dialog'));note('已结束本轮复核。意见与处理状态未被更改；新想法可以继续添加批注。');}
   }
   function startLocationReview() {
     if (!locationReview || !previewReady || !data) return;
@@ -5846,7 +5901,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   }
   function installPreview(result) {
     previewReady = false;latestSelectionSerial=0;
-    locationInspection=null; window.HRUI.closeDialog($('location-dialog')); $('location-preview-bar').hidden=true;
+    locationInspection=null;resultReviewQueue=null;resultReviewDismissed=false; window.HRUI.closeDialog($('location-dialog')); $('location-preview-bar').hidden=true;
     $('pdf-thumbnails').hidden=true; $('pdf-thumbnails').replaceChildren(); $('pdf-thumbnail-toggle').setAttribute('aria-expanded','false');
     $('pdf-search-bar').hidden=true; $('pdf-scan-guide').hidden=true;
     frame.setAttribute('aria-busy',String(!result.pdf));pdfPreview.setAttribute('aria-busy',String(Boolean(result.pdf)));
@@ -6197,7 +6252,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     const merged = core.applyAgentResults(data, await readResultFile(file));
     await core.validateData(merged.data);
     if (merged.applied) {
-      recordResultsChange(data, merged.data); data = merged.data;
+      recordResultsChange(data, merged.data); data = merged.data;resultReviewDismissed=false;
       markDirty(); renderAnnotations(); updateEditor(); queueAutosave();
       startLocationReview();
     }
@@ -6282,22 +6337,37 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     manualLocationRequests.set(annotation.id, {token,revision:core.annotationRevision(annotation),target:JSON.stringify(annotation.target)});
     send('locate', {target: annotation.target, requestId: annotation.id,locationToken:token});
   }
-  function inspectLocation(annotation) {
-    if(busy || !previewReady || core.annotationStatus(annotation)!=='open')return;
-    locationInspection={id:annotation.id,revision:core.annotationRevision(annotation),target:JSON.stringify(annotation.target),sourceHash:data.source.sha256,token:id(),originalText:targetText(annotation.target),candidates:[],selected:-1,viewed:false};
+  function inspectLocation(annotation,options={}) {
+    if(busy || !previewReady)return;
+    const readOnly=core.annotationStatus(annotation)==='resolved';
+    if(readOnly && !options.review)return;
+    locationInspection={id:annotation.id,revision:core.annotationRevision(annotation),target:JSON.stringify(annotation.target),sourceHash:data.source.sha256,status:core.annotationStatus(annotation),history:JSON.stringify(annotation.history || []),readOnly,review:Boolean(options.review),token:id(),originalText:targetText(annotation.target),candidates:[],selected:-1,viewed:false};
     $('location-preview-bar').hidden=true;
+    $('location-dialog-title').textContent=options.review ? '复核处理结果' : '确认批注位置';
+    $('location-current-title').textContent=readOnly ? '当前内容对照' : '选择并核对当前位置';
+    const feedback=annotation.history?.at(-1);
+    $('location-feedback').hidden=!feedback;
+    $('location-feedback').textContent=feedback ? `${feedback.revision<core.annotationRevision(annotation)?'上一版处理说明':readOnly?'完成说明':'未完成说明'} · 第 ${feedback.revision} 版 · ${feedback.by==='user'?'你':feedback.by}：${feedback.summary || '未附说明'}` : '';
+    $('confirm-location').hidden=readOnly || wholeTarget(annotation.target);$('reselect-location').hidden=readOnly || wholeTarget(annotation.target);
+    $('review-current-document').hidden=!options.review;
+    const inQueue=Boolean(options.review && resultReviewQueue),queueIndex=resultReviewQueue?.indexOf(annotation.id) ?? -1;
+    $('result-review-position').hidden=!inQueue;$('result-review-position').textContent=inQueue ? `第 ${queueIndex+1} / ${resultReviewQueue.length} 条 · ${readOnly?'完成记录，核对不会改变状态':core.taskState(annotation)==='new'?'新增意见':'待处理意见'}` : '';
+    $('review-previous').hidden=!inQueue;$('review-previous').disabled=queueIndex<=0;
+    $('review-next').hidden=!inQueue;$('review-next').textContent=queueIndex===resultReviewQueue?.length-1 ? '结束复核' : '下一条';
     $('location-opinion').textContent=annotation.comment;
+    $('location-confirm-help').textContent=readOnly ? '完成记录仅供复核，不自动匹配相似原文，也不更换旧定位。' : '确认位置会保留原定位记录；修改意见仍是待处理。';
     $('location-original').textContent=targetText(annotation.target);
     const quote=annotation.target.quote || {};
     $('location-original-context').textContent=[quote.prefix,quote.suffix].filter(Boolean).join(' … ');
     $('location-review-status').textContent='正在读取当前文档中的候选位置…';
     $('location-candidates').replaceChildren();$('confirm-location').disabled=true;
     window.HRUI.openDialog($('location-dialog'));
-    send('review-candidates',{target:annotation.target,requestId:annotation.id,locationToken:locationInspection.token});
+    if(wholeTarget(annotation.target))receiveLocationCandidates({requestId:annotation.id,locationToken:locationInspection.token,candidates:[]});
+    else send('review-candidates',{target:annotation.target,requestId:annotation.id,locationToken:locationInspection.token});
   }
   function inspectionAnnotation() {
     const state=locationInspection,annotation=data?.annotations.find(item=>item.id===state?.id);
-    return annotation && core.annotationRevision(annotation)===state.revision && JSON.stringify(annotation.target)===state.target && data.source.sha256===state.sourceHash ? annotation : null;
+    return annotation && core.annotationRevision(annotation)===state.revision && JSON.stringify(annotation.target)===state.target && core.annotationStatus(annotation)===state.status && JSON.stringify(annotation.history || [])===state.history && data.source.sha256===state.sourceHash ? annotation : null;
   }
   function candidateNeedsViewing(candidate) {return candidate.target.kind==='region' || (candidate.target.kind==='page' && !wholeTarget(candidate.target)) || candidate.target.tag==='img';}
   function showTextDifference(node,oldText,newText,previous) {
@@ -6317,21 +6387,23 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     showTextDifference($('location-original'),locationInspection.originalText,selected.text,true);
     const copy=$('location-candidates').querySelector(`[data-candidate-copy="${index}"]`);if(copy)showTextDifference(copy,locationInspection.originalText,selected.text,false);
     const needsView=candidateNeedsViewing(selected);
-    $('confirm-location').disabled=needsView;
-    $('location-confirm-help').textContent=needsView ? '先在文档中查看区域或页面，再确认。原定位记录会保留，意见仍待处理。' : '确认位置会保留原定位记录；修改意见仍是待处理。';
+    $('confirm-location').disabled=needsView || locationInspection.readOnly;
+    $('location-confirm-help').textContent=locationInspection.readOnly ? '完成记录仅供复核。原定位和完成说明保留，不更换目标或重新要求 agent 处理。' : needsView ? '先在文档中查看区域或页面，再确认。原定位记录会保留，意见仍待处理。' : '确认位置会保留原定位记录；修改意见仍是待处理。';
   }
   function previewLocation(index) {
     chooseLocation(index);const candidate=locationInspection?.candidates[index];if(!candidate)return;
     locationInspection.viewed=true;
     $('location-preview-label').textContent=candidate.label;
-    $('location-preview-bar').hidden=false;$('confirm-preview-location').disabled=false;
-    $('confirm-location').disabled=false;
+    $('location-preview-bar').hidden=false;$('confirm-preview-location').hidden=locationInspection.readOnly;$('confirm-preview-location').disabled=locationInspection.readOnly;
+    $('confirm-location').disabled=locationInspection.readOnly;
     window.HRUI.closeDialog($('location-dialog'));send('preview-candidate',{target:candidate.target});
   }
   function receiveLocationCandidates(message) {
     if(!inspectionAnnotation() || message.requestId!==locationInspection.id || message.locationToken!==locationInspection.token)return;
     const candidates=[];
-    for(const candidate of Array.isArray(message.candidates)?message.candidates.slice(0,6):[]) {
+    // A deleted completed target is a historical record, not a suggestion to inspect
+    // whatever now occupies its old structural path.
+    for(const candidate of locationInspection.readOnly && message.status==='missing' ? [] : Array.isArray(message.candidates)?message.candidates.slice(0,6):[]) {
       try {
         if(JSON.stringify(candidate.target).length>250000)continue;
         core.validateTarget(candidate.target,candidate.target.kind);
@@ -6342,22 +6414,24 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
       }catch(_) { /* Invalid or stale evidence never becomes a confirmation target. */ }
     }
     locationInspection.candidates=candidates;
-    $('location-review-status').textContent=candidates.length ? (candidates.length===1 ? '找到一个可核对的位置，请检查原文与当前位置。' : '找到多个候选，请根据上下文选择，不会自动绑定。') : '没有找到可靠的候选；原文可能已删除。请在文档中重新选择，或保留批注记录。';
+    const whole=wholeTarget(inspectionAnnotation().target);
+    $('location-review-status').textContent=whole ? '这条意见覆盖整个文件。请结合处理说明阅读当前版本。' : locationInspection.readOnly && !candidates.length ? '原定位内容已变化或删除。结合完成说明阅读当前文档，完成记录仍保留。' : candidates.length ? (candidates.length===1 ? '找到一个可核对的位置，请检查原文与当前位置。' : '找到多个候选，请根据上下文选择，不会自动绑定。') : '没有找到可靠的候选；原文可能已删除。请在文档中重新选择，或保留批注记录。';
     const list=$('location-candidates');list.replaceChildren();
     candidates.forEach((candidate,index)=>{
       const card=textNode('section','location-candidate','');
-      const label=document.createElement('label');const radio=document.createElement('input');radio.type='radio';radio.name='review-location';radio.value=String(index);radio.addEventListener('change',()=>chooseLocation(index));
+      const label=document.createElement('label');const radio=document.createElement('input');radio.type='radio';radio.name='review-location';radio.value=String(index);radio.hidden=locationInspection.readOnly;radio.addEventListener('change',()=>chooseLocation(index));
       label.append(radio,textNode('strong','',candidate.label));
       const copy=textNode('p','',candidate.text);copy.dataset.candidateCopy=String(index);card.append(label,copy);
       if(candidate.prefix || candidate.suffix)card.append(textNode('p','location-context',[candidate.prefix,candidate.suffix].filter(Boolean).join(' … ')));
       const viewButton=textNode('button','text-button','在文档中查看');viewButton.type='button';viewButton.addEventListener('click',()=>previewLocation(index));card.append(viewButton);list.append(card);
     });
-    if(!candidates.length)list.append(textNode('p','navigation-empty','无可靠候选。不猜测新原文，也不自动更换目标。'));
+    if(!candidates.length)list.append(textNode('p','navigation-empty',whole ? '整体意见没有单独的位置。当前文件：'+data.source.name : locationInspection.readOnly ? '当前文档中没有可靠的原目标。可查看当前文档，或继续下一条复核。' : '无可靠候选。不猜测新原文，也不自动更换目标。'));
+    if(locationInspection.readOnly)$('location-confirm-help').textContent='完成记录仅供复核，不自动匹配相似原文，也不更换旧定位。';
     if(candidates.length===1)chooseLocation(0);
   }
   function confirmLocation() {
     const annotation=inspectionAnnotation(),state=locationInspection,candidate=state?.candidates[state.selected];
-    if(!annotation || !candidate || busy)return;
+    if(!annotation || !candidate || busy || state.readOnly)return;
     if(candidateNeedsViewing(candidate) && !state.viewed)return;
     if(draftDirty()){note('先保存或取消编辑框中的意见，再确认位置；草稿仍保留。',true);return;}
     if((annotation.targetHistory?.length || 0)>=100){note('此批注已保存 100 次定位记录，请新建批注。',true);return;}
@@ -6417,8 +6491,8 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     for (const panel of copy.querySelectorAll('[data-settings-panel]')) panel.removeAttribute('aria-hidden');
     copy.querySelector('#pdf-preview').replaceChildren(); copy.querySelector('#pdf-preview').hidden=true;
     copy.querySelector('#pdf-thumbnails').replaceChildren(); copy.querySelector('#pdf-thumbnails').hidden=true; copy.querySelector('#pdf-thumbnail-toggle').setAttribute('aria-expanded','false');
-    for(const selector of ['#pdf-search-bar','#pdf-scan-guide','#location-preview-bar'])copy.querySelector(selector).hidden=true;
-    for(const selector of ['#location-candidates','#location-original','#location-original-context','#location-opinion','#location-review-status','#location-preview-label'])copy.querySelector(selector).replaceChildren();
+    for(const selector of ['#pdf-search-bar','#pdf-scan-guide','#location-preview-bar','#result-review'])copy.querySelector(selector).hidden=true;
+    for(const selector of ['#location-candidates','#location-original','#location-original-context','#location-opinion','#location-review-status','#location-preview-label','#location-feedback','#result-review-position','#result-review-summary'])copy.querySelector(selector).replaceChildren();
     copy.querySelector('#backup-menu').removeAttribute('open');
     copy.querySelector('#pdf-controls').hidden=true; copy.querySelector('#pdf-cancel-search').hidden=true;
     copy.querySelector('#preview-width').closest('.select-field')?.removeAttribute('hidden');
@@ -6845,6 +6919,12 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   $('pdf-search-close').addEventListener('click',()=>{$('document-search').value='';clearTimeout(searchTimer);send('cancel-search');$('pdf-search-bar').hidden=true;renderDocumentNavigation();});
   $('pdf-use-region').addEventListener('click',()=>{setMode('element');$('pdf-scan-guide').hidden=true;});
   $('confirm-location').addEventListener('click',confirmLocation);$('confirm-preview-location').addEventListener('click',confirmLocation);
+  $('result-review-start').addEventListener('click',()=>startResultReview());
+  $('result-review-reload').addEventListener('click',reloadSource);
+  $('result-review-dismiss').addEventListener('click',()=>{resultReviewDismissed=true;renderResultReview();});
+  $('review-previous').addEventListener('click',()=>moveResultReview(-1));
+  $('review-next').addEventListener('click',()=>moveResultReview(1));
+  $('review-current-document').addEventListener('click',()=>{if(inspectionAnnotation()){window.HRUI.closeDialog($('location-dialog'));$('location-preview-bar').hidden=false;$('location-preview-label').textContent='正在核对当前文档。返回对照后可以继续下一条。';$('confirm-preview-location').hidden=true;}});
   $('return-location-comparison').addEventListener('click',()=>{if(inspectionAnnotation())window.HRUI.openDialog($('location-dialog'));});
   $('reselect-location').addEventListener('click',()=>{const annotation=inspectionAnnotation();window.HRUI.closeDialog($('location-dialog'));$('location-preview-bar').hidden=true;locationInspection=null;if(annotation)reselect(annotation);});
   $('handoff-export-package').addEventListener('click',()=>run(async()=>{if(!data || draftDirty())return;const result=await window.HRHandoff.create(data);downloadBlob(result.blob,result.filename);delivered=true;updateGuide();queueAutosave();$('copy-agent-status').textContent='交接包已下载。将 ZIP 附给 agent，让它读取包内任务说明。';}));
@@ -6929,7 +7009,8 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     if (!button || !data) return;
     const annotation = data.annotations.find(item => item.id === button.dataset.id);
     if (!annotation) return;
-    if (button.dataset.action === 'review-location') inspectLocation(annotation);
+    if (button.dataset.action === 'review-result') startResultReview(annotation.id);
+    else if (button.dataset.action === 'review-location') {resultReviewQueue=null;inspectLocation(annotation);}
     else if (button.dataset.action === 'locate') locate(annotation);
     else if (button.dataset.action === 'edit') edit(annotation);
     else if (button.dataset.action === 'reselect') reselect(annotation);

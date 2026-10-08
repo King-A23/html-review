@@ -31,7 +31,9 @@
     "test:pdf-copy": "node tests/pdf-copy.browser.mjs",
     "test:pdf-reading": "node tests/pdf-reading.browser.mjs",
     "test:location-candidates": "node tests/location-candidates.browser.mjs",
-    "test:ux-flow": "node tests/ux-flow.browser.mjs"
+    "test:ux-flow": "node tests/ux-flow.browser.mjs",
+    "test:roundtrip": "node tests/real-roundtrip.browser.mjs",
+    "test:performance": "node tests/performance.browser.mjs"
   },
   "engines": {
     "node": ">=22.13.0"

@@ -488,3 +488,11 @@ kbd{color:#4d6040;font-size:12px}
 .location-comparison del{background:#f8e4db;color:#965540;text-decoration-thickness:1px;border-radius:3px}.location-comparison ins{background:#e4efda;color:#426334;text-decoration:none;border-radius:3px}.location-comparison>section{max-height:48dvh;overflow:auto;scrollbar-width:thin}
 .handoff-next-step{font-size:12px;line-height:1.8;color:#69795b;padding:12px 0;margin:12px 0 0;border-top:1px solid #e2e7da}#pdf-search-position{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .location-context{font-size:12px!important;color:#69765c}#location-review-status,#location-confirm-help{color:#657256}.handoff-choice p,#agent-task-help{color:#66735b}
+
+/* Keep completion feedback and the next review action visible in the reading workspace. */
+.result-review{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:15px 20px;background:#f3f6ed;border-bottom:1px solid #dfe5d7}
+.result-review>div:first-child{min-width:0}.result-review .eyebrow{display:block;margin-bottom:5px}.result-review strong{font-size:14px}.result-review p{font-size:12px;line-height:1.7;color:#627154;margin:5px 0 0}.result-review-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px}.result-review-actions button{font-size:12px;white-space:nowrap}
+.location-feedback{font-size:13px;line-height:1.8;color:#526748;padding:12px 15px;border-left:3px solid #bbc9a6;background:#f7f9f2;white-space:pre-wrap;overflow-wrap:anywhere}.result-review-position{font-size:12px;color:#68785c}
+.annotation-card.is-resolved .annotation-feedback{display:block;color:#5d7051}.location-dialog .editor-actions #review-next{margin-left:auto}
+.location-dialog .dialog-body{max-height:calc(90dvh - 185px)}.location-review-actions{margin:0;padding:14px 26px 20px;border-top:1px solid #e3e7dc;background:#fffefb}.location-review-actions button{white-space:nowrap}
+@media(max-width:900px){.result-review{align-items:flex-start;flex-direction:column;gap:10px}.result-review-actions{justify-content:flex-start}.result-review p{margin-top:4px}}

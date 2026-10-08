@@ -1,5 +1,7 @@
 # 交接、定位对照与 PDF 阅读优化验收
 
+后续实际修改往返、逐条复核及有界 PDF 搜索缓存的验证见 [ROUNDTRIP_VALIDATION.md](ROUNDTRIP_VALIDATION.md)。以下记录保留上一轮版本与测量边界。
+
 日期：2026-10-08。基于本地 `codex/pdf-review` 分支，保留 HTML / DOCX / PDF。未推送、未创建 PR、未部署，也未更新 GitHub 发布资产。Windows 真机验证按用户要求暂缓。
 
 ## 交付与实际行为
