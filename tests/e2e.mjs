@@ -44,6 +44,11 @@ async function frameFor(page) {
     else document.addEventListener('DOMContentLoaded', resolve, {once: true});
   }));
   await page.waitForFunction(() => !document.querySelector('#open-button').disabled);
+  await page.locator('#preview-frame[aria-busy="false"]').waitFor();
+  await frame.locator('body').evaluate(() => new Promise(resolve => {
+    if (document.readyState === 'complete') resolve();
+    else window.addEventListener('load', resolve, {once: true});
+  }));
   return frame;
 }
 async function waitCount(page, count) {

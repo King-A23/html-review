@@ -6,6 +6,7 @@ output/playwright/
 output/docx-review/
 output/docx-user-test/
 output/docx-word-comparison/
+output/pdf-review/
 .playwright-cli/
 __pycache__/
 *.pyc

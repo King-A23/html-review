@@ -15,7 +15,7 @@
    - **整体**：针对当前整个 HTML 或 DOCX 文件提出意见，无需选择文字或元素。打开文件后可在浏览模式直接填写并保存，也可点击**整体**。适合全文内容、结构、页面布局、配色和响应式需求；不包含文件夹中的其他入口页面。
    - **浏览**：使用 HTML 页面按钮和页内锚点等交互，或阅读 DOCX，也可直接填写针对整个文件的意见；HTML 跨页链接会被阻止并提示。添加元素批注时再切换回元素模式。
 4. 填写意见后点击**保存批注**，或按 `Ctrl+Enter` / `⌘+Enter`。在列表中查看、定位、编辑或删除批注；编辑后点击**更新批注**。添加、更新和删除均可撤销、重做（最近 50 次，刷新后不保留操作历史）。
-5. 在顶部选择保存格式并下载，默认为可继续编辑的 HTML 副本，例如 `demo.review.html`。也可选择压缩副本或轻量批注，见下表。无论原文件是 HTML 还是 DOCX，完整批注工作区都保存为 `.review.html`；原文件保持不变。
+5. 在顶部选择保存格式并下载，默认为可继续编辑的 HTML 副本，例如 `demo.review.html`。也可选择压缩副本或轻量批注，见下表。无论原文件是 HTML、DOCX 还是 PDF，完整批注工作区都保存为 `.review.html`；原文件保持不变。
 6. 双击 HTML 副本，或重新导入本工具，即可继续查看、修改批注；压缩副本需先解压。轻量 JSON 供 agent 使用；DOCX 的轻量 JSON 可先通过**打开文档**导入，再点击**选择配套 DOCX**，提供哈希和字节数匹配的原文件以恢复工作区。HTML 轻量 JSON 当前不能恢复工作区，请使用完整副本。
 7. 点击**复制修改任务**，将任务文本和对应原始 HTML 及资源或原始 DOCX 交给 coding agent；或将**批注文件和对应的原文件**交给 agent，配合 [`AGENT_PROMPT.md`](../AGENT_PROMPT.md) 中的通用提示词使用。
 
@@ -94,8 +94,8 @@ HTML 的解码会参考 BOM 或 `meta charset`，未声明时按 UTF-8 处理。
 
 | 输入 | 上限 |
 | --- | --- |
-| 原始 HTML 或 DOCX | 20 MiB。DOCX ZIP 另限 3000 个条目、合计 100 MiB 解压大小。 |
-| 整个文件夹 | 合计 50 MiB、最多 500 个文件；其中入口 HTML 或 DOCX 仍限 20 MiB，HTML 单个资源限 40 MiB。 |
+| 原始 HTML、DOCX 或 PDF | 20 MiB。PDF 预览另限 1000 页；DOCX ZIP 另限 3000 个条目、合计 100 MiB 解压大小。 |
+| 整个文件夹 | 合计 50 MiB、最多 500 个文件；其中入口 HTML、DOCX 或 PDF 仍限 20 MiB，HTML 单个资源限 40 MiB。 |
 | 已下载的批注副本 | 整个 `.review.html` 文件可重新导入的上限为 100 MiB；其中原文件快照仍限 20 MiB。 |
 
 Base64 和批注界面会让副本比原文件与资源的合计体积更大，原始 HTML 的 20 MiB 限制不能用于判断批注副本是否可重新导入。
@@ -110,13 +110,13 @@ Base64 和批注界面会让副本比原文件与资源的合计体积更大，�
 | --- | --- | --- |
 | HTML 副本 `.review.html` | 编辑界面、原文件和资源快照、完整批注。 | 可直接双击继续编辑；不需要原文件即可查看快照。 |
 | 压缩副本 `.review.html.gz` | 完整 HTML 副本的 gzip 压缩结果。 | 解压得到 HTML 后继续编辑；检查器可直接读取压缩文件。压缩率取决于内容。 |
-| 轻量批注 `.review.json` | 文件名、版本哈希等元数据、资源路径和哈希、完整批注；不含文件或资源快照、编辑界面。 | 与原始 HTML 和相关资源或原始 DOCX 一起交给 agent；DOCX 可选择匹配原文件恢复，HTML 当前需完整副本。 |
+| 轻量批注 `.review.json` | 文件名、版本哈希等元数据、资源路径和哈希、完整批注；不含文件或资源快照、编辑界面。 | 与原始 HTML 和相关资源、原始 DOCX 或 PDF 一起交给 agent；DOCX / PDF 可选择匹配原文件恢复，HTML 当前需完整副本。 |
 
 HTML 保存时不再携带工具内置示例，批注 JSON 使用紧凑格式；原文件与资源的字节快照保持完整。小文件的副本增量主要来自离线编辑界面；大文件的增量还包含 Base64 编码带来的约三分之一体积。压缩副本可减少保存和传输体积，轻量 JSON 则直接省去这些快照与工具代码。
 
 **文件体积与 agent 的上下文占用取决于读取方式。** 请让 agent 运行 `scripts/inspect_review.py`，只把它输出的批注和元数据放入上下文，不要直接打印整份 HTML、gzip 或 Base64 内容。轻量 JSON 本身可直接解析；仍需校验配套原文件版本。
 
-批注副本是一份自包含的**批注工作区 HTML**：它携带批注界面、原 HTML 或 DOCX 字节、HTML 已导入的本地资源和批注数据。文档在隔离预览中渲染，副本不是把工具栏直接插进原文件后覆盖保存。
+批注副本是一份自包含的**批注工作区 HTML**：它携带批注界面、原 HTML、DOCX 或 PDF 字节、HTML 已导入的本地资源和批注数据。文档在隔离预览中渲染，副本不是把工具栏直接插进原文件后覆盖保存。
 
 结构化数据内嵌在副本的一个 JSON 数据块中：
 
@@ -126,21 +126,22 @@ HTML 保存时不再携带工具内置示例，批注 JSON 使用紧凑格式；
 </script>
 ```
 
-完整副本的主要字段如下。HTML 继续使用 `schemaVersion: 1`，DOCX 使用 `schemaVersion: 2`。轻量 JSON 使用 `format: "html-review-annotations"`，保持原文档的 schemaVersion，保留下列元数据和完整 `annotations`，但省略 `source.base64` 与所有资源的 `base64`：
+完整副本的主要字段如下。HTML 继续使用 `schemaVersion: 1`，DOCX 使用 `schemaVersion: 2`，PDF 使用 `schemaVersion: 3`。轻量 JSON 使用 `format: "html-review-annotations"`，保持原文档的 schemaVersion，保留下列元数据和完整 `annotations`，但省略 `source.base64` 与所有资源的 `base64`：
 
 | 字段 | 说明 |
 | --- | --- |
 | `format` | 固定为 `html-review`。 |
-| `schemaVersion` | HTML 为 `1`；DOCX 为 `2`。读取器应检查版本和 source 类型。 |
+| `schemaVersion` | HTML 为 `1`；DOCX 为 `2`；PDF 为 `3`。读取器应检查版本和 source 类型。 |
 | `source.name`、`source.path` | 原文件名称和相对所选目录根部的路径（使用 `/` 分隔，不包含所选文件夹名称或磁盘绝对路径），用于区分文件。 |
 | `source.byteLength`、`source.lastModified` | 原文件字节数，以及文件选择器提供的最后修改时间（Unix 毫秒；未知时为 `null`）等版本线索。 |
 | `source.sha256` | **原始文件字节**的 SHA-256，用于校验 agent 拿到的原文件是否为批注时的版本。不是整个批注副本的哈希。 |
-| `source.encoding` | HTML 渲染所用的文本编码；DOCX 不包含此字段。 |
+| `source.encoding` | HTML 渲染所用的文本编码；DOCX 与 PDF 不包含此字段。 |
+| `source.type`、`source.adapterVersion` | DOCX 为 `docx` / `1`，PDF 为 `pdf` / `1`；HTML 沿用版本 1 的编码元数据。 |
 | `source.base64` | 原始文件字节的 Base64 表示，保留批注创建时的源文件快照。 |
-| `resources` | HTML 已导入资源列表，每项包含 `path`、`mime`、`base64`、`sha256`；DOCX 固定为 `[]`。 |
+| `resources` | HTML 已导入资源列表，每项包含 `path`、`mime`、`base64`、`sha256`；DOCX 与 PDF 固定为 `[]`。 |
 | `annotations` | 批注列表。 |
 | `annotations[].id` | 批注唯一标识，用于反馈修改结果。 |
-| `annotations[].kind` | `text`（文字）、`element`（元素）或 `page`（单页或整体，由 `target.scope` 区分）。 |
+| `annotations[].kind` | HTML / DOCX 使用 `text`（文字）、`element`（元素）、`page`；PDF 使用 `text`、`region`（框选区域）、`page`。单页与整体由 `target.scope` 区分。 |
 | `annotations[].comment` | 用户填写的修改意见。 |
 | `annotations[].revision`、`status` | 意见版本，以及 `open`（待处理）/`resolved`（已完成）；旧记录默认第 1 版、待处理。 |
 | `annotations[].history` | 对应意见版本的处理者、时间、状态与说明；不会覆盖原文与定位。 |
@@ -152,7 +153,7 @@ HTML 保存时不再携带工具内置示例，批注 JSON 使用紧凑格式；
 
 重新定位会把之前的定位与视口写入 `targetHistory`，再更新当前 `kind`、`target`、`view` 并增加批注版本。历史目标须按各自的 `target.kind` 校验，允许与当前类型不同；尺寸、坐标和时间仍须有效。该历史只作记录，agent 修改应以当前 `target`、`view` 和意见为依据。完整副本、轻量导出以及导入处理结果均保留历史；静态检查器只显示历史的版本和类型摘要，不展开旧目标原文。
 
-文字、元素和单页目标的主要定位字段包括：
+HTML / DOCX 派生预览中的文字、元素和单页目标的主要定位字段包括；PDF 原文定位另见下方 PDF 协议：
 
 | `target` 内的字段 | 含义 |
 | --- | --- |
@@ -209,15 +210,76 @@ DOCX 预览用于阅读与批注，不能替代 Word 的排版结果；复杂域
 python3 scripts/inspect_review.py "报告.review.json" "报告.docx"
 ```
 
+## PDF 数据与定位
+
+PDF 使用 `schemaVersion: 3`、`source.type: "pdf"`、`source.adapterVersion: "1"`。完整副本将原 PDF 字节原样保存在 `source.base64`，哈希和 `byteLength` 均基于这些字节；不保存派生页面图片、全文索引或预览 HTML，`resources` 为 `[]`，没有 `source.encoding`。轻量 `.review.json` 只保留源文件元数据及批注，须与原 PDF 一起交接。轻量 JSON 可以选择字节数与哈希匹配的原 PDF 恢复工作区；完整工作区仍下载为 `.review.html` 或其 gzip 副本。
+
+预览按 PDF 实际页面显示，支持文字、框选区域、单页及整体批注。页码跳转、缩放、文本搜索和目录用于阅读；扫描页没有可选文字时使用区域批注，当前不提供 OCR。原 PDF 内的批注只显示外观，不自动转换为修改任务。原文件上限 20 MiB，预览上限 1000 页；损坏、无法解锁或处理超时的文件会中止导入并保留原工作区。加密 PDF 需在打开时输入密码；密码只用于本次解锁，不写入副本、轻量 JSON、复制任务或本机恢复记录，重新打开可能需要再次输入。
+
+每个 PDF 目标含 `target.pdf`。以下示例是单页上的文字选区，真实 SHA-256 必须为 64 位小写十六进制字符串：
+
+```json
+{
+  "kind": "text",
+  "pdf": {
+    "adapterVersion": "1",
+    "sourceSha256": "保存目标时的原PDF字节SHA256",
+    "pages": [{
+      "pageNumber": 1,
+      "label": "i",
+      "viewBox": [0, 0, 612, 792],
+      "rotation": 0,
+      "userUnit": 1,
+      "fingerprint": {
+        "textSha256": "页面文字项及几何元数据SHA256",
+        "visualSha256": "页面参考渲染像素SHA256"
+      },
+      "rects": [[44, 706, 272, 724]],
+      "quads": [[44, 724, 272, 724, 272, 706, 44, 706]],
+      "segments": [{"itemIndex": 2, "start": 0, "end": 4, "text": "标题原文"}],
+      "quote": "标题原文",
+      "prefix": "前文",
+      "suffix": "后文"
+    }]
+  }
+}
+```
+
+| 字段 | 含义与校验 |
+| --- | --- |
+| `target.pdf.sourceSha256` | 保存此目标时的原 PDF 字节哈希；重载新版本后仍保留旧值，可以与当前 `source.sha256` 不同。 |
+| `pages[].pageNumber`、`label` | `pageNumber` 是从 1 开始的物理页序号；`label` 是文档页标签，仅作辅助，不能代替物理页码。页面列表按物理页码严格递增、不重复。 |
+| `viewBox` | 原页面有效范围 `[x0, y0, x1, y1]`；可包含非零或负原点，必须有正宽高。 |
+| `rotation`、`userUnit` | 页面旋转为 `0`、`90`、`180`、`270` 度，`userUnit` 为有限正数。显示坐标转换须考虑这两项和裁剪范围。 |
+| `fingerprint` | `textSha256` 与 `visualSha256` 是适配器生成的页面证据，均须为 SHA-256。不是文档数字签名，也不是其他解析器可直接复用的全文哈希。 |
+| `rects` | 原始 PDF 用户空间中的矩形 `[x0, y0, x1, y1]`；坐标须有限、矩形须有正宽高且位于 `viewBox` 内。 |
+| `quads` | 可选，每项为四个角按顺序排列的八个数 `[x1,y1,x2,y2,x3,y3,x4,y4]`，同样属于原始 PDF 用户空间并须在页面边界内。 |
+| `segments` | 文字项索引 `itemIndex` 从 0 开始；`start` 与 `end` 是该文字项字符串内的 UTF-16 码元偏移，`end` 不包含在选区内。`text` 保存该片段，长度须等于 `end-start`；同一页的片段按文字项及偏移排列，不重叠。 |
+| `quote`、`prefix`、`suffix` | 此页选区的精确原文和前后文。文字目标要求原文、非空片段和有效矩形；跨页文字分成多个 `pages` 项。 |
+
+这些坐标保留原始 PDF 用户空间；通常 y 轴向上，不能直接当作屏幕左上角坐标、CSS 像素、已旋转页面坐标或某个 DOCX / 设计稿的坐标。正确显示需要应用 PDF 页面的裁剪、旋转、`userUnit` 和当前缩放变换。工具生成的 `selector` 和顶层 `quote` 是阅读辅助；原 PDF 定位应以 `target.pdf` 的物理页、原文和坐标为依据。全文搜索的文字项索引依赖本适配器版本，不等同于 PDF 对象号、内容流字节偏移或其他解析器的字符串位置。
+
+`kind: "region"` 必须定位一个物理页及非空矩形。`kind: "page"` 配合 `scope: "single-page"` 时只含一个页面；`scope: "whole-document"` 时 `pages: []`，意见覆盖整份 PDF。HTML 的单页范围仍为 `scope: "page"`，不要与 PDF 的 `single-page` 混用。目标历史按各自格式和 `kind` 校验，保留历史时的源哈希；历史定位不作为本轮修改目标。
+
+重载保留意见和原目标。相同源版本仍核对页面几何、指纹，以及文字片段、原文和上下文；源版本变化后先查找指纹唯一匹配的页面。文字没有匹配页面时，只有原文及前后文唯一匹配才提供候选定位，须人工核对；重复页、重复原文或跨页顺序改变会标为歧义，删除或无法确认则标为缺失。区域与单页不能仅凭旧页码和坐标套用到已改变的页面；没有唯一指纹匹配时需要人工重新选择。核对不会自动改写保存的目标；重新选择并保存才更新定位、增加意见版本、保留 `targetHistory`。
+
+Python 检查器仅校验 PDF 元数据、定位结构、坐标与 UTF-16 数值约束、源文件字节哈希和快照一致性。它不解析 PDF 正文、不渲染页面、不验证选中文字是否真实存在，也不重新计算页面指纹。其输出保留当前批注所需的页码、坐标和原文快照，不输出整份 PDF 正文、页面图片或 Base64。检查成功不等于修改完成或页面内容已核对；agent 仍须打开对应页或使用独立 PDF 工具验证：
+
+```sh
+python3 scripts/inspect_review.py "报告.review.json" "报告.pdf"
+```
+
+交给 agent 的最小材料是原 PDF 与轻量批注 JSON；“复制修改任务”提供源哈希、坐标说明及回报协议，辅助脚本不是必需交接材料。若修改需要 DOCX、HTML、设计稿等可编辑源文件，应明确报告缺少材料，不应从 PDF 页码推断其他文件的结构，也不应把尚未修改的任务标为完成。意见描述与框选范围不一致时先澄清目标。agent 交回修改后的 PDF 和结果 JSON；结果只更新批注状态，用户需重载修改后的 PDF 查看新内容。
+
 ## 交给 coding agent
 
 使用 [`AGENT_PROMPT.md`](../AGENT_PROMPT.md) 提供的完整提示词。最短流程是：
 
-1. 运行 `python3 scripts/inspect_review.py "批注文件" "原始.html"`（DOCX 使用 `"原始.docx"`），静态提取批注并校验版本；完整 HTML、gzip 副本和轻量 JSON 都支持。不要将完整工作区或 Base64 放进上下文。
-2. 完整副本会在脚本中解码并校验原文件和资源快照；轻量 JSON 没有快照，需要提供配套原文件，HTML 还需配套外部资源。DOCX 的媒体已包含在原 ZIP 中。
+1. 运行 `python3 scripts/inspect_review.py "批注文件" "原始.html"`（DOCX 使用 `"原始.docx"`，PDF 使用 `"原始.pdf"`），静态提取批注并校验版本；完整 HTML、gzip 副本和轻量 JSON 都支持。不要将完整工作区或 Base64 放进上下文。
+2. 完整副本会在脚本中解码并校验原文件和资源快照；轻量 JSON 没有快照，需要提供配套原文件，HTML 还需配套外部资源。DOCX 的媒体已包含在原 ZIP 中；PDF 的字体和媒体位于原文件中。
 3. 检查脚本的版本校验结果。版本不一致时先报告差异并重新核对定位；脚本输出保留完整批注和定位上下文。
-4. HTML 按批注原文、元素内容、选择器与上下文定位源代码；DOCX 按对应的 OOXML part、路径与文字或图片证据核对源文档。定位失效或目标有歧义时说明情况，避免猜测修改。
-5. 仅处理 `status=open` 的意见，修改原始 HTML、相应资源或原始 DOCX，验证效果；按批注 ID 生成处理结果 JSON，已完成记录仅供参考。结果接口见 [`docs/AGENT_RESULTS.md`](../docs/AGENT_RESULTS.md)。
+4. HTML 按批注原文、元素内容、选择器与上下文定位源代码；DOCX 按对应的 OOXML part、路径与文字或图片证据核对源文档；PDF 按物理页、原文及原始用户空间坐标独立核对，Python 检查不解析其正文。定位失效或目标有歧义时说明情况，避免猜测修改。
+5. 仅处理 `status=open` 的意见，修改原始 HTML、相应资源、原始 DOCX 或原始 PDF，验证效果；按批注 ID 生成处理结果 JSON，已完成记录仅供参考。结果接口见 [`docs/AGENT_RESULTS.md`](../docs/AGENT_RESULTS.md)。
 
 如果批注要求修改外部 CSS 或 JavaScript，请同时交给 agent 对应的原项目文件。副本内的资源快照可辅助核对，但实际交付应修改原项目中的文件。
 
@@ -251,7 +313,7 @@ python scripts/inspect_review.py demo.review.json demo.html
 
 ## 开发与测试
 
-开发需 Node.js 20+；涉及静态检查器、agent 回报及发布打包时需 Python 3.8+。使用成品 `html-review.html` 或 `index.html` 不需要这些运行环境。先在仓库根目录安装锁定的开发依赖：
+开发需 Node.js 22.13+；涉及静态检查器、agent 回报及发布打包时需 Python 3.8+。使用成品 `html-review.html` 或 `index.html` 不需要这些运行环境。先在仓库根目录安装锁定的开发依赖：
 
 ```sh
 npm ci
@@ -277,6 +339,11 @@ npm run test:results
 npm run test:docx
 npm run test:docx-errors
 npm run test:docx-location
+npm run test:pdf
+npm run test:pdf-errors
+npm run test:pdf-lifecycle
+npm run test:pdf-visual
+npm run test:pdf-copy
 npm run site:build
 npm run test:site
 ```
@@ -291,7 +358,7 @@ node tests/e2e.mjs
 
 将示例路径替换成实际安装位置；仅在使用已有测试依赖或浏览器时需要设置这些变量。
 
-GitHub Actions 在推送、PR 和手动运行时，在 Windows 与 Linux 上用 Node.js 20 与 24 检查生成文件、单元测试和上述浏览器套件，并保存测试报告与截图。Linux 首次安装浏览器依赖可执行 `npx playwright install --with-deps chromium`。
+GitHub Actions 在推送、PR 和手动运行时，在 Windows 与 Linux 上按工作流配置的 Node.js 矩阵检查生成文件、单元测试和上述浏览器套件，并保存测试报告与截图。Linux 首次安装浏览器依赖可执行 `npx playwright install --with-deps chromium`。
 
 官网源文件位于 `site/`，`npm run site:build` 生成被忽略的 `_site/`。构建只收录页面、应用、展示素材与下载资产，不部署工作目录、原视频工程或开发依赖。网站专项验证通过临时 HTTP 服务检查真实下载、示例保存/恢复与离线重开，并在结束时关闭服务和浏览器。离线 ZIP 不包含完整宣传片，重建官网时该视频会引用已发布的网站素材。
 
@@ -299,13 +366,15 @@ Pages 使用 `.github/workflows/pages.yml`。管理员先在仓库设置中启�
 
 ## 可选：命令行打开
 
-需要 Node.js 20+。在源码仓库根目录运行 `npm ci`，再用 `npm link` 注册命令：
+需要 Node.js 22.13+。在源码仓库根目录运行 `npm ci`，再用 `npm link` 注册命令：
 
 ```sh
 html-review                  # 打开空白批注工具
 html-review "./报告.html"     # 生成同目录的批注副本并打开
 html-review "./报告.review.html" # 继续编辑已有批注
 html-review "./报告.html" --no-open # 仅生成副本并输出路径
+html-review "./报告.pdf"      # 生成 PDF 批注工作区
+html-review "./报告.review.json" # DOCX / PDF 轻量批注配对工作区
 ```
 
 macOS 默认使用 Google Chrome；Windows/Linux 使用系统默认浏览器。

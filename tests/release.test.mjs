@@ -25,6 +25,7 @@ test('release downloads preserve the standalone app, use a curated bundle and ma
     assert.equal(archive.version.trim(), version);
     assert.equal(archive.bad, null);
     for (const name of ['LICENSE','index.html','docs/QUICKSTART.md','scripts/update_review.py','examples/demo.review.html']) assert(archive.names.includes(`html-review/${name}`));
+    assert(archive.names.includes('html-review/tests/helpers/pdf-fixture.py'), 'PDF fixture generator travels with its development tests');
     assert(archive.names.every(name => name.startsWith('html-review/')));
     assert(archive.names.every(name => !name.includes('\\')), 'ZIP paths use portable forward slashes on every OS');
     for (const name of ['docs/WINDOWS.md','docs/REFERENCE.md','docs/media/demo.gif','docs/media/demo.mp4','docs/media/social-preview.png','site/index.html','scripts/build_site.mjs','scripts/python.mjs','scripts/test.mjs']) assert(archive.names.includes(`html-review/${name}`));

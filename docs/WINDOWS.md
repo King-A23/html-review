@@ -25,7 +25,7 @@ py -3 scripts/update_review.py "C:\Reports\经营 分析.review.json" --id "批�
 
 ## 可选：开发、测试与命令行入口
 
-需要 Node.js 20+、Python 3.8+。在源码仓库或完整 ZIP 的根部运行：
+需要 Node.js 22.13+、Python 3.8+。在源码仓库或完整 ZIP 的根部运行：
 
 ```powershell
 npm ci

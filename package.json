@@ -23,10 +23,15 @@
     "test:docx-location": "node tests/docx-location.browser.mjs",
     "test:docx-session": "node tests/docx-session.browser.mjs",
     "test:simplification": "node tests/ui-simplification.browser.mjs",
-    "test:reload-review": "node tests/reload-review.browser.mjs"
+    "test:reload-review": "node tests/reload-review.browser.mjs",
+    "test:pdf": "node tests/pdf.browser.mjs",
+    "test:pdf-errors": "node tests/pdf-errors.browser.mjs",
+    "test:pdf-lifecycle": "node tests/pdf-lifecycle.browser.mjs",
+    "test:pdf-visual": "node tests/pdf-visual.browser.mjs",
+    "test:pdf-copy": "node tests/pdf-copy.browser.mjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13.0"
   },
   "bin": {
     "html-review": "bin/html-review.mjs"
@@ -47,6 +52,7 @@
   "dependencies": {
     "@xmldom/xmldom": "0.8.15",
     "jszip": "3.10.2",
-    "mammoth": "1.13.0"
+    "mammoth": "1.13.0",
+    "pdfjs-dist": "6.4.299"
   }
 }

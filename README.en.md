@@ -64,6 +64,6 @@ The public beta is **v0.1.0**. For the offline bundle, scripts and checksums, us
 
 ## Development and feedback
 
-Development requires Node.js 20+ and Python 3.8+; the standalone tool requires neither. Run `npm ci`, then `npm run build`, `npm run check` and `npm test`. Rebuild and commit `index.html` with source changes. Browser suites and the optional CLI are documented in the [development reference](docs/REFERENCE.md#开发与测试). GitHub Actions checks Windows and Linux with Node 20 and 24; Windows also checks workflows in Microsoft Edge.
+Development requires Node.js 22.13+ and Python 3.8+; the standalone tool requires neither. Run `npm ci`, then `npm run build`, `npm run check` and `npm test`. Rebuild and commit `index.html` with source changes. Browser suites and the optional CLI are documented in the [development reference](docs/REFERENCE.md#开发与测试). GitHub Actions checks Windows and Linux with Node 22.13 and 24; Windows also checks workflows in Microsoft Edge.
 
 [MIT license](LICENSE). v0.1.0 is a public beta; the interface and data APIs may evolve. Report issues through [GitHub Issues](https://github.com/King-A23/html-review/issues) with your browser version, reproduction steps and a shareable minimal HTML example.

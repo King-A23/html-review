@@ -31,6 +31,8 @@ def package(output):
     paths += sorted(p.relative_to(ROOT).as_posix() for folder in ("src", "tests", "site")
                     for p in (ROOT / folder).iterdir()
                     if p.is_file() and p.suffix in (".mjs", ".js", ".css", ".html", ".svg"))
+    paths += sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / "tests/helpers").rglob("*.py")
+                    if p.is_file())
     contents = {}
     for relative in paths:
         path = ROOT / relative

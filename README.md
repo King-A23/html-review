@@ -64,6 +64,6 @@ agent 可用仓库中的 `scripts/inspect_review.py` 读取批注并核对原文
 
 ## 开发与反馈
 
-开发需 Node.js 20+、Python 3.8+；成品工具无需这些运行环境。`npm ci` 后运行 `npm run build`、`npm run check` 和 `npm test`。浏览器测试与可选命令行入口见[开发参考](docs/REFERENCE.md#开发与测试)；Windows 操作见[专门说明](docs/WINDOWS.md)。
+开发需 Node.js 22.13+、Python 3.8+；成品工具无需这些运行环境。`npm ci` 后运行 `npm run build`、`npm run check` 和 `npm test`。浏览器测试与可选命令行入口见[开发参考](docs/REFERENCE.md#开发与测试)；Windows 操作见[专门说明](docs/WINDOWS.md)。
 
 采用 [MIT 许可证](LICENSE)。v0.1.0 为 public beta，界面和数据接口可能调整。通过 [GitHub Issues](https://github.com/King-A23/html-review/issues) 反馈问题时，请附浏览器版本、复现步骤和可公开的最小 HTML 示例。

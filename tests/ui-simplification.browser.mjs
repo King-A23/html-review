@@ -148,13 +148,19 @@ try {
   await observer.locator('#recovery-banner').waitFor({state:'visible'});
   assert.equal(await observer.locator('#comment-input').isVisible(),false,'Saved signal prompts without activating a document');
   // A loaded, deliberately selected document must ignore another tab's later saves.
-  const protectedPage=await shared.newPage();protectedPage.on('dialog',d=>d.accept());await protectedPage.goto(lateURL);await ready(protectedPage);await open(protectedPage,htmlSource);
+  const protectedPage=await shared.newPage();await protectedPage.addInitScript(()=>window.addEventListener('message',event=>{if(event.data?.hr && event.data.event==='ready')window.__bridgeReady=event.data;}));protectedPage.on('dialog',d=>d.accept());await protectedPage.goto(lateURL);await ready(protectedPage);await open(protectedPage,htmlSource);
   await protectedPage.waitForFunction(async url=>(await HRSession.load('workspace:'+url))?.data?.source?.name==='page.html',lateURL);
   await protectedPage.waitForFunction(()=>document.getElementById('autosave-state').textContent.includes('本机已保存'));
   const protectedBefore=await draftSnapshot(protectedPage);
   await writer.locator('#comment-input').fill('迟到保存更新后的草稿');
   await writer.waitForFunction(async url=>(await HRSession.load('workspace:'+url))?.draft?.comment==='迟到保存更新后的草稿',lateURL);
-  await writer.waitForTimeout(200);
+  await frame(protectedPage).locator('h1').filter({hasText:'HTML page mode'}).waitFor();
+  const delayedReady=await protectedPage.evaluate(()=>window.__bridgeReady);assert(delayedReady,'Capture the genuine preview ready message');
+  await frame(protectedPage).locator('body').evaluate((_body,message)=>parent.postMessage(message,'*'),delayedReady);
+  await writer.waitForTimeout(400);
+  const latest=await observer.evaluate(url=>HRSession.load('workspace:'+url),lateURL);
+  assert.equal(latest.data.source.name,'reading.docx','A late preview-ready UI update must not overwrite another tab’s new save');
+  assert.equal(latest.data.annotations.length,1);
   assert.deepEqual(await draftSnapshot(protectedPage),protectedBefore,'Saved signal cannot overwrite an already-loaded workspace');
   assert.equal(await protectedPage.locator('#source-name').textContent(),'page.html');
   await frame(protectedPage).locator('h1').filter({hasText:'HTML page mode'}).waitFor();

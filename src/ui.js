@@ -145,7 +145,7 @@
       if (event.key === 'Tab') closeMenu(true);
     });
   }
-  for (const id of ['export-format', 'sidebar-position', 'preview-width', 'entry-select', 'page-select', 'annotation-filter']) {
+  for (const id of ['export-format', 'sidebar-position', 'preview-width', 'pdf-zoom', 'entry-select', 'page-select', 'annotation-filter']) {
     const select = $(id); if (!select) continue;
     let wrapper = select.parentElement.classList.contains('select-field') ? select.parentElement : null;
     if (!wrapper) { wrapper = document.createElement('span'); wrapper.className = 'select-field'; select.before(wrapper); wrapper.append(select); }

@@ -3,14 +3,17 @@
   const $ = id => document.getElementById(id);
   const core = window.HRCore;
   const local = window.HRLocalFiles;
+  const adapters = window.HRAdapters;
+  const pdfPreview = $('pdf-preview');
   const frame = $('preview-frame');
   const workspace = document.querySelector('.workspace');
   const sidebarPreferenceKey = 'html-review.sidebar-position';
   const recoveryKey = 'workspace:' + location.href.split('#')[0];
   const resumeKey = 'html-review.resume:' + recoveryKey;
   const guideKey = 'html-review.guide-dismissed';
-  const labels = {text: '文字', element: '元素', page: '单页'};
-  const targetLabel = target => target.kind === 'page' && (target.scope === 'whole-document' || !target.selector) ? '整体' : labels[target.kind];
+  const labels = {text: '文字', element: '元素', region: '区域', page: '单页'};
+  const wholeTarget = target => target.scope === 'whole-document' || (!target.pdf && target.kind === 'page' && !target.selector);
+  const targetLabel = target => target.kind === 'page' && wholeTarget(target) ? '整体' : labels[target.kind];
   let pageInventory = [];
   let renderedIds = new Set();
   const hints = {
@@ -23,6 +26,8 @@
   let data = null;
   let pendingLight = null;
   const isDocx = value => value?.source?.type === 'docx';
+  const isPdf = value => value?.source?.type === 'pdf';
+  const hasSearch = value => isDocx(value) || isPdf(value);
   let mode = 'browse';
   let channel = '';
   let previewReady = false;
@@ -135,7 +140,7 @@
   }
   function setBusy(value) {
     busy = value;
-    $('cancel-conversion').textContent = pendingPicker ? '取消选择' : '取消转换';
+    $('cancel-conversion').textContent = pendingPicker ? '取消选择' : '取消读取 / 转换';
     $('cancel-conversion').hidden = !value;
     $('open-button').disabled = value;
     $('welcome-open').disabled = value;
@@ -146,7 +151,7 @@
     $('export-format').disabled = value;
     $('reload-preview').disabled = value || !data;
     $('data-button').disabled = value || !data;
-    updateEditor();
+    updateEditor(false);
   }
   function draftDirty() { return $('comment-input').value !== draftBaseline || (draftTargetChanged && Boolean($('comment-input').value.trim())); }
   function confirmDiscard() {
@@ -162,13 +167,13 @@
     $('save-state').textContent = dirty ? '● 有未下载的修改，请下载保存' : (data ? saved[lastExportFormat] : '批注保存在下载的副本中');
   }
   function view() {
-    return {width: Math.round(frame.clientWidth), height: Math.round(frame.clientHeight), devicePixelRatio: window.devicePixelRatio || 1};
+    return {width: Math.round((isPdf(data) ? pdfPreview : frame).clientWidth), height: Math.round((isPdf(data) ? pdfPreview : frame).clientHeight), devicePixelRatio: window.devicePixelRatio || 1};
   }
   function pageTarget() {
-    return {kind: 'page', text: data.source.name, scope: 'whole-document', context: {sourcePath: data.source.path}, viewport: view(), ...(isDocx(data) ? {docx:{adapterVersion:'1',sourceSha256:data.source.sha256,blocks:[]}} : {})};
+    return {kind: 'page', text: data.source.name, scope: 'whole-document', context: {sourcePath: data.source.path}, viewport: view(), ...(isPdf(data) ? {pdf:{adapterVersion:'1',sourceSha256:data.source.sha256,pages:[]}} : {}), ...(isDocx(data) ? {docx:{adapterVersion:'1',sourceSha256:data.source.sha256,blocks:[]}} : {})};
   }
   function send(command, extra = {}) {
-    if (frame.contentWindow && channel) frame.contentWindow.postMessage({hr: true, channel, command, ...extra}, '*');
+    if (channel) adapters.command(command, extra, frame, channel);
   }
   function setMode(next) {
     if (!['browse', 'text', 'element', 'page', 'whole'].includes(next)) return;
@@ -180,7 +185,7 @@
     if (data && (mode === 'whole' || (mode === 'browse' && !editingId))) {
       send('clear-focus');
       setTarget(pageTarget());
-    } else if (mode !== 'browse' && pendingTarget && (pendingTarget.kind !== mode || (mode === 'page' && pendingTarget.scope === 'whole-document'))) {
+    } else if (mode !== 'browse' && pendingTarget && (pendingTarget.kind !== (isPdf(data) && mode === 'element' ? 'region' : mode) || (mode === 'page' && pendingTarget.scope === 'whole-document'))) {
       pendingTarget = null;
       draftTargetChanged = true;
       $('target-preview').hidden = true;
@@ -193,14 +198,14 @@
   function renderPageControls() {
     $('page-controls').hidden = mode !== 'page';
     $('page-select').disabled = busy || !pageInventory.length;
-    $('page-description').textContent = pageInventory.length ? `识别到 ${pageInventory.length} 个分页区块，也可直接点击预览选择。` : '未发现明确的分页区块。连续页面可使用整体或元素批注。';
+    $('page-description').textContent = isPdf(data) ? `PDF 共 ${pageInventory.length} 页。可点击预览或选择页码。` : pageInventory.length ? `识别到 ${pageInventory.length} 个分页区块，也可直接点击预览选择。` : '未发现明确的分页区块。连续页面可使用整体或元素批注。';
   }
   function targetText(target) {
-    if (target.kind === 'page') return (target.scope === 'whole-document' || !target.selector) ? `整个文件 · ${data.source.name}` : `第 ${target.pageIndex || '?'} 页 · ${target.pageTitle || target.text || '分页区块'}`;
+    if (target.kind === 'page') return wholeTarget(target) ? `整个文件 · ${data.source.name}` : `第 ${target.pageIndex || '?'} 页 · ${target.pageTitle || target.text || '分页区块'}`;
     return target.quote?.exact || target.text || target.attributes?.alt || `<${target.tag || '元素'}> ${target.selector || ''}`;
   }
   function setTarget(target) {
-    if(isDocx(data)) {try {core.validateDocxTarget(target);} catch(error) {pendingTarget=null;$('target-preview').hidden=true;send('clear-focus');updateEditor();note(error.message,true);return;} }
+    if(isDocx(data) || isPdf(data)) {try {(isPdf(data) ? core.validatePdfTarget : core.validateDocxTarget)(target);} catch(error) {pendingTarget=null;$('target-preview').hidden=true;send('clear-focus');updateEditor();note(error.message,true);return;} }
     autosavePaused = false;
     pendingTarget = target;
     draftTargetChanged = true;
@@ -211,14 +216,14 @@
     const docxBlock=target.docx?.blocks[0];
     $('target-selector').textContent = isDocx(data) ? (target.scope==='whole-document' ? '整个 DOCX 文档' : docxBlock?.table ? `表格 · 第 ${docxBlock.table.row} 行 / 第 ${docxBlock.table.column} 列` : docxBlock?.image ? '文档图片' : docxBlock?.part==='word/footnotes.xml' ? '脚注内容' : docxBlock?.part==='word/endnotes.xml' ? '尾注内容' : '正文内容') : target.selector || `视口 ${target.viewport?.width || view().width} × ${target.viewport?.height || view().height}px`;
     $('parent-target').hidden = target.kind !== 'element';
-    if (target.kind === 'page' && target.scope === 'page') { $('page-select').value = String(target.pageIndex); window.HRUI.syncSelect('page-select'); }
+    if (target.kind === 'page' && ['page','single-page'].includes(target.scope)) { $('page-select').value = String(target.pageIndex); window.HRUI.syncSelect('page-select'); }
     updateEditor();
   }
-  function updateEditor() {
+  function updateEditor(persistDraft = true) {
     $('handoff-button').hidden = !data?.annotations.length;
     $('handoff-button').disabled = busy || !data?.annotations.length || draftDirty();
     $('handoff-button').title = draftDirty() ? '先保存或取消编辑框中的意见' : '查看需要交给 agent 的文件与任务';
-    $('document-nav-button').hidden = !isDocx(data);
+    $('document-nav-button').hidden = !hasSearch(data);
     $('document-nav-button').disabled = busy || !previewReady;
     $('compatible-reload').disabled = busy || !data || exampleWorkspace;
     $('undo-button').disabled = busy || !undoStack.length;
@@ -229,7 +234,7 @@
     $('import-results').disabled = busy || !data;
     $('clear-target').hidden = !pendingTarget || pendingTarget.scope === 'whole-document';
     $('clear-target').disabled = busy;
-    $('mode-hint').textContent = data ? (mode === 'browse' && editingId ? '可以正常阅读和点击页面。正在编辑已有批注，修改意见仍对应下方目标。' : isDocx(data) && mode === 'element' ? '点击段落、表格或图片，再写意见。需要更大范围时，可继续扩大选择。' : hints[mode]) : '先打开 HTML 或 DOCX，或体验下方示例。';
+    $('mode-hint').textContent = data ? (mode === 'browse' && editingId ? '可以正常阅读和点击页面。正在编辑已有批注，修改意见仍对应下方目标。' : isPdf(data) && mode === 'element' ? '在页面上拖出矩形区域，再填写修改意见。' : isDocx(data) && mode === 'element' ? '点击段落、表格或图片，再写意见。需要更大范围时，可继续扩大选择。' : isPdf(data) && mode === 'page' ? '点击 PDF 页面，或从列表选择实际页码。' : hints[mode]) : '先打开 HTML、DOCX 或 PDF，或体验下方示例。';
     $('comment-input').disabled = !data || busy;
     $('save-button').disabled = !data || busy || !pendingTarget || !$('comment-input').value.trim();
     $('draft-status').textContent = draftDirty() ? '尚未保存' : '';
@@ -238,7 +243,7 @@
     $('cancel-edit').hidden = !editingId && (!pendingTarget || pendingTarget.kind === 'page') && !$('comment-input').value;
     renderPageControls();
     updateGuide();
-    queueAutosave();
+    if (persistDraft) queueAutosave();
   }
   function clearEditor() {
     pendingTarget = null;
@@ -274,12 +279,12 @@
     $('entry-select').replaceChildren();
   }
   function renderSource() {
-    const docx = isDocx(data);
+    const docx = isDocx(data), pdf = isPdf(data);
     workspace.classList.add('has-document');
-    $('format-note').hidden = !docx;
-    $('format-note').textContent = docx ? 'Word 内容预览：可以批注文字、表格和图片；排版可能与 Word 不同。' : '';
+    $('format-note').hidden = !docx && !pdf;
+    $('format-note').textContent = pdf ? 'PDF 按实际页面预览，可选择文字、区域、单页或整体。扫描页可使用区域批注。' : docx ? 'Word 内容预览：可以批注文字、表格和图片；排版可能与 Word 不同。' : '';
     frame.title = docx ? 'DOCX 文档内容预览' : '原始 HTML 页面';
-    document.querySelector('.preview-section').setAttribute('aria-label', docx ? 'Word 文档预览' : 'HTML 页面预览');
+    document.querySelector('.preview-section').setAttribute('aria-label', pdf ? 'PDF 文档预览' : docx ? 'Word 文档预览' : 'HTML 页面预览');
     document.querySelector('[data-mode=page]').hidden = docx;
     document.querySelector('.mode-tabs').classList.toggle('is-docx',docx);
     document.querySelectorAll('[data-docx-hide]').forEach(node=>node.hidden=docx);
@@ -287,7 +292,10 @@
     $('preview-label').textContent = data.source.name;
     document.title = `${data.source.name} · HTML 批注`;
     $('welcome').hidden = true;
-    frame.hidden = false;
+    frame.hidden = pdf;
+    pdfPreview.hidden = !pdf; $('pdf-controls').hidden = !pdf;
+    document.querySelector('[data-mode=element]').textContent = pdf ? '区域' : '元素';
+    $('preview-width').closest('.select-field')?.toggleAttribute('hidden',pdf);
     updateSaveState();
   }
   function textNode(tag, className, content) {
@@ -405,17 +413,19 @@
     locationTimer = setTimeout(() => {
       locationRequest = null;
       if (locationReview) { locationReview.checking = false; locationReview.queue = []; renderAnnotations(); }
-    },8000);
+    },isPdf(data) ? 30000 : 8000);
   }
   async function preparePreview(nextData) {
+    if(isPdf(nextData)) note('正在读取 PDF，可随时取消…');
     if(isDocx(nextData)) note('正在生成 DOCX 内容预览，可随时取消…');
     const nextChannel = id();
     const bridge = `(${window.HRBridge.toString()})(${JSON.stringify(nextChannel)}, ${window.HRShortcut.toString()}, ${JSON.stringify(isDocx(nextData) ? {sourceSha256:nextData.source.sha256} : null)});`;
-    const result = await (isDocx(nextData) ? window.HRDocx.preview(nextData, bridge) : core.createPreview(nextData, bridge));
+    const result = await adapters.preview(nextData, bridge);
     return {...result, channel: nextChannel};
   }
   function installPreview(result) {
     previewReady = false;
+    frame.setAttribute('aria-busy',String(!result.pdf));pdfPreview.setAttribute('aria-busy',String(Boolean(result.pdf)));
     documentOutline = []; clearTimeout(searchTimer);
     $('document-search').value = ''; renderDocumentNavigation();
     pageInventory = []; $('page-select').replaceChildren(new Option('点击预览或选择页面', '')); renderPageControls();
@@ -424,14 +434,17 @@
     const localChannel = result.channel;
     locations.clear();
     showWarnings(result.warnings);
-    frame.srcdoc = result.html;
+    const sourceHash = data.source.sha256;
+    $('pdf-cancel-operation').hidden=true; $('pdf-operation-status').textContent=''; $('pdf-page-number').value='1'; $('pdf-page-count').textContent='/ —'; $('pdf-zoom').value='fit'; window.HRUI.syncSelect('pdf-zoom');
+    adapters.mount(result, pdfPreview, message => { if(channel===localChannel && data?.source.sha256===sourceHash && isPdf(data)) handlePreviewMessage(message); }).catch(error=>{ if(channel===localChannel) note(error.message || 'PDF 预览失败。',true); });
+    frame.srcdoc = result.pdf ? '' : result.html;
     renderAnnotations();
     setTimeout(() => {
       if (channel === localChannel && !previewReady) {
         if (locationReview) { locationReview.checking = false; renderLocationReview(); }
         note('页面已载入，但批注定位脚本未响应。原页面可能存在脚本错误、跳转或不支持的结构；可重载或改用普通静态 HTML。', true);
       }
-    }, 8000);
+    }, result.pdf ? 30000 : 8000);
   }
   async function renderPreview() {
     const generation = ++renderGeneration;
@@ -454,8 +467,8 @@
     delivered = false;
     guideAnnotated = false;
     dirty = false;
-    lastExportFormat = isDocx(nextData) ? 'annotations' : 'html';
-    if(isDocx(nextData)) $('export-format').value = lastExportFormat;
+    lastExportFormat = hasSearch(nextData) ? 'annotations' : 'html';
+    if(hasSearch(nextData)) $('export-format').value = lastExportFormat;
     updateExportFormat();
     clearEditor();
     renderSource();
@@ -467,18 +480,18 @@
   }
   async function readFile(file, path = file.name, resources = []) {
     if (file.size > 100 * 1024 * 1024) throw new Error('待导入文件超过 100 MiB。');
-    if (/\.docx$/i.test(file.name) && file.size > core.limits.source) throw new Error('DOCX 文件超过 20 MiB 限制。');
+    if (/\.(docx|pdf)$/i.test(file.name) && file.size > core.limits.source) throw new Error('文档超过 20 MiB 限制。');
     const bytes = new Uint8Array(await file.arrayBuffer());
-    if (/\.docx$/i.test(file.name)) return core.importSource({bytes,name:file.name,path,lastModified:file.lastModified,type:'docx'});
+    if (/\.(docx|pdf)$/i.test(file.name)) return core.importSource({bytes,name:file.name,path,lastModified:file.lastModified,type:/\.pdf$/i.test(file.name) ? 'pdf' : 'docx'});
     if (/\.json$/i.test(file.name)) {
       const imported = JSON.parse(new TextDecoder().decode(bytes));
-      if(imported.format !== 'html-review-annotations' || ![1,2].includes(imported.schemaVersion)) throw new Error('请选择轻量批注 JSON；agent 结果请使用导入处理结果。');
+      if(imported.format !== 'html-review-annotations' || ![1,2,3].includes(imported.schemaVersion)) throw new Error('请选择轻量批注 JSON；agent 结果请使用导入处理结果。');
       if(imported.schemaVersion===1) throw new Error('HTML 轻量批注恢复暂不支持，请打开完整批注副本。');
       await core.validateAnnotationExport(imported);
-      pendingLight=imported; $('pair-source').hidden=false; note('已读取轻量批注，请选择配套原始 DOCX；当前工作区已保留。');
+      pendingLight=imported; $('pair-source').hidden=false; note('已读取轻量批注，请选择配套原始 DOCX 或 PDF；当前工作区已保留。');
       return null;
     }
-    if (!/\.(html?|xhtml)$/i.test(file.name)) throw new Error('支持 HTML、DOCX、完整副本和轻量批注 JSON。');
+    if (!/\.(html?|xhtml)$/i.test(file.name)) throw new Error('支持 HTML、DOCX、PDF、完整副本和轻量批注 JSON。');
     const decoded = core.decodeBytes(bytes);
     const parsed = new DOMParser().parseFromString(decoded.text, 'text/html');
     const nodes = parsed.querySelectorAll('script#html-review-data[type="application/json"]');
@@ -509,7 +522,7 @@
     if (!entry) throw new Error('找不到所选文档。');
     const resources = [];
     for (const file of files) {
-      if (/\.docx$/i.test(entry.name)) break;
+      if (/\.(docx|pdf)$/i.test(entry.name)) break;
       if (file === entry || folderPath(file) === core.resultPath(path)) continue;
       resources.push({path: folderPath(file), bytes: new Uint8Array(await file.arrayBuffer()), mime: file.type});
     }
@@ -532,7 +545,7 @@
 
   function updateFolder(files, entryPath) {
     folderFiles = files;
-    folderEntries = files.filter(file => /\.(html?|xhtml|docx)$/i.test(file.name)).sort((a, b) => folderPath(a).localeCompare(folderPath(b)));
+    folderEntries = files.filter(file => /\.(html?|xhtml|docx|pdf)$/i.test(file.name)).sort((a, b) => folderPath(a).localeCompare(folderPath(b)));
     currentEntryPath = entryPath;
     showFolderEntries(folderEntries.map(folderPath), entryPath);
   }
@@ -566,7 +579,7 @@
       }
     }
     await core.validateData(nextData);
-    if(isDocx(nextData)!==isDocx(data)) throw new Error('重载文件格式发生变化，当前工作区已保留。');
+    if(adapters.sourceType(nextData)!==adapters.sourceType(data)) throw new Error('重载文件格式发生变化，当前工作区已保留。');
     const prepared = await preparePreview(nextData);
     const completedNow = nextData.annotations.filter(annotation => core.annotationStatus(annotation) === 'resolved' && core.annotationStatus(data.annotations.find(item => item.id === annotation.id)) !== 'resolved').map(annotation => annotation.id);
     if (resultCount) recordResultsChange(data, nextData);
@@ -607,7 +620,7 @@
     let nextData = await readFile(file, reloading ? data.source.path : file.name);
     if(!nextData) return;
     if(pendingLight && !reloading) {
-      if(!isDocx(nextData) || nextData.source.sha256 !== pendingLight.source.sha256 || nextData.source.byteLength !== pendingLight.source.byteLength) throw new Error('版本不一致：请选择批注时对应的原始 DOCX。当前工作区和待恢复批注已保留。');
+      if(nextData.source.type !== pendingLight.source.type || nextData.source.sha256 !== pendingLight.source.sha256 || nextData.source.byteLength !== pendingLight.source.byteLength) throw new Error('版本不一致：请选择批注时对应的原始文档。当前工作区和待恢复批注已保留。');
       nextData={...pendingLight,format:core.FORMAT,source:{...pendingLight.source,base64:nextData.source.base64}};
       await core.validateData(nextData);
     }
@@ -672,8 +685,8 @@
   }
   async function importDirectory(files, directory = null, reloading = false) {
     if (files.length > 500 || files.reduce((size, file) => size + file.size, 0) > 50 * 1024 * 1024) throw new Error('文件夹最多 500 个文件、合计最多 50 MiB。请选择只包含页面所需资源的目录。');
-    const entries = files.filter(file => /\.(html?|xhtml|docx)$/i.test(file.name)).sort((a, b) => folderPath(a).localeCompare(folderPath(b)));
-    if (!entries.length) throw new Error('所选文件夹没有 HTML 或 DOCX 文件。');
+    const entries = files.filter(file => /\.(html?|xhtml|docx|pdf)$/i.test(file.name)).sort((a, b) => folderPath(a).localeCompare(folderPath(b)));
+    if (!entries.length) throw new Error('所选文件夹没有 HTML、DOCX 或 PDF 文件。');
     let path = '';
     let attach = reloading;
     if (data && directory) {
@@ -731,7 +744,7 @@
         const files = await local.directoryFiles(access.directoryHandle);
         const nextData = await readFolderEntry(access.entryPath, files);
         if (reviewFiles.has(files.find(file => folderPath(file) === access.entryPath))) throw new Error('关联的原文件已变成批注副本，当前工作区已保留。');
-        const nextAccess = {...access, entries: files.filter(file => /\.(html?|xhtml|docx)$/i.test(file.name)).map(folderPath).sort()};
+        const nextAccess = {...access, entries: files.filter(file => /\.(html?|xhtml|docx|pdf)$/i.test(file.name)).map(folderPath).sort()};
         await replaceSource(nextData, nextAccess, files, access.entryPath);
       } else {
         const file = await access.fileHandle.getFile();
@@ -832,7 +845,7 @@
   }
   function locate(annotation) {
     if (core.annotationStatus(annotation) === 'resolved') { note('这条批注已完成，原文与位置保留作处理记录。需要继续修改时可编辑意见或重新待处理。'); return; }
-    if (annotation.kind === 'page' && (annotation.target.scope === 'whole-document' || !annotation.target.selector)) {
+    if (annotation.kind === 'page' && wholeTarget(annotation.target)) {
       const width = annotation.view?.width || annotation.target.viewport?.width;
       const available = ['390', '768', '1280'];
       note(`整体批注：${data.source.name}。意见适用于整个文件；记录视口 ${width || '未知'} × ${annotation.view?.height || annotation.target.viewport?.height || '未知'}px。`);
@@ -850,9 +863,9 @@
     editingId = annotation.id;
     $('comment-input').value = annotation.comment;
     draftBaseline = annotation.comment;
-    setMode(annotation.kind === 'page' && (annotation.target.scope === 'whole-document' || !annotation.target.selector) ? 'whole' : annotation.kind);
+    setMode(annotation.kind === 'page' && wholeTarget(annotation.target) ? 'whole' : annotation.kind === 'region' ? 'element' : annotation.kind);
     const restoredTarget = structuredClone(annotation.target);
-    if (annotation.kind === 'page' && !restoredTarget.selector) restoredTarget.scope = 'whole-document';
+    if (annotation.kind === 'page' && wholeTarget(restoredTarget)) restoredTarget.scope = 'whole-document';
     setTarget(restoredTarget);
     locate(annotation);
     draftTargetChanged = false;
@@ -866,7 +879,7 @@
     $('comment-input').value = annotation.comment;
     pendingTarget = null; draftTargetChanged = false;
     $('target-preview').hidden = true; send('clear-selection'); send('clear-focus');
-    setMode(annotation.kind === 'page' ? 'page' : annotation.kind);
+    setMode(annotation.kind === 'page' ? 'page' : annotation.kind === 'region' ? 'element' : annotation.kind);
     updateEditor(); renderAnnotations();
     note('在预览中重新选择位置，再点击「更新批注」。意见会保留，保存后原位置也会留作记录。');
   }
@@ -874,11 +887,11 @@
     if (draftDirty()) { note('编辑框中还有未保存的修改，请先点击「保存批注」或「更新批注」，再下载副本。', true); return; }
     await core.validateData(data);
     const format = requestedFormat || $('export-format').value;
-    const basename = data.source.name.replace(/\.(html?|xhtml|docx)$/i, '').replace(/[\\/:*?"<>|]/g, '_') + '.review';
+    const basename = data.source.name.replace(/\.(html?|xhtml|docx|pdf)$/i, '').replace(/[\\/:*?"<>|]/g, '_') + '.review';
     if (format === 'annotations') {
       const blob = new Blob([core.serialize(core.createAnnotationExport(data), true)], {type: 'application/json;charset=utf-8'});
       downloadBlob(blob, basename + '.json');
-      finishDownload(format, '已导出轻量批注，不含原文件快照和编辑界面。请将 JSON 与原文件一起交给 agent；DOCX JSON 可选择配套原文件恢复批注。');
+      finishDownload(format, '已导出轻量批注，不含原文件快照和编辑界面。请将 JSON 与原文件一起交给 agent；DOCX / PDF JSON 可选择配套原文件恢复批注。');
       return;
     }
     const copy = document.documentElement.cloneNode(true);
@@ -889,6 +902,13 @@
     for (const node of copy.querySelectorAll('[data-ui-transient],[data-site-only],.select-popover')) node.remove();
     for (const node of copy.querySelectorAll('[data-motion],[inert]')) { node.removeAttribute('data-motion'); node.removeAttribute('inert'); }
     for (const panel of copy.querySelectorAll('[data-settings-panel]')) panel.removeAttribute('aria-hidden');
+    copy.querySelector('#pdf-preview').replaceChildren(); copy.querySelector('#pdf-preview').hidden=true;
+    copy.querySelector('#pdf-controls').hidden=true; copy.querySelector('#pdf-cancel-search').hidden=true;
+    copy.querySelector('#preview-width').closest('.select-field')?.removeAttribute('hidden');
+    copy.querySelector('#pdf-page-number').value='1'; copy.querySelector('#pdf-page-number').setAttribute('value','1'); copy.querySelector('#pdf-page-number').removeAttribute('max');
+    copy.querySelector('#pdf-page-count').textContent='/ —'; copy.querySelector('#pdf-operation-status').textContent=''; copy.querySelector('#pdf-cancel-operation').hidden=true;
+    copy.querySelector('#pdf-password-input').value=''; copy.querySelector('#pdf-password-input').removeAttribute('value');
+    copy.querySelector('#pdf-password-error').textContent='';
     copy.querySelector('#page-select').replaceChildren();
     // Rebuilt on startup. Do not serialize transient editor/list state or duplicate page bytes.
     copy.querySelector('#annotation-list').replaceChildren();
@@ -1042,7 +1062,7 @@
       exampleWorkspace = Boolean(record.exampleWorkspace);
       guideAnnotated = Boolean(record.guideAnnotated);
       if (localAccess?.directoryHandle) {
-        const entries = Array.isArray(localAccess.entries) ? localAccess.entries.filter(path => typeof path === 'string' && /\.(html?|xhtml|docx)$/i.test(path)) : [];
+        const entries = Array.isArray(localAccess.entries) ? localAccess.entries.filter(path => typeof path === 'string' && /\.(html?|xhtml|docx|pdf)$/i.test(path)) : [];
         if (!entries.includes(localAccess.entryPath)) entries.push(localAccess.entryPath);
         showFolderEntries(entries, localAccess.entryPath);
       }
@@ -1137,7 +1157,7 @@
     const categories = [['new','新增'], ['updated','已更新'], ['pending','已回报仍待处理']].filter(([key]) => counts[key]).map(([key,label]) => `${label} ${counts[key]}`);
     $('handoff-summary').textContent = `待完成 ${data.annotations.length-counts.completed} · 已完成 ${counts.completed}\n` + (categories.join(' · ') || '所有意见已完成，新想法可以继续添加批注。');
     $('handoff-source').textContent = data.source.name;
-    $('agent-task-help').textContent = isDocx(data) ? '附上这份原始 DOCX（Word 文件），不需要另存 HTML。工具只做预览和批注。' : '附上原始 HTML；若有本地图片、样式或脚本，请一起提供。';
+    $('agent-task-help').textContent = isPdf(data) ? '附上这份原始 PDF 和批注 JSON。工具只做预览和批注，保留页面位置与原文。' : isDocx(data) ? '附上这份原始 DOCX（Word 文件），不需要另存 HTML。工具只做预览和批注。' : '附上原始 HTML；若有本地图片、样式或脚本，请一起提供。';
     $('agent-task-text').value = core.createAgentTask(data);
     $('task-details').open = false;
     $('copy-agent-status').textContent = '复制后，粘贴到你使用的 agent 对话中。';
@@ -1167,7 +1187,7 @@
     if (draftDirty()) { note('编辑框中有未保存的意见，请先保存或取消编辑，再复制任务。', true); return; }
     prepareHandoff();
     try {
-      await navigator.clipboard.writeText($('agent-task-text').value); note(isDocx(data) ? '修改任务已复制，请连同原始 DOCX 交给 agent。' : '修改任务已复制，请连同原 HTML 和资源交给 agent。');
+      await navigator.clipboard.writeText($('agent-task-text').value); note(isPdf(data) ? '修改任务已复制，请连同原始 PDF 交给 agent。' : isDocx(data) ? '修改任务已复制，请连同原始 DOCX 交给 agent。' : '修改任务已复制，请连同原 HTML 和资源交给 agent。');
       const help = textNode('button', 'text-button', '查看交接步骤'); help.type = 'button'; help.addEventListener('click', openHandoff); $('status').append(' ', help);
     }
     catch (_) { $('task-details').open = true; $('copy-agent-status').textContent = '请选中下方任务，按 Ctrl / ⌘ + C 复制。'; window.HRUI.openDialog($('agent-task-dialog')); $('agent-task-text').focus(); $('agent-task-text').select(); }
@@ -1177,7 +1197,7 @@
     if (!draftDirty() || confirm('确定放弃编辑框中尚未保存的修改吗？')) { clearEditor(); setMode('browse'); renderAnnotations(); }
   }
   function shortcut(action) {
-    if (action === 'escape' && busy) { window.HRDocx.cancel(); return; }
+    if (action === 'escape' && busy) { if (!cancelPicker()) adapters.cancel(); return; }
     if (action === 'escape' && window.HRUI.closeMenu(true)) return;
     const dialog = document.querySelector('dialog[open]');
     if (dialog) { if (action === 'escape') window.HRUI.closeDialog(dialog); return; }
@@ -1198,7 +1218,7 @@
     $('drop-overlay').hidden = true;
     await bootPromise;
     if (busy) return;
-    if (files.length !== 1 || !/\.(html?|xhtml|docx|json)$/i.test(files[0]?.name || '')) { note('请一次拖入一个 HTML、DOCX 或轻量批注 JSON；HTML 资源请使用「导入文件夹」。', true); return; }
+    if (files.length !== 1 || !/\.(html?|xhtml|docx|pdf|json)$/i.test(files[0]?.name || '')) { note('请一次拖入一个 HTML、DOCX、PDF 或轻量批注 JSON；HTML 资源请使用「导入文件夹」。', true); return; }
     if (!confirmDiscard()) return;
     await run(() => importSelectedFile(files[0]));
   }
@@ -1222,15 +1242,24 @@
     return nextData;
   }
 
-  window.addEventListener('message', event => {
-    const message = event.data;
-    if (event.source !== frame.contentWindow || !message || message.hr !== true || message.channel !== channel || !data) return;
+  function handlePreviewMessage(message) {
+    if(!message || !data) return;
+    if(isPdf(data) && message.event==='operation-complete') { $('pdf-cancel-operation').hidden=true; $('pdf-operation-status').textContent=''; return; }
+    if (isPdf(data) && message.event === 'pdf-view') {
+      if(Number.isInteger(message.pageNumber) && message.pageNumber > 0) $('pdf-page-number').value=String(message.pageNumber);
+      if(Number.isInteger(message.pageCount) && message.pageCount > 0) { $('pdf-page-count').textContent='/ '+message.pageCount; $('pdf-page-number').max=String(message.pageCount); }
+      if(message.zoom==='fit' || (Number.isFinite(message.zoom) && message.zoom>0)) { const value=String(message.zoom); if(Array.from($('pdf-zoom').options).some(option=>option.value===value)) { $('pdf-zoom').value=value; window.HRUI.syncSelect('pdf-zoom'); } }
+      $('pdf-prev-page').disabled=Number($('pdf-page-number').value)<=1; $('pdf-next-page').disabled=Number($('pdf-page-number').value)>=Number($('pdf-page-number').max);
+      return;
+    }
+    if(isPdf(data) && ['search-progress','check-progress'].includes(message.event)) { $('pdf-cancel-operation').hidden=false; $('pdf-operation-status').textContent=typeof message.message==='string' ? message.message.slice(0,200) : '正在处理…'; return; }
+    if(isPdf(data) && ['document-search','targets-checked'].includes(message.event)) { $('pdf-cancel-operation').hidden=true; $('pdf-operation-status').textContent=''; }
     if (message.event === 'external-link' && isDocx(data)) {
       if(typeof message.url==='string' && /^(https?:|mailto:)/i.test(message.url)) window.open(message.url,'_blank','noopener,noreferrer');
     } else if (message.event === 'shortcut') { if (typeof message.action === 'string') shortcut(message.action); }
     else if (message.event === 'file-drag') $('drop-overlay').hidden = false;
     else if (message.event === 'dropped-files') { if (Array.isArray(message.files) && message.files.every(file => file instanceof File)) droppedFiles(message.files); }
-    else if (message.event === 'ready') { previewReady = true; send('set-mode', {mode: mode === 'whole' ? 'browse' : mode}); updateEditor(); startLocationReview(); }
+    else if (message.event === 'ready') { previewReady = true; (isPdf(data) ? pdfPreview : frame).setAttribute('aria-busy','false'); send('set-mode', {mode: mode === 'whole' ? 'browse' : mode}); updateEditor(false); startLocationReview(); }
     else if (message.event === 'targets-checked') {
       if (!locationRequest || message.requestId !== locationRequest.id || !Array.isArray(message.items) || message.items.length !== locationRequest.items.length) return;
       const expected = new Map(locationRequest.items.map(item => [item.id,item]));
@@ -1245,28 +1274,28 @@
       locationRequest = null;
       renderLocationReview(); locationTimer = setTimeout(nextLocationBatch,0);
     }
-    else if (message.event === 'document-outline' && isDocx(data)) {
+    else if (message.event === 'document-outline' && hasSearch(data)) {
       if (!Array.isArray(message.items) || message.items.length > 1000 || !message.items.every(item => Number.isInteger(item.index) && item.index >= 0 && typeof item.text === 'string' && item.text.length <= 160 && item.level >= 1 && item.level <= 6)) return;
       documentOutline = message.items; renderDocumentNavigation();
-    } else if (message.event === 'document-search' && isDocx(data)) {
+    } else if (message.event === 'document-search' && hasSearch(data)) {
       if (message.query !== $('document-search').value.trim() || !Array.isArray(message.items) || message.items.length > 50 || !Number.isInteger(message.total) || message.total < 0 || !message.items.every(item => Number.isInteger(item.index) && item.index >= 0 && typeof item.text === 'string' && item.text.length <= 220)) return;
       renderDocumentNavigation(message.items, message.total);
     }
     else if (message.event === 'pages') {
       if (!Array.isArray(message.pages) || message.pages.length > 1000 || !message.pages.every((item, index) => item.index === index + 1 && typeof item.title === 'string' && item.title.length <= 100)) return;
       pageInventory = message.pages;
-      const selected = pendingTarget?.scope === 'page' ? String(pendingTarget.pageIndex) : '';
+      const selected = ['page','single-page'].includes(pendingTarget?.scope) ? String(pendingTarget.pageIndex) : '';
       $('page-select').replaceChildren(new Option('点击预览或选择页面', ''), ...pageInventory.map(item => new Option(`${String(item.index).padStart(2, '0')} · ${item.title}`, String(item.index))));
       $('page-select').value = selected; window.HRUI.syncSelect('page-select'); renderPageControls();
     }
-    else if (message.event === 'target-cleared' && message.kind === 'text' && mode === 'text' && pendingTarget?.kind === 'text') clearTarget();
+    else if (message.event === 'target-cleared' && ((message.kind === 'text' && mode === 'text' && pendingTarget?.kind === 'text') || (isPdf(data) && message.kind==='region' && mode==='element' && pendingTarget?.kind==='region'))) clearTarget();
     else if (message.event === 'target') {
       if (!['text', 'element', 'page'].includes(mode)) return;
       try {
         const serialized = JSON.stringify(message.target);
         if (!serialized || serialized.length > 250000) throw new Error('选中范围过大，请缩小范围。');
         const target = JSON.parse(serialized);
-        if (!target || target.kind !== mode || typeof target.selector !== 'string' || target.selector.length > 4096) return;
+        if (!target || target.kind !== (isPdf(data) && mode === 'element' ? 'region' : mode) || typeof target.selector !== 'string' || target.selector.length > 4096) return;
         core.validateTarget(target, target.kind);
         setTarget(target); note(editingId ? '新位置已选中，点击「更新批注」保存；原位置会保留作记录。' : '目标已选中，请填写修改意见。');
       } catch (error) { note(error.message, true); }
@@ -1280,17 +1309,24 @@
       locations.set(message.requestId, {status: message.status, message: description + (reason ? ' · ' + reason : '')});
       renderAnnotations(); note(description, ['missing', 'ambiguous'].includes(message.status));
     } else if (message.event === 'warning' && typeof message.message === 'string') note(message.message.slice(0, 1500), true);
-  });
-  $('cancel-conversion').addEventListener('click',()=>{ if (!cancelPicker()) window.HRDocx.cancel(); });
+  }
+  window.addEventListener('message', event => { const message=event.data; if(!isPdf(data) && event.source===frame.contentWindow && message?.hr===true && message.channel===channel) handlePreviewMessage(message); });
+  $('cancel-conversion').addEventListener('click',()=>{ if (!cancelPicker()) adapters.cancel(); });
+  $('pdf-prev-page').addEventListener('click',()=>window.HRPdf.goToPage(Math.max(1,Number($('pdf-page-number').value)-1)));
+  $('pdf-next-page').addEventListener('click',()=>window.HRPdf.goToPage(Math.min(Number($('pdf-page-number').max)||1,Number($('pdf-page-number').value)+1)));
+  $('pdf-page-number').addEventListener('change',()=>window.HRPdf.goToPage(Number($('pdf-page-number').value)));
+  $('pdf-zoom').addEventListener('change',event=>window.HRPdf.setZoom(event.target.value==='fit' ? 'fit' : Number(event.target.value)));
+  $('pdf-cancel-operation').addEventListener('click',()=>{ send('cancel-operations'); clearTimeout(locationTimer); locationRequest=null; if(locationReview) {locationReview.checking=false;locationReview.queue=[];renderLocationReview();} $('pdf-cancel-operation').hidden=true; $('pdf-operation-status').textContent='已取消查找 / 检查'; });
   $('pair-source-button').addEventListener('click',()=>openHTML());
   $('pair-compatible').addEventListener('click',()=>openCompatible());
   $('cancel-pair').addEventListener('click',()=>{pendingLight=null;$('pair-source').hidden=true;note('已取消恢复，当前工作区已保留。');});
   $('open-button').addEventListener('click', () => openHTML());
   $('welcome-open').addEventListener('click', () => openHTML());
   $('handoff-button').addEventListener('click', openHandoff);
-  $('document-nav-button').addEventListener('click', () => { renderDocumentNavigation(); window.HRUI.openDialog($('document-nav-dialog')); $('document-search').focus(); });
+  $('document-nav-button').addEventListener('click', () => { $('pdf-cancel-search').hidden=!isPdf(data); renderDocumentNavigation(); window.HRUI.openDialog($('document-nav-dialog')); $('document-search').focus(); });
+  $('pdf-cancel-search').addEventListener('click',()=>{ clearTimeout(searchTimer); send('cancel-search'); $('document-search-status').textContent='已取消查找'; });
   $('document-search').addEventListener('input', () => {
-    clearTimeout(searchTimer); renderDocumentNavigation();
+    clearTimeout(searchTimer); if(isPdf(data)) send('cancel-search'); renderDocumentNavigation();
     const query = $('document-search').value.trim();
     if (query) searchTimer = setTimeout(() => send('search-document', {query}), 150);
   });
@@ -1342,7 +1378,7 @@
   $('clear-target').addEventListener('click', clearTarget);
   $('export-format').addEventListener('change', () => {
     updateExportFormat();
-    if ($('export-format').value === 'annotations') note(isDocx(data) ? '轻量批注不含原文件快照，请将 JSON 与原始 DOCX 一起保留、交给 agent；原文件匹配后可恢复批注。' : '轻量批注不包含原文件快照或编辑界面，请与原始 HTML 和相关资源一起保留、交给 agent。');
+    if ($('export-format').value === 'annotations') note(isPdf(data) ? '轻量批注需与原始 PDF 一起保留、交给 agent；选择相同版本原文件可恢复批注。' : isDocx(data) ? '轻量批注不含原文件快照，请将 JSON 与原始 DOCX 一起保留、交给 agent；原文件匹配后可恢复批注。' : '轻量批注不包含原文件快照或编辑界面，请与原始 HTML 和相关资源一起保留、交给 agent。');
     else if ($('export-format').value === 'gzip') note('压缩副本保留完整快照和批注，解压后可继续编辑。');
   });
   $('download-button').addEventListener('click', () => run(download));
@@ -1414,7 +1450,7 @@
   bootPromise.then(async () => {
     const pending=document.getElementById('html-review-pending-annotations');
     if(pending?.textContent && pending.textContent.trim()!=='null') {
-      try {const imported=JSON.parse(pending.textContent);await core.validateAnnotationExport(imported);pendingLight=imported;$('pair-source').hidden=false;note('请选配套原始 DOCX 恢复轻量批注。');}catch(error){note(error.message,true);}
+      try {const imported=JSON.parse(pending.textContent);await core.validateAnnotationExport(imported);pendingLight=imported;$('pair-source').hidden=false;note('请选配套原始 DOCX 或 PDF 恢复轻量批注。');}catch(error){note(error.message,true);}
     }
     if (new URL(location.href).searchParams.get('demo') === '1' && !data && !cachedSession) return run(openExample);
   });

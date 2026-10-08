@@ -113,6 +113,122 @@ def validate_docx_targets(data, expected):
             raise ValueError("DOCX 非整体目标缺少 blocks")
 
 
+def validate_pdf_target(target):
+    """Validate locator metadata only; this does not parse PDF pages or text."""
+    def integer(value):
+        return type(value) is int and 0 <= value <= 9007199254740991
+    def finite(value):
+        return type(value) in (int, float) and math.isfinite(value)
+    def digest(value):
+        return isinstance(value, str) and re.fullmatch(r"[a-f0-9]{64}", value)
+    def text(value, allow_empty=True):
+        return isinstance(value, str) and string_length(value) <= 20000 and (allow_empty or value.strip())
+    if not isinstance(target, dict) or target.get("kind") not in ("text", "region", "page") or "docx" in target:
+        raise ValueError("PDF 目标类型无效")
+    nodes = [0]
+    def tree(value, depth=0):
+        nodes[0] += 1
+        if nodes[0] > 30000 or depth > 24:
+            raise ValueError("PDF 定位数据过于复杂")
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if key in ("__proto__", "prototype", "constructor"):
+                    raise ValueError("PDF 定位包含不安全字段")
+                tree(child, depth + 1)
+        elif isinstance(value, list):
+            for child in value:
+                tree(child, depth + 1)
+        elif isinstance(value, str) and string_length(value) > 250000:
+            raise ValueError("PDF 定位文字过长")
+        elif type(value) in (int, float) and not math.isfinite(value):
+            raise ValueError("PDF 定位包含无效数字")
+    tree(target)
+    mapping = target.get("pdf")
+    if not isinstance(mapping, dict) or mapping.get("adapterVersion") != "1" or not digest(mapping.get("sourceSha256")):
+        raise ValueError("PDF 目标源文件定位无效")
+    pages = mapping.get("pages")
+    if not isinstance(pages, list) or len(pages) > 10000:
+        raise ValueError("PDF 页定位无效")
+    kind = target["kind"]
+    if kind == "page":
+        if target.get("scope") not in ("whole-document", "single-page") or len(pages) != (0 if target["scope"] == "whole-document" else 1):
+            raise ValueError("PDF 页范围无效")
+    elif not pages or (kind == "region" and len(pages) != 1):
+        raise ValueError("PDF 目标页数无效")
+    previous = 0
+    for page in pages:
+        if not isinstance(page, dict) or not integer(page.get("pageNumber")) or not previous < page["pageNumber"] <= 10000:
+            raise ValueError("PDF 页码无效")
+        previous = page["pageNumber"]
+        box = page.get("viewBox")
+        if not isinstance(box, list) or len(box) != 4 or not all(finite(value) for value in box) or box[2] <= box[0] or box[3] <= box[1] or type(page.get("rotation")) is not int or page["rotation"] not in (0, 90, 180, 270) or not finite(page.get("userUnit")) or page["userUnit"] <= 0:
+            raise ValueError("PDF 页面尺寸无效")
+        if not isinstance(page.get("label"), str) or string_length(page["label"]) > 1024:
+            raise ValueError("PDF 页标签无效")
+        fingerprint = page.get("fingerprint")
+        if not isinstance(fingerprint, dict) or any(not digest(fingerprint.get(key)) for key in ("textSha256", "visualSha256")):
+            raise ValueError("PDF 页面指纹无效")
+        def coordinates(value, length):
+            if not isinstance(value, list) or len(value) != length or any(not finite(number) or not box[index % 2] <= number <= box[index % 2 + 2] for index, number in enumerate(value)):
+                raise ValueError("PDF 坐标超出页面边界")
+            if length == 4 and (value[2] <= value[0] or value[3] <= value[1]):
+                raise ValueError("PDF 区域尺寸无效")
+        rects = page.get("rects")
+        if not isinstance(rects, list) or len(rects) > 10000 or (kind != "page" and not rects):
+            raise ValueError("PDF 区域定位无效")
+        for rect in rects:
+            coordinates(rect, 4)
+        if "quads" in page:
+            if not isinstance(page["quads"], list) or len(page["quads"]) > 10000:
+                raise ValueError("PDF 四边形定位无效")
+            for quad in page["quads"]:
+                coordinates(quad, 8)
+        for key in ("quote", "prefix", "suffix"):
+            if key in page and not text(page[key], key != "quote"):
+                raise ValueError("PDF 原文元数据无效")
+        segments = page.get("segments", [])
+        if not isinstance(segments, list) or len(segments) > 10000:
+            raise ValueError("PDF 文字片段无效")
+        item, end = -1, 0
+        for segment in segments:
+            if not isinstance(segment, dict) or any(not integer(segment.get(key)) for key in ("itemIndex", "start", "end")) or segment["end"] <= segment["start"] or segment["itemIndex"] < item or (segment["itemIndex"] == item and segment["start"] < end) or not text(segment.get("text"), True) or string_length(segment["text"]) != segment["end"] - segment["start"]:
+                raise ValueError("PDF UTF-16 文字范围无效")
+            item, end = segment["itemIndex"], segment["end"]
+        if kind == "text" and (not text(page.get("quote"), False) or not segments):
+            raise ValueError("PDF 文字定位缺少原文或范围")
+
+
+def validate_pdf_targets(data):
+    source = data["source"]
+    if type(source.get("byteLength")) is not int or not 0 <= source["byteLength"] <= 20 * 1024 * 1024 or not valid_time(data.get("createdAt")) or not valid_time(data.get("updatedAt")):
+        raise ValueError("PDF 源文件大小或时间无效")
+    filename, source_path = source.get("name"), source.get("path")
+    if not isinstance(filename, str) or not filename.strip() or string_length(filename) > 1024 or not isinstance(source_path, str) or not source_path or string_length(source_path) > 4096 or source_path.startswith("/") or "\\" in source_path or re.match(r"[a-zA-Z][\w+.-]*:", source_path) or any(part in ("", ".", "..") for part in source_path.split("/")) or re.search(r"[\x00-\x1f\x7f]", source_path):
+        raise ValueError("PDF 原文件名称或路径无效")
+    modified = source.get("lastModified")
+    if modified is not None and (type(modified) not in (int, float) or not math.isfinite(modified) or modified < 0):
+        raise ValueError("PDF 原文件修改时间无效")
+    if source.get("type") != "pdf" or source.get("adapterVersion") != "1" or data.get("resources") != []:
+        raise ValueError("PDF 源文件类型、适配器版本或资源无效")
+    if any(key in source for key in ("encoding", "html", "index", "preview", "previewHtml", "pageIndex", "textIndex")) or any(key in data for key in ("preview", "index", "pageIndex", "textIndex")):
+        raise ValueError("PDF 不应包含派生预览或索引")
+    for annotation in data["annotations"]:
+        if not isinstance(annotation.get("comment"), str) or not annotation["comment"].strip() or string_length(annotation["comment"]) > 50000 or not valid_time(annotation.get("createdAt")):
+            raise ValueError("PDF 批注意见或时间无效")
+        if annotation.get("kind") not in ("text", "region", "page") or annotation.get("kind") != annotation.get("target", {}).get("kind"):
+            raise ValueError("PDF 批注类型无效")
+        validate_pdf_target(annotation.get("target"))
+        if "view" in annotation:
+            validate_dimensions(annotation["view"])
+        for event in annotation.get("targetHistory", []):
+            validate_pdf_target(event.get("target"))
+
+
+def validate_pdf_header(raw):
+    if not re.search(br"%PDF-[0-9]\.[0-9]", raw[:1024]):
+        raise ValueError("PDF 缺少有效的 %PDF- 文件头")
+
+
 def bounded_docx_archive(raw):
     archive = ZipFile(io.BytesIO(raw))
     entries = archive.infolist()
@@ -297,7 +413,7 @@ def require_source(data):
     expected = source.get("sha256")
     if not isinstance(expected, str) or not SHA256_RE.fullmatch(expected):
         raise ValueError("source SHA-256 无效")
-    if not isinstance(data.get("annotations"), list):
+    if not isinstance(data.get("annotations"), list) or len(data["annotations"]) > 10000:
         raise ValueError("批注列表无效")
     if not isinstance(data.get("resources", []), list):
         raise ValueError("资源列表无效")
@@ -362,6 +478,8 @@ def validate_dimensions(value):
 
 
 def validate_history_target(target):
+    if isinstance(target, dict) and "pdf" in target:
+        return validate_pdf_target(target)
     """Validate historical HTML anchors by their own kind, without source evidence lookup."""
     if not isinstance(target, dict) or target.get("kind") not in ("text", "element", "page"):
         raise ValueError("重新定位历史目标类型无效")
@@ -547,14 +665,16 @@ def task_state(annotation):
 def read_review(review_path):
     """Read and validate a review independently of the current source file."""
     data, input_kind = read_review_data(review_path)
-    if not isinstance(data, dict) or type(data.get("schemaVersion")) is not int or data["schemaVersion"] not in (1, 2):
+    if not isinstance(data, dict) or type(data.get("schemaVersion")) is not int or data["schemaVersion"] not in (1, 2, 3):
         raise ValueError("不支持的数据格式或版本")
     source, expected = require_source(data)
     normalize_annotations(data["annotations"])
     if data["schemaVersion"] == 2:
         validate_docx_targets(data, expected)
-    elif source.get("type") == "docx":
-        raise ValueError("DOCX 必须使用 schemaVersion 2")
+    elif data["schemaVersion"] == 3:
+        validate_pdf_targets(data)
+    elif source.get("type") in ("docx", "pdf") or any("pdf" in (annotation.get("target") or {}) or any("pdf" in event["target"] for event in annotation.get("targetHistory", [])) for annotation in data["annotations"]):
+        raise ValueError("DOCX / PDF 必须使用对应 schemaVersion")
 
     if data.get("format") == FULL_FORMAT:
         if not isinstance(source.get("base64"), str):
@@ -562,6 +682,8 @@ def read_review(review_path):
         validate_full_snapshot(data, source, expected)
         if data["schemaVersion"] == 2:
             docx_evidence(data, base64.b64decode(source["base64"], validate=True))
+        elif data["schemaVersion"] == 3:
+            validate_pdf_header(base64.b64decode(source["base64"], validate=True))
     elif data.get("format") == ANNOTATIONS_FORMAT:
         validate_lightweight_data(data)
     else:
@@ -582,6 +704,10 @@ def inspect(review_path, original_path):
     print("当前原文件 SHA-256：", actual)
     if data["schemaVersion"] == 2:
         print("原文件类型： DOCX；适配器版本：", source["adapterVersion"])
+    elif data["schemaVersion"] == 3:
+        validate_pdf_header(actual_bytes)
+        print("原文件类型： PDF；适配器版本：", source["adapterVersion"])
+        print("PDF 仅校验哈希和定位元数据；未解析或验证页面文字与页面指纹。坐标为原始 PDF 用户空间。")
     else:
         print("文本编码：", source.get("encoding", "未注明"))
     print("批注数量：", len(data["annotations"]))
@@ -612,7 +738,7 @@ def inspect(review_path, original_path):
 
 if __name__ == "__main__":
     configure_stdio()
-    usage = "用法：python inspect_review.py 批注副本.review.html|.review.html.gz|.review.json 原始.html|原始.docx"
+    usage = "用法：python inspect_review.py 批注副本.review.html|.review.html.gz|.review.json 原始.html|原始.docx|原始.pdf"
     if len(sys.argv) == 2 and sys.argv[1] in ("-h", "--help"):
         print(usage)
         raise SystemExit(0)

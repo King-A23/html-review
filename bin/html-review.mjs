@@ -10,7 +10,7 @@ const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 function validatePendingAnnotations(data, core) {
   const source = data?.source;
   const validTime = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
-  if (data?.format !== 'html-review-annotations' || data.schemaVersion !== 2 || source?.type !== 'docx'
+  if (data?.format !== 'html-review-annotations' || ![2,3].includes(data.schemaVersion) || source?.type !== (data.schemaVersion === 3 ? 'pdf' : 'docx')
     || source.adapterVersion !== '1' || source.encoding !== undefined || source.base64 !== undefined
     || typeof source.name !== 'string' || !source.name || source.name.length > 1024
     || typeof source.path !== 'string' || core.normalizePath(source.path) !== source.path
@@ -22,8 +22,9 @@ function validatePendingAnnotations(data, core) {
     || data.preview !== undefined || data.index !== undefined
     || !Array.isArray(data.annotations) || data.annotations.length > core.limits.annotations
     || data.annotations.some(annotation => !annotation || typeof annotation !== 'object' || Array.isArray(annotation))) {
-    throw new Error('请选择有效的 DOCX 轻量批注 JSON（格式版本 2）。');
+    throw new Error('请选择有效的 DOCX / PDF 轻量批注 JSON（格式版本 2 / 3）。');
   }
+  if (data.schemaVersion === 3) return core.validateAnnotationExport(data);
   return data;
 }
 export async function prepareReview(input) {
@@ -31,7 +32,7 @@ export async function prepareReview(input) {
   // Decode file URLs with Node's platform-aware converter, including Windows
   // drive letters and UNC hosts. URL.pathname alone loses both kinds of paths.
   const filename = /^file:/i.test(input) ? fileURLToPath(input) : path.resolve(input);
-  if (!/\.(?:html?|docx|json)$/i.test(filename)) throw new Error('请选择 .html、.htm、.docx 或 DOCX 轻量批注 .json 文件。');
+  if (!/\.(?:html?|docx|pdf|json)$/i.test(filename)) throw new Error('请选择 .html、.htm、.docx、.pdf 或 DOCX / PDF 轻量批注 .json 文件。');
   const info = await stat(filename);
   if (!info.isFile()) throw new Error('输入路径不是文件。');
   if (info.size > 100 * 1024 * 1024) throw new Error('输入文件超过 100 MiB。');
@@ -40,8 +41,9 @@ export async function prepareReview(input) {
   vm.runInNewContext(await readFile(path.join(root, 'src/core.js'), 'utf8'), context);
   const core = context.HRCore;
   const isDocx = /\.docx$/i.test(filename);
+  const isPdf = /\.pdf$/i.test(filename);
   const isJSON = /\.json$/i.test(filename);
-  const text = isDocx ? '' : core.decodeBytes(bytes).text;
+  const text = isDocx || isPdf ? '' : core.decodeBytes(bytes).text;
   const blocks = isJSON ? [] : Array.from(text.matchAll(/<script\b(?=[^>]*\bid\s*=\s*["']html-review-data["'])(?=[^>]*\btype\s*=\s*["']application\/json["'])[^>]*>([\s\S]*?)<\/script\s*>/gi));
   if (blocks.length) {
     if (blocks.length !== 1) throw new Error('文件包含多个批注数据块。');
@@ -49,7 +51,7 @@ export async function prepareReview(input) {
     if (data) await core.validateData(data);
     return filename;
   }
-  const data = isJSON ? validatePendingAnnotations(JSON.parse(text), core)
+  const data = isJSON ? await validatePendingAnnotations(JSON.parse(text), core)
     : await core.importSource({bytes: new Uint8Array(bytes), name: path.basename(filename), lastModified: info.mtimeMs});
   if (!isJSON) await core.validateData(data);
   const template = (await readFile(path.join(root, 'index.html'), 'utf8'))
@@ -64,7 +66,7 @@ export async function prepareReview(input) {
     if (template.includes(pendingMarker)) output = template.replace(pendingMarker, () => pendingScript);
     else output = template.replace(marker, () => marker + '\n' + pendingScript);
   } else output = template.replace(marker, () => '<script id="html-review-data" type="application/json">' + core.serialize(data) + '</script>');
-  const basename = filename.replace(/\.(?:html?|docx|json)$/i, '');
+  const basename = filename.replace(/\.(?:html?|docx|pdf|json)$/i, '');
   for (let index = 0; index < 10000; index++) {
     const destination = basename + '.review' + (index ? '.' + index : '') + '.html';
     try {await writeFile(destination, output, {flag: 'wx'}); return destination;}
@@ -90,7 +92,7 @@ export async function openReview(filename, {platform = process.platform, spawnPr
 }
 export async function main(args = process.argv.slice(2), {openFile = openReview, log = console.log, errorLog = console.error} = {}) {
   if (args.includes('--help') || args.includes('-h')) {
-    log('用法：html-review [文件.html / 文件.docx / DOCX批注.json 或 file: URL] [--no-open]\n\n无参数打开工具；HTML / DOCX 生成同目录批注副本；批注副本直接继续编辑。\nDOCX 轻量批注 JSON 打开配对工作区，请在浏览器中选择对应的原始 DOCX。\n已有文件不会被覆盖。外部资源请在工具中使用“导入文件夹”。\n--no-open 仅准备文件并输出路径，不启动浏览器。');
+    log('用法：html-review [文件.html / 文件.docx / 文件.pdf / DOCX或PDF批注.json 或 file: URL] [--no-open]\n\n无参数打开工具；HTML / DOCX / PDF 生成同目录批注副本；批注副本直接继续编辑。\nDOCX / PDF 轻量批注 JSON 打开配对工作区，请在浏览器中选择对应的原始 DOCX 或 PDF。\n已有文件不会被覆盖。外部资源请在工具中使用“导入文件夹”。\n--no-open 仅准备文件并输出路径，不启动浏览器。');
     return 0;
   }
   const noOpen = args.includes('--no-open');
