@@ -56,6 +56,9 @@
   let locationTimer = null;
   let locationInspection = null;
   let resultReviewQueue = null;
+  let workflowDetailsOpen = null;
+  let workflowDisclosureAlert = '';
+  let lastScopeKey = '';
   let workflow = {handoffStamp:'',documentRead:false,documentChanged:false,resultsRead:false,needsDocument:false};
   const needsLocationReview = annotation => core.annotationStatus(annotation) === 'open' && ['missing','ambiguous','fallback'].includes(locations.get(annotation.id)?.status);
   const undoStack = [];
@@ -214,10 +217,14 @@
     autosavePaused = false;
     pendingTarget = target;
     draftTargetChanged = true;
-    $('target-preview').hidden = false;
+    $('target-preview').hidden = wholeTarget(target);
+    $('target-preview').dataset.expanded = 'false';
+    $('target-summary-toggle').setAttribute('aria-expanded', 'false');
+    $('target-summary-toggle').textContent = '展开摘要';
     $('target-kind').textContent = targetLabel(target) || '目标';
     const text = targetText(target);
     $('target-text').textContent = text.length > 600 ? text.slice(0, 600) + '…' : text;
+    $('target-summary-toggle').hidden = wholeTarget(target) || text.length <= 80;
     const docxBlock=target.docx?.blocks[0];
     $('target-selector').textContent = isDocx(data) ? (target.scope==='whole-document' ? '整个 DOCX 文档' : docxBlock?.table ? `表格 · 第 ${docxBlock.table.row} 行 / 第 ${docxBlock.table.column} 列` : docxBlock?.image ? '文档图片' : docxBlock?.part==='word/footnotes.xml' ? '脚注内容' : docxBlock?.part==='word/endnotes.xml' ? '尾注内容' : '正文内容') : target.selector || `视口 ${target.viewport?.width || view().width} × ${target.viewport?.height || view().height}px`;
     $('parent-target').hidden = target.kind !== 'element';
@@ -239,6 +246,8 @@
     $('import-results').disabled = busy || !data;
     $('clear-target').hidden = !pendingTarget || pendingTarget.scope === 'whole-document';
     $('clear-target').disabled = busy;
+    updateScopeSummary();
+    $('mode-hint').hidden = Boolean(data && pendingTarget && !(mode === 'browse' && editingId && !wholeTarget(pendingTarget)));
     $('mode-hint').textContent = data ? (mode === 'browse' && editingId ? '可以正常阅读和点击页面。正在编辑已有批注，修改意见仍对应下方目标。' : isPdf(data) && mode === 'element' ? '在页面上拖出矩形区域，再填写修改意见。' : isDocx(data) && mode === 'element' ? '点击段落、表格或图片，再写意见。需要更大范围时，可继续扩大选择。' : isPdf(data) && mode === 'page' ? '点击 PDF 页面，或从列表选择实际页码。' : hints[mode]) : '先打开 HTML、DOCX 或 PDF，或体验下方示例。';
     $('comment-input').disabled = !data || busy;
     $('save-button').disabled = !data || busy || !pendingTarget || !$('comment-input').value.trim();
@@ -249,6 +258,15 @@
     renderPageControls();
     updateGuide();
     if (persistDraft) queueAutosave();
+  }
+  function updateScopeSummary() {
+    const target = pendingTarget;
+    const label = !data ? '等待打开文档' : !target ? ({text:'请先选择文字',element:isPdf(data) ? '请先框选区域' : '请先选择元素',page:'请先选择页面'}[mode] || '请先选择范围') : wholeTarget(target) ? '整份文档' : target.kind === 'page' ? `第 ${target.pageIndex || '?'} 页` : {text:'所选文字',region:'所选区域',element:'所选元素'}[target.kind] || '所选范围';
+    const badge = $('comment-scope');
+    if (badge.textContent !== label) badge.textContent = label;
+    badge.dataset.state = !data ? 'idle' : target ? 'ready' : 'waiting';
+    const key = JSON.stringify([label, editingId, target && targetText(target).slice(0,600)]);
+    if (key !== lastScopeKey) { lastScopeKey = key; if (data && previewReady) window.HRUI.scopeChanged(badge, target && !wholeTarget(target) ? $('target-preview') : null); }
   }
   function clearEditor(afterSave = false) {
     pendingTarget = null;
@@ -272,7 +290,7 @@
     $('target-preview').hidden = true;
     send('clear-selection');
     updateEditor();
-    note('已取消选择，修改意见已保留。请重新选择目标，或切换到「整体」批注。');
+    note('已取消选择，修改意见已保留。请重新选择目标，或回到「浏览」填写整份文档的意见。');
   }
   function resetFolder() {
     folderFiles = null;
@@ -419,7 +437,7 @@
     if(workflow.needsDocument) {
       stage='read-return';title='处理记录已导入，正文还没有重新读取。';help='完成状态由处理者回报，仍需检查实际效果。请先读取修改后的文档；批注和草稿会保留。';
     } else if(draftDirty()) {
-      stage='draft';title='先保存这条意见，再继续下一步。';help=pendingTarget ? '保存后，这条意见才会进入交接材料。' : '先在预览中选择目标，或切换到整体；已填写的意见会保留。';label=pendingTarget && $('comment-input').value.trim() ? '保存这条意见' : '继续填写意见';action=pendingTarget && $('comment-input').value.trim() ? 'save' : 'write';
+      stage='draft';title='先保存这条意见，再继续下一步。';help=pendingTarget ? '保存后，这条意见才会进入交接材料。' : '先在预览中选择目标，或回到浏览填写整体意见；已填写的意见会保留。';label=pendingTarget && $('comment-input').value.trim() ? '保存这条意见' : '继续填写意见';action=pendingTarget && $('comment-input').value.trim() ? 'save' : 'write';
     } else if(prepared) {
       stage='prepared';title='交接材料已准备好。';help='请把材料交给你使用的 agent。工具不会自动发送或修改文档；拿到返回文件后，从这里继续。';action='handoff';label='再查看交接材料';
     } else if(annotations.length && workflow.documentRead && !newAfterReading) {
@@ -437,7 +455,8 @@
     $('result-review-title').textContent=title;
     $('workflow-stage').textContent=stage==='review'||stage==='read-return' ? '03 / 读取与复核' : stage==='handoff'||stage==='prepared' ? '02 / 交给 agent' : '01 / 阅读与批注';
     $('result-review-summary').hidden=!annotations.length;
-    $('result-review-summary').textContent=`完成记录 ${done} · 待处理 ${annotations.length-done} · 新增 / 已更新 ${fresh} · 需确认位置 ${attention}`;
+    const summary = `完成记录 ${done} · 待处理 ${annotations.length-done} · 新增 / 已更新 ${fresh} · 需确认位置 ${attention}`;
+    if ($('result-review-summary').textContent !== summary) $('result-review-summary').textContent = summary;
     $('result-review-help').textContent=help;
     $('workflow-primary').hidden=stage==='read-return' || stage==='review';
     $('workflow-primary').textContent=label;$('workflow-primary').dataset.action=action;$('workflow-primary').disabled=busy || !previewReady;
@@ -545,6 +564,7 @@
     const prepared = await preparePreview(nextData);
     autosavePaused = false;
     data = nextData;
+    workflowDetailsOpen = null; workflowDisclosureAlert = '';
     locationReview = null; $('reload-review').hidden = true;
     if ($('annotation-filter').value === 'attention') { $('annotation-filter').value = 'all'; window.HRUI.syncSelect('annotation-filter'); }
     data.annotations = data.annotations.map(core.normalizeAnnotation);
@@ -1120,6 +1140,13 @@
     copy.querySelector('#review-progress').textContent = '意见与处理记录';
     copy.querySelector('#comment-input').textContent = '';
     copy.querySelector('#target-preview').hidden = true;
+    copy.querySelector('#target-preview').dataset.expanded = 'false';
+    copy.querySelector('#target-summary-toggle').setAttribute('aria-expanded','false');
+    copy.querySelector('#target-summary-toggle').textContent='展开摘要';
+    copy.querySelector('#comment-scope').textContent='等待打开文档';
+    copy.querySelector('#workflow-details').hidden=true;
+    copy.querySelector('#workflow-details-toggle').setAttribute('aria-expanded','false');
+    copy.querySelector('#workflow-details-toggle').querySelector('span').textContent='流程详情';
     for (const selector of ['#target-text', '#target-selector', '#target-kind']) copy.querySelector(selector).textContent = '';
     copy.querySelector('#data-preview').textContent = '';
     copy.querySelector('#agent-task-text').textContent = '';
@@ -1207,6 +1234,23 @@
     const stage=$('result-review').dataset.stage;
     const current=['read-return','review'].includes(stage) ? 2 : ['handoff','prepared'].includes(stage) ? 1 : 0;
     Array.from(document.querySelectorAll('[data-guide-step]')).forEach((item,index)=>{item.dataset.complete=String(index<current);item.toggleAttribute('aria-current',index===current);if(index===current)item.setAttribute('aria-current','step');});
+    const attention = data?.annotations.filter(needsLocationReview).length || 0;
+    const incomplete = locationReview && !locationReview.checking && !locationReview.dismissed && data?.annotations.some(annotation => core.annotationStatus(annotation) === 'open' && !locations.has(annotation.id));
+    const alert = workflow.needsDocument ? 'needs-document' : attention ? 'location-attention' : incomplete ? 'check-incomplete' : '';
+    // A newly discovered issue opens its explanation, but ordinary stage changes
+    // and typing do not reset the user's disclosure choice.
+    if (alert && alert !== workflowDisclosureAlert) {
+      workflowDetailsOpen = null;
+      if (alert !== 'needs-document') $('workflow-check-details').open = true;
+    }
+    workflowDisclosureAlert = alert;
+    const expanded = Boolean(data && (workflowDetailsOpen ?? (!guideDismissed || Boolean(alert))));
+    $('result-review').dataset.expanded = String(expanded);
+    $('result-review').dataset.attention = String(Boolean(alert));
+    $('workflow-details-toggle').setAttribute('aria-expanded', String(expanded));
+    $('workflow-details-toggle').querySelector('span').textContent = expanded ? '收起详情' : '流程详情';
+    if (!expanded && $('workflow-details').contains(document.activeElement)) $('workflow-details-toggle').focus({preventScroll:true});
+    window.HRUI.disclose($('workflow-details'), expanded, previewReady);
   }
   function autosaveStatus(message, error = false) {
     $('autosave-state').textContent = message;
@@ -1669,8 +1713,17 @@
     try { await navigator.clipboard.writeText($('agent-task-text').value); $('copy-agent-status').textContent = '已复制。请附上原文档，再粘贴到 agent 对话中。'; rememberHandoff(stamp); }
     catch (_) { $('task-details').open = true; $('agent-task-text').focus(); $('agent-task-text').select(); $('copy-agent-status').textContent = '已选中，请按 Ctrl / ⌘ + C 复制。'; }
   });
-  $('onboarding-dismiss').addEventListener('click', () => { guideDismissed = true; try { localStorage.setItem(guideKey, 'true'); } catch (_) {} updateGuide(); });
-  $('restart-guide').addEventListener('click', () => { guideDismissed = false; try { localStorage.removeItem(guideKey); } catch (_) {} window.HRUI.closeDialog($('settings-dialog')); updateGuide(); });
+  $('workflow-details-toggle').addEventListener('click', () => { workflowDetailsOpen = $('workflow-details-toggle').getAttribute('aria-expanded') !== 'true'; if (!workflowDetailsOpen && !guideDismissed) { guideDismissed = true; try { localStorage.setItem(guideKey,'true'); } catch (_) {} } updateGuide(); });
+  $('target-summary-toggle').addEventListener('click', () => {
+    const expanded = $('target-summary-toggle').getAttribute('aria-expanded') !== 'true';
+    window.HRUI.reflow($('target-preview'), () => {
+      $('target-preview').dataset.expanded = String(expanded);
+      $('target-summary-toggle').setAttribute('aria-expanded', String(expanded));
+      $('target-summary-toggle').textContent = expanded ? '收起摘要' : '展开摘要';
+    });
+  });
+  $('onboarding-dismiss').addEventListener('click', () => { workflowDetailsOpen = null; guideDismissed = true; try { localStorage.setItem(guideKey, 'true'); } catch (_) {} updateGuide(); });
+  $('restart-guide').addEventListener('click', () => { workflowDetailsOpen = null; guideDismissed = false; try { localStorage.removeItem(guideKey); } catch (_) {} window.HRUI.closeDialog($('settings-dialog')); updateGuide(); });
   $('recover-session').addEventListener('click', () => run(async () => { const record = cachedSession; if (record && (!data || confirmDiscard())) await restoreSession(record); }));
   $('discard-session').addEventListener('click', () => run(clearRecovery));
   $('clear-recovery').addEventListener('click', () => run(clearRecovery));

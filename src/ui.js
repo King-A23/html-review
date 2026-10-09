@@ -47,6 +47,45 @@
   reducedMotion.addEventListener('change', () => {
     if (reducedMotion.matches) for (const animation of activeAnimations) { try { animation.finish(); } catch (_) { animation.cancel(); } }
   });
+  const disclosures = new WeakMap();
+  function disclose(element, open, motion = true) {
+    const previous = disclosures.get(element);
+    if (previous?.open === open) return;
+    const height = element.hidden ? 0 : element.getBoundingClientRect().height;
+    const opacity = element.hidden ? 0 : Number(getComputedStyle(element).opacity);
+    previous?.animation?.cancel();
+    const record = {open, animation: null}; disclosures.set(element, record);
+    element.inert = !open;
+    element.setAttribute('aria-hidden', String(!open));
+    if (!motion || reducedMotion.matches || (!open && element.hidden)) { element.hidden = !open; return; }
+    element.hidden = false;
+    record.animation = animate(element, [
+      {height: height + 'px', opacity},
+      {height: (open ? element.scrollHeight : 0) + 'px', opacity: open ? 1 : 0}
+    ], {duration: open ? 300 : 190, fill: 'both'});
+    record.animation.finished.then(() => {
+      if (disclosures.get(element) !== record) return;
+      element.hidden = !open; record.animation.cancel(); record.animation = null;
+    }, () => {});
+  }
+  const reflows = new WeakMap();
+  function reflow(element, change) {
+    const height = element.getBoundingClientRect().height;
+    reflows.get(element)?.cancel();
+    change();
+    const nextHeight = element.getBoundingClientRect().height;
+    const animation = animate(element, [{height: height + 'px'}, {height: nextHeight + 'px'}], {duration: 280});
+    if (animation) reflows.set(element, animation);
+  }
+  const scopeAnimations = new WeakMap();
+  function scopeChanged(badge, preview) {
+    if (preview) reflows.get(preview)?.cancel();
+    for (const element of [badge, preview].filter(Boolean)) {
+      scopeAnimations.get(element)?.cancel();
+      const animation = animate(element, [{opacity: .5, transform: 'translateY(3px)'}, {opacity: 1, transform: 'translateY(0)'}], {duration: 220});
+      if (animation) scopeAnimations.set(element, animation);
+    }
+  }
   // Each surface keeps one timeline. Reversing it preserves its current geometry.
   function drive(record, opening, finish) {
     const revision = ++record.revision;
@@ -336,5 +375,5 @@
   for (const button of document.querySelectorAll('[data-settings-page]')) button.addEventListener('click', () => openSettings(button.dataset.settingsPage));
   for (const choice of document.querySelectorAll('[data-sidebar-choice]')) choice.addEventListener('click', () => { $('sidebar-position').value = choice.dataset.sidebarChoice; $('sidebar-position').dispatchEvent(new Event('change', {bubbles: true})); });
   $('settings-button').addEventListener('click', () => openSettings());
-  window.HRUI = {icon, syncSelect, closeMenu, toggleBackup, closeBackup, closeDialog, openDialog, openSettings, enterCards, saved};
+  window.HRUI = {icon, syncSelect, closeMenu, toggleBackup, closeBackup, closeDialog, openDialog, openSettings, enterCards, saved, disclose, reflow, scopeChanged};
 })();

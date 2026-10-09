@@ -597,6 +597,33 @@ dialog{background:#fffefa;border-color:#e1e3d8;border-radius:20px;box-shadow:0 3
 .annotation-state{color:#805c32}.annotation-state.updated{color:#98482d}.annotation-state.pending{color:#5d6d4e}.annotation-state.completed{color:#50683f}
 .position-choice button{color:#5e6e50}.settings-section-label,.keyboard-note,.settings-note p{color:#65735a}.settings-topbar button{color:#67775a}
 
+/* Keep the writing scope close to the input; details open only when useful. */
+.comment-label{margin-top:15px;align-items:center;min-height:26px;flex-wrap:wrap}
+.comment-scope{display:inline-flex;align-items:center;gap:6px;max-width:100%;font-size:10px;font-weight:500;line-height:1.5;padding:4px 8px;border-radius:6px;color:#405744;background:#edf2e9;overflow-wrap:anywhere}
+.comment-scope:before{content:'';width:4px;height:4px;border-radius:50%;background:#6b866a;flex-shrink:0}
+.comment-scope[data-state=waiting]{color:#805b32;background:#f7f0e5}.comment-scope[data-state=waiting]:before{background:#a8814d}
+.comment-scope[data-state=idle]{color:#667160;background:#f0f1eb}.comment-scope[data-state=idle]:before{background:#8b9580}
+.mode-hint{min-height:0;margin:11px 0 13px;font-size:11px}
+.target-preview{animation:none;padding:11px 12px;margin:12px 0 14px;overflow:hidden;border-radius:10px}
+.target-caption{display:flex;align-items:center;gap:7px}.target-caption-label{font-size:10px;color:#746854}.target-caption .tag{margin-left:auto;font-size:10px}.target-caption>.icon,.target-caption>[data-icon] .icon{width:14px;height:14px}
+.target-preview #target-text{margin:8px 0 2px;line-height:1.75;max-height:180px;overflow:auto;font-size:12px}
+.target-preview:not([data-expanded=true]) #target-text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;max-height:none}
+.target-actions{gap:12px;flex-wrap:wrap;margin-top:8px}.target-actions:has(>button:not([hidden])){display:flex}.target-actions:not(:has(>button:not([hidden]))){display:none}
+.workflow-card{display:block;padding:10px 18px;flex-shrink:0;background:linear-gradient(110deg,#f9faf5,#f5f6ef)}
+.workflow-next{flex-direction:row;align-items:center;gap:14px}.workflow-copy>strong{font-size:12px;line-height:1.7;font-weight:500;color:#4d6148}
+.workflow-card .result-review-actions{max-width:none;gap:5px}.workflow-card .result-review-actions button{min-height:30px;padding:6px 9px;font-size:10px}
+.workflow-card .workflow-details-toggle{gap:6px;color:#64745b}.workflow-details-toggle .icon{width:12px;height:12px;transition:transform .25s var(--ease)}
+.workflow-details-toggle[aria-expanded=true] .icon{transform:rotate(180deg)}
+.workflow-details{overflow:hidden;display:flow-root}
+.workflow-details>.eyebrow{padding-top:13px;font-size:10px;color:#6a7a60;margin-bottom:5px}
+.workflow-details>p{font-size:11px;line-height:1.8;max-width:820px}.workflow-details>p:last-child{padding-bottom:4px}
+.workflow-details .workflow-steps{margin:14px 0 0;padding:12px 0;border-top:1px solid #e2e7da;border-bottom:1px solid #e2e7da}
+.workflow-details .workflow-check{margin-top:10px;padding-top:9px}.workflow-card[data-attention=true]{background:linear-gradient(110deg,#fbf8f0,#f7f4ea);border-bottom-color:#e7ddc7}
+@media(max-width:1100px){.workflow-next{align-items:flex-start;flex-wrap:wrap;gap:7px}.workflow-copy{flex-basis:100%}.workflow-card .result-review-actions{justify-content:flex-start}}
+@media(max-width:760px){.workflow-card{padding:10px 12px}.workflow-copy>strong{font-size:12px}.workflow-card .result-review-actions button{min-height:34px;font-size:10px}.workflow-details>p{font-size:11px}.comment-scope{font-size:10px}.workflow-details .workflow-steps{gap:8px}.workflow-details .workflow-steps ol{flex-wrap:wrap;gap:10px}}
+@media(prefers-reduced-motion:reduce){.workflow-details-toggle .icon{transition:none}}
+.workflow-card[data-expanded=false]:is([data-stage=handoff],[data-stage=prepared],[data-stage=draft]) #workflow-primary{display:none}
+
 /* PDF.js 6.4.299 text layer styles, Apache-2.0; see bundled licenses. */
 #pdf-preview .textLayer {
   color-scheme: only light;
@@ -800,9 +827,9 @@ dialog{background:#fffefa;border-color:#e1e3d8;border-radius:20px;box-shadow:0 3
         <div class="mode-tabs" role="group" aria-label="批注模式"><span class="mode-indicator" aria-hidden="true"></span><button type="button" data-mode="browse" aria-pressed="true">浏览</button><button type="button" data-mode="text" aria-pressed="false">文字</button><button type="button" data-mode="element" aria-pressed="false">元素</button><button type="button" data-mode="page" aria-pressed="false">单页</button></div>
         <p id="mode-hint" class="mode-hint">先打开 HTML、DOCX 或 PDF，或体验示例。</p>
         <div id="page-controls" class="page-controls" hidden><label for="page-select">选择页面</label><select id="page-select" aria-label="选择分页区块"><option value="">等待页面载入</option></select><p id="page-description"></p></div>
-        <div id="target-preview" class="target-preview" hidden><div class="target-caption"><span data-icon="crosshair" aria-hidden="true"></span><span id="target-kind" class="tag"></span></div><p id="target-text"></p><code id="target-selector"></code><div class="target-actions"><button id="parent-target" class="text-button" type="button" hidden>选父级容器</button><button id="clear-target" class="text-button" type="button" hidden>取消选择</button></div></div>
-        <label class="field-label" for="comment-input">修改意见<span class="label-hint">具体一点，修改更准确</span></label>
-        <textarea id="comment-input" rows="4" maxlength="20000" placeholder="你希望这里如何改进？&#10;例如：缩短这段介绍，并保留核心结论。" disabled></textarea>
+        <div id="target-preview" class="target-preview" hidden><div class="target-caption"><span data-icon="crosshair" aria-hidden="true"></span><span class="target-caption-label">选中范围</span><span id="target-kind" class="tag"></span></div><p id="target-text"></p><code id="target-selector"></code><div class="target-actions"><button id="target-summary-toggle" class="text-button" type="button" aria-expanded="false" aria-controls="target-text" hidden>展开摘要</button><button id="parent-target" class="text-button" type="button" hidden>选父级容器</button><button id="clear-target" class="text-button" type="button" hidden>取消选择</button></div></div>
+        <label class="field-label comment-label" for="comment-input">修改意见<span id="comment-scope" class="comment-scope" role="status" aria-live="polite" aria-atomic="true">等待打开文档</span></label>
+        <textarea id="comment-input" aria-describedby="comment-scope mode-hint" rows="4" maxlength="20000" placeholder="你希望这里如何改进？&#10;例如：缩短这段介绍，并保留核心结论。" disabled></textarea>
         <div class="editor-actions"><button id="save-button" class="primary" type="button" disabled>保存批注</button><span id="draft-status" class="muted"></span><span class="save-key-hint" aria-hidden="true">⌘ ↵</span></div>
       </section>
       <section class="annotations-section"><div class="section-heading"><h2>批注 <span id="annotation-count" class="count">0</span></h2><button id="data-button" class="text-button" type="button" disabled>查看数据</button></div><div class="list-tools"><div class="history-controls"><button id="undo-button" class="icon-button" type="button" aria-label="撤销" title="撤销（Ctrl/⌘+Z，输入框外）" disabled><span data-icon="undo"></span></button><button id="redo-button" class="icon-button" type="button" aria-label="重做" title="重做（Ctrl/⌘+Shift+Z，输入框外）" disabled><span data-icon="redo"></span></button></div></div><div class="review-progress"><span id="review-progress" aria-live="polite">意见与处理记录</span><select id="annotation-filter" aria-label="筛选批注"><option value="all">全部记录</option><option value="open">待处理</option><option value="resolved">已完成</option><option value="attention">需确认位置</option><option value="new">新增 / 已更新</option></select></div><button id="import-results" class="text-button results-import" type="button" disabled>导入处理记录 JSON <span data-icon="file"></span></button><div id="annotation-list" class="annotation-list"><p class="empty-list">每一次改进，<br>从一条清晰的建议开始。</p></div></section>
@@ -812,9 +839,12 @@ dialog{background:#fffefa;border-color:#e1e3d8;border-radius:20px;box-shadow:0 3
       <div class="preview-toolbar"><div class="preview-breadcrumb"><span data-icon="layout" aria-hidden="true"></span><span id="preview-label">页面预览</span><span class="preview-live-dot" aria-hidden="true"></span></div><div class="preview-controls"><button id="document-nav-button" class="quiet" type="button" hidden disabled>目录与查找</button><select id="sidebar-position" aria-label="批注栏位置"><option value="left">左侧批注</option><option value="right">右侧批注</option></select><select id="preview-width" aria-label="预览视口"><option value="fluid">自适应</option><option value="390">手机 · 390px</option><option value="768">平板 · 768px</option><option value="1280">桌面 · 1280px</option></select><button id="reload-preview" class="icon-button" type="button" aria-label="重载页面" title="读取最新原文件与资源，保留批注和草稿" disabled><span data-icon="refresh"></span></button></div></div>
       <div id="warnings" class="warnings" hidden></div><div id="status" class="status" role="status" aria-live="polite" hidden></div>
       <section id="result-review" class="result-review workflow-card" aria-label="审阅进度与下一步" hidden>
-        <section id="onboarding-card" class="workflow-steps" hidden aria-label="审阅流程"><ol><li data-guide-step="open">阅读与批注</li><li data-guide-step="annotate">交给 agent</li><li data-guide-step="deliver">读取与复核</li></ol><button id="onboarding-dismiss" class="text-button" type="button" aria-label="收起流程步骤">收起步骤</button><p id="format-note" class="format-note" hidden></p></section>
-        <div class="workflow-next"><div class="workflow-copy"><span id="workflow-stage" class="eyebrow">阅读与批注</span><strong id="result-review-title">先读文档，再写下你的意见。</strong><p id="result-review-summary" role="status" aria-live="polite"></p><p id="result-review-help"></p></div><div class="result-review-actions"><button id="workflow-primary" class="primary" type="button">写第一条意见</button><button id="result-review-reload" class="primary" type="button" hidden>读取修改后的文档</button><button id="result-review-start" class="primary" type="button" hidden>逐条复核</button><button id="workflow-return" class="quiet" type="button" hidden>agent 已返回文件</button><button id="review-attention" class="text-button" type="button" hidden>查看需确认的批注</button><button id="review-retry" class="text-button" type="button" hidden>重新检查位置</button></div></div>
+        <div class="workflow-next"><div class="workflow-copy"><strong id="result-review-title">先读文档，再写下你的意见。</strong></div><div class="result-review-actions"><button id="workflow-primary" class="primary" type="button">写第一条意见</button><button id="result-review-reload" class="primary" type="button" hidden>读取修改后的文档</button><button id="result-review-start" class="primary" type="button" hidden>逐条复核</button><button id="workflow-return" class="quiet" type="button" hidden>agent 已返回文件</button><button id="review-attention" class="text-button" type="button" hidden>查看需确认的批注</button><button id="review-retry" class="text-button" type="button" hidden>重新检查位置</button><button id="workflow-details-toggle" class="quiet workflow-details-toggle" type="button" aria-expanded="false" aria-controls="workflow-details"><span>流程详情</span><span data-icon="chevron-down"></span></button></div></div>
+        <div id="workflow-details" class="workflow-details" hidden>
+        <section id="onboarding-card" class="workflow-steps" hidden aria-label="审阅流程"><ol><li data-guide-step="open">阅读与批注</li><li data-guide-step="annotate">交给 agent</li><li data-guide-step="deliver">读取与复核</li></ol><button id="onboarding-dismiss" class="text-button" type="button" aria-label="之后精简显示流程说明">以后精简显示</button><p id="format-note" class="format-note" hidden></p></section>
+          <span id="workflow-stage" class="eyebrow">阅读与批注</span><p id="result-review-summary" role="status" aria-live="polite"></p><p id="result-review-help"></p>
         <section id="reload-review" class="workflow-check" aria-label="重载后的批注检查" hidden><details id="workflow-check-details"><summary>位置检查详情</summary><strong id="reload-review-title">已读取文档，检查批注位置</strong><p id="reload-review-summary"></p><p id="reload-review-detail"></p><button id="review-dismiss" class="text-button" type="button">收起位置检查</button></details></section>
+        </div>
       </section>
       <div id="recovery-banner" class="recovery-banner" hidden><span class="recovery-icon" data-icon="history" aria-hidden="true"></span><span id="recovery-description"></span><button id="recover-session" type="button">继续上次审阅 <span data-icon="arrow-right"></span></button><button id="discard-session" class="text-button" type="button">忽略</button></div>
       <div id="pdf-controls" class="pdf-controls" hidden><button id="pdf-thumbnail-toggle" class="quiet" type="button" aria-expanded="false" aria-controls="pdf-thumbnails">缩略图</button><button id="pdf-prev-page" class="quiet" type="button" aria-label="上一页">上一页</button><label for="pdf-page-number">页码</label><input id="pdf-page-number" type="number" min="1" value="1" aria-label="PDF 页码"><span id="pdf-page-count">/ —</span><button id="pdf-next-page" class="quiet" type="button" aria-label="下一页">下一页</button><label for="pdf-zoom">缩放</label><select id="pdf-zoom" aria-label="PDF 缩放"><option value="fit">适合宽度</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option></select><button id="pdf-cancel-operation" class="text-button" type="button" hidden>取消查找 / 检查</button><span id="pdf-operation-status" role="status" aria-live="polite"></span></div>
@@ -5291,6 +5321,45 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   reducedMotion.addEventListener('change', () => {
     if (reducedMotion.matches) for (const animation of activeAnimations) { try { animation.finish(); } catch (_) { animation.cancel(); } }
   });
+  const disclosures = new WeakMap();
+  function disclose(element, open, motion = true) {
+    const previous = disclosures.get(element);
+    if (previous?.open === open) return;
+    const height = element.hidden ? 0 : element.getBoundingClientRect().height;
+    const opacity = element.hidden ? 0 : Number(getComputedStyle(element).opacity);
+    previous?.animation?.cancel();
+    const record = {open, animation: null}; disclosures.set(element, record);
+    element.inert = !open;
+    element.setAttribute('aria-hidden', String(!open));
+    if (!motion || reducedMotion.matches || (!open && element.hidden)) { element.hidden = !open; return; }
+    element.hidden = false;
+    record.animation = animate(element, [
+      {height: height + 'px', opacity},
+      {height: (open ? element.scrollHeight : 0) + 'px', opacity: open ? 1 : 0}
+    ], {duration: open ? 300 : 190, fill: 'both'});
+    record.animation.finished.then(() => {
+      if (disclosures.get(element) !== record) return;
+      element.hidden = !open; record.animation.cancel(); record.animation = null;
+    }, () => {});
+  }
+  const reflows = new WeakMap();
+  function reflow(element, change) {
+    const height = element.getBoundingClientRect().height;
+    reflows.get(element)?.cancel();
+    change();
+    const nextHeight = element.getBoundingClientRect().height;
+    const animation = animate(element, [{height: height + 'px'}, {height: nextHeight + 'px'}], {duration: 280});
+    if (animation) reflows.set(element, animation);
+  }
+  const scopeAnimations = new WeakMap();
+  function scopeChanged(badge, preview) {
+    if (preview) reflows.get(preview)?.cancel();
+    for (const element of [badge, preview].filter(Boolean)) {
+      scopeAnimations.get(element)?.cancel();
+      const animation = animate(element, [{opacity: .5, transform: 'translateY(3px)'}, {opacity: 1, transform: 'translateY(0)'}], {duration: 220});
+      if (animation) scopeAnimations.set(element, animation);
+    }
+  }
   // Each surface keeps one timeline. Reversing it preserves its current geometry.
   function drive(record, opening, finish) {
     const revision = ++record.revision;
@@ -5580,7 +5649,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   for (const button of document.querySelectorAll('[data-settings-page]')) button.addEventListener('click', () => openSettings(button.dataset.settingsPage));
   for (const choice of document.querySelectorAll('[data-sidebar-choice]')) choice.addEventListener('click', () => { $('sidebar-position').value = choice.dataset.sidebarChoice; $('sidebar-position').dispatchEvent(new Event('change', {bubbles: true})); });
   $('settings-button').addEventListener('click', () => openSettings());
-  window.HRUI = {icon, syncSelect, closeMenu, toggleBackup, closeBackup, closeDialog, openDialog, openSettings, enterCards, saved};
+  window.HRUI = {icon, syncSelect, closeMenu, toggleBackup, closeBackup, closeDialog, openDialog, openSettings, enterCards, saved, disclose, reflow, scopeChanged};
 })();
 
 </script>
@@ -5643,6 +5712,9 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   let locationTimer = null;
   let locationInspection = null;
   let resultReviewQueue = null;
+  let workflowDetailsOpen = null;
+  let workflowDisclosureAlert = '';
+  let lastScopeKey = '';
   let workflow = {handoffStamp:'',documentRead:false,documentChanged:false,resultsRead:false,needsDocument:false};
   const needsLocationReview = annotation => core.annotationStatus(annotation) === 'open' && ['missing','ambiguous','fallback'].includes(locations.get(annotation.id)?.status);
   const undoStack = [];
@@ -5801,10 +5873,14 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     autosavePaused = false;
     pendingTarget = target;
     draftTargetChanged = true;
-    $('target-preview').hidden = false;
+    $('target-preview').hidden = wholeTarget(target);
+    $('target-preview').dataset.expanded = 'false';
+    $('target-summary-toggle').setAttribute('aria-expanded', 'false');
+    $('target-summary-toggle').textContent = '展开摘要';
     $('target-kind').textContent = targetLabel(target) || '目标';
     const text = targetText(target);
     $('target-text').textContent = text.length > 600 ? text.slice(0, 600) + '…' : text;
+    $('target-summary-toggle').hidden = wholeTarget(target) || text.length <= 80;
     const docxBlock=target.docx?.blocks[0];
     $('target-selector').textContent = isDocx(data) ? (target.scope==='whole-document' ? '整个 DOCX 文档' : docxBlock?.table ? `表格 · 第 ${docxBlock.table.row} 行 / 第 ${docxBlock.table.column} 列` : docxBlock?.image ? '文档图片' : docxBlock?.part==='word/footnotes.xml' ? '脚注内容' : docxBlock?.part==='word/endnotes.xml' ? '尾注内容' : '正文内容') : target.selector || `视口 ${target.viewport?.width || view().width} × ${target.viewport?.height || view().height}px`;
     $('parent-target').hidden = target.kind !== 'element';
@@ -5826,6 +5902,8 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     $('import-results').disabled = busy || !data;
     $('clear-target').hidden = !pendingTarget || pendingTarget.scope === 'whole-document';
     $('clear-target').disabled = busy;
+    updateScopeSummary();
+    $('mode-hint').hidden = Boolean(data && pendingTarget && !(mode === 'browse' && editingId && !wholeTarget(pendingTarget)));
     $('mode-hint').textContent = data ? (mode === 'browse' && editingId ? '可以正常阅读和点击页面。正在编辑已有批注，修改意见仍对应下方目标。' : isPdf(data) && mode === 'element' ? '在页面上拖出矩形区域，再填写修改意见。' : isDocx(data) && mode === 'element' ? '点击段落、表格或图片，再写意见。需要更大范围时，可继续扩大选择。' : isPdf(data) && mode === 'page' ? '点击 PDF 页面，或从列表选择实际页码。' : hints[mode]) : '先打开 HTML、DOCX 或 PDF，或体验下方示例。';
     $('comment-input').disabled = !data || busy;
     $('save-button').disabled = !data || busy || !pendingTarget || !$('comment-input').value.trim();
@@ -5836,6 +5914,15 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     renderPageControls();
     updateGuide();
     if (persistDraft) queueAutosave();
+  }
+  function updateScopeSummary() {
+    const target = pendingTarget;
+    const label = !data ? '等待打开文档' : !target ? ({text:'请先选择文字',element:isPdf(data) ? '请先框选区域' : '请先选择元素',page:'请先选择页面'}[mode] || '请先选择范围') : wholeTarget(target) ? '整份文档' : target.kind === 'page' ? `第 ${target.pageIndex || '?'} 页` : {text:'所选文字',region:'所选区域',element:'所选元素'}[target.kind] || '所选范围';
+    const badge = $('comment-scope');
+    if (badge.textContent !== label) badge.textContent = label;
+    badge.dataset.state = !data ? 'idle' : target ? 'ready' : 'waiting';
+    const key = JSON.stringify([label, editingId, target && targetText(target).slice(0,600)]);
+    if (key !== lastScopeKey) { lastScopeKey = key; if (data && previewReady) window.HRUI.scopeChanged(badge, target && !wholeTarget(target) ? $('target-preview') : null); }
   }
   function clearEditor(afterSave = false) {
     pendingTarget = null;
@@ -5859,7 +5946,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     $('target-preview').hidden = true;
     send('clear-selection');
     updateEditor();
-    note('已取消选择，修改意见已保留。请重新选择目标，或切换到「整体」批注。');
+    note('已取消选择，修改意见已保留。请重新选择目标，或回到「浏览」填写整份文档的意见。');
   }
   function resetFolder() {
     folderFiles = null;
@@ -6006,7 +6093,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     if(workflow.needsDocument) {
       stage='read-return';title='处理记录已导入，正文还没有重新读取。';help='完成状态由处理者回报，仍需检查实际效果。请先读取修改后的文档；批注和草稿会保留。';
     } else if(draftDirty()) {
-      stage='draft';title='先保存这条意见，再继续下一步。';help=pendingTarget ? '保存后，这条意见才会进入交接材料。' : '先在预览中选择目标，或切换到整体；已填写的意见会保留。';label=pendingTarget && $('comment-input').value.trim() ? '保存这条意见' : '继续填写意见';action=pendingTarget && $('comment-input').value.trim() ? 'save' : 'write';
+      stage='draft';title='先保存这条意见，再继续下一步。';help=pendingTarget ? '保存后，这条意见才会进入交接材料。' : '先在预览中选择目标，或回到浏览填写整体意见；已填写的意见会保留。';label=pendingTarget && $('comment-input').value.trim() ? '保存这条意见' : '继续填写意见';action=pendingTarget && $('comment-input').value.trim() ? 'save' : 'write';
     } else if(prepared) {
       stage='prepared';title='交接材料已准备好。';help='请把材料交给你使用的 agent。工具不会自动发送或修改文档；拿到返回文件后，从这里继续。';action='handoff';label='再查看交接材料';
     } else if(annotations.length && workflow.documentRead && !newAfterReading) {
@@ -6024,7 +6111,8 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     $('result-review-title').textContent=title;
     $('workflow-stage').textContent=stage==='review'||stage==='read-return' ? '03 / 读取与复核' : stage==='handoff'||stage==='prepared' ? '02 / 交给 agent' : '01 / 阅读与批注';
     $('result-review-summary').hidden=!annotations.length;
-    $('result-review-summary').textContent=`完成记录 ${done} · 待处理 ${annotations.length-done} · 新增 / 已更新 ${fresh} · 需确认位置 ${attention}`;
+    const summary = `完成记录 ${done} · 待处理 ${annotations.length-done} · 新增 / 已更新 ${fresh} · 需确认位置 ${attention}`;
+    if ($('result-review-summary').textContent !== summary) $('result-review-summary').textContent = summary;
     $('result-review-help').textContent=help;
     $('workflow-primary').hidden=stage==='read-return' || stage==='review';
     $('workflow-primary').textContent=label;$('workflow-primary').dataset.action=action;$('workflow-primary').disabled=busy || !previewReady;
@@ -6132,6 +6220,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     const prepared = await preparePreview(nextData);
     autosavePaused = false;
     data = nextData;
+    workflowDetailsOpen = null; workflowDisclosureAlert = '';
     locationReview = null; $('reload-review').hidden = true;
     if ($('annotation-filter').value === 'attention') { $('annotation-filter').value = 'all'; window.HRUI.syncSelect('annotation-filter'); }
     data.annotations = data.annotations.map(core.normalizeAnnotation);
@@ -6707,6 +6796,13 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     copy.querySelector('#review-progress').textContent = '意见与处理记录';
     copy.querySelector('#comment-input').textContent = '';
     copy.querySelector('#target-preview').hidden = true;
+    copy.querySelector('#target-preview').dataset.expanded = 'false';
+    copy.querySelector('#target-summary-toggle').setAttribute('aria-expanded','false');
+    copy.querySelector('#target-summary-toggle').textContent='展开摘要';
+    copy.querySelector('#comment-scope').textContent='等待打开文档';
+    copy.querySelector('#workflow-details').hidden=true;
+    copy.querySelector('#workflow-details-toggle').setAttribute('aria-expanded','false');
+    copy.querySelector('#workflow-details-toggle').querySelector('span').textContent='流程详情';
     for (const selector of ['#target-text', '#target-selector', '#target-kind']) copy.querySelector(selector).textContent = '';
     copy.querySelector('#data-preview').textContent = '';
     copy.querySelector('#agent-task-text').textContent = '';
@@ -6794,6 +6890,23 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     const stage=$('result-review').dataset.stage;
     const current=['read-return','review'].includes(stage) ? 2 : ['handoff','prepared'].includes(stage) ? 1 : 0;
     Array.from(document.querySelectorAll('[data-guide-step]')).forEach((item,index)=>{item.dataset.complete=String(index<current);item.toggleAttribute('aria-current',index===current);if(index===current)item.setAttribute('aria-current','step');});
+    const attention = data?.annotations.filter(needsLocationReview).length || 0;
+    const incomplete = locationReview && !locationReview.checking && !locationReview.dismissed && data?.annotations.some(annotation => core.annotationStatus(annotation) === 'open' && !locations.has(annotation.id));
+    const alert = workflow.needsDocument ? 'needs-document' : attention ? 'location-attention' : incomplete ? 'check-incomplete' : '';
+    // A newly discovered issue opens its explanation, but ordinary stage changes
+    // and typing do not reset the user's disclosure choice.
+    if (alert && alert !== workflowDisclosureAlert) {
+      workflowDetailsOpen = null;
+      if (alert !== 'needs-document') $('workflow-check-details').open = true;
+    }
+    workflowDisclosureAlert = alert;
+    const expanded = Boolean(data && (workflowDetailsOpen ?? (!guideDismissed || Boolean(alert))));
+    $('result-review').dataset.expanded = String(expanded);
+    $('result-review').dataset.attention = String(Boolean(alert));
+    $('workflow-details-toggle').setAttribute('aria-expanded', String(expanded));
+    $('workflow-details-toggle').querySelector('span').textContent = expanded ? '收起详情' : '流程详情';
+    if (!expanded && $('workflow-details').contains(document.activeElement)) $('workflow-details-toggle').focus({preventScroll:true});
+    window.HRUI.disclose($('workflow-details'), expanded, previewReady);
   }
   function autosaveStatus(message, error = false) {
     $('autosave-state').textContent = message;
@@ -7256,8 +7369,17 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     try { await navigator.clipboard.writeText($('agent-task-text').value); $('copy-agent-status').textContent = '已复制。请附上原文档，再粘贴到 agent 对话中。'; rememberHandoff(stamp); }
     catch (_) { $('task-details').open = true; $('agent-task-text').focus(); $('agent-task-text').select(); $('copy-agent-status').textContent = '已选中，请按 Ctrl / ⌘ + C 复制。'; }
   });
-  $('onboarding-dismiss').addEventListener('click', () => { guideDismissed = true; try { localStorage.setItem(guideKey, 'true'); } catch (_) {} updateGuide(); });
-  $('restart-guide').addEventListener('click', () => { guideDismissed = false; try { localStorage.removeItem(guideKey); } catch (_) {} window.HRUI.closeDialog($('settings-dialog')); updateGuide(); });
+  $('workflow-details-toggle').addEventListener('click', () => { workflowDetailsOpen = $('workflow-details-toggle').getAttribute('aria-expanded') !== 'true'; if (!workflowDetailsOpen && !guideDismissed) { guideDismissed = true; try { localStorage.setItem(guideKey,'true'); } catch (_) {} } updateGuide(); });
+  $('target-summary-toggle').addEventListener('click', () => {
+    const expanded = $('target-summary-toggle').getAttribute('aria-expanded') !== 'true';
+    window.HRUI.reflow($('target-preview'), () => {
+      $('target-preview').dataset.expanded = String(expanded);
+      $('target-summary-toggle').setAttribute('aria-expanded', String(expanded));
+      $('target-summary-toggle').textContent = expanded ? '收起摘要' : '展开摘要';
+    });
+  });
+  $('onboarding-dismiss').addEventListener('click', () => { workflowDetailsOpen = null; guideDismissed = true; try { localStorage.setItem(guideKey, 'true'); } catch (_) {} updateGuide(); });
+  $('restart-guide').addEventListener('click', () => { workflowDetailsOpen = null; guideDismissed = false; try { localStorage.removeItem(guideKey); } catch (_) {} window.HRUI.closeDialog($('settings-dialog')); updateGuide(); });
   $('recover-session').addEventListener('click', () => run(async () => { const record = cachedSession; if (record && (!data || confirmDiscard())) await restoreSession(record); }));
   $('discard-session').addEventListener('click', () => run(clearRecovery));
   $('clear-recovery').addEventListener('click', () => run(clearRecovery));

@@ -105,6 +105,7 @@ try {
  try {
   await page.locator('#settings-button').click(); assert.equal(await page.locator('#settings-dialog').evaluate(e=>getComputedStyle(e).animationName),'none'); await page.keyboard.press('Escape'); await page.locator('#settings-dialog').waitFor({state:'hidden'});
   await page.locator('#file-input').setInputFiles(path.join(root,'examples/finance/index.html')); await page.locator('#preview-frame').waitFor({state:'visible'}); await page.locator('[data-mode="page"]').click();
+  await page.locator('#workflow-details-toggle').click(); assert.equal(await page.locator('#workflow-details').evaluate(node=>node.getAnimations().length),0);
   await page.locator('#page-description').filter({hasText:'未发现明确的分页区块'}).waitFor(); assert(await page.locator('#page-select-trigger').isDisabled()); assert(await page.locator('#target-preview').isHidden());
   // A deck containing nested chapter sections must inventory leaf slides, including hidden ones.
   const deck='<html><body><div class="slides"><section><section class="slide" id="slide-one"><h2>第一页</h2></section><section class="slide future" id="slide-two" hidden><h2>第二页</h2></section></section></div></body></html>';
@@ -153,6 +154,79 @@ try {
   console.log('PASS merged browse/whole mode, legacy whole/page drafts and existing whole opinion editing');
  } finally {await context.close();}
  }
+ {
+ const {context,page}=await fresh();
+ try {
+  await page.locator('#file-input').setInputFiles(path.join(root,'examples/pages.html'));
+  const frame=page.locator('#preview-frame').contentFrame();
+  await page.locator('#preview-frame[aria-busy="false"]').waitFor();
+  await frame.locator('#page-feedback').waitFor();
+  await frame.locator('body').evaluate(() => new Promise(resolve => {if(document.readyState==='complete')resolve();else window.addEventListener('load',resolve,{once:true});}));
+  assert.equal(await page.locator('#comment-scope').textContent(),'整份文档');
+  assert(await page.locator('#target-preview').isHidden(),'Whole scope uses the compact input badge rather than repeating the filename');
+  await page.locator('#onboarding-card').waitFor({state:'visible'});
+  const expandedHeight=(await page.locator('#result-review').boundingBox()).height;
+  await page.locator('#workflow-details-toggle').click();
+  await page.locator('#workflow-details').waitFor({state:'hidden'});
+  assert.equal(await page.locator('#workflow-details-toggle').getAttribute('aria-expanded'),'false');
+  assert.equal(await page.locator('#workflow-details').evaluate(node=>node.inert),true);
+  const compactHeight=(await page.locator('#result-review').boundingBox()).height;
+  assert(expandedHeight-compactHeight>=65,'Collapsing explanations returns meaningful room to the document');
+  await page.reload(); await page.locator('#preview-frame[aria-busy="false"]').waitFor();
+  await page.locator('#comment-scope').filter({hasText:'整份文档'}).waitFor();
+  assert(await page.locator('#workflow-details').isHidden(),'The first deliberate collapse persists across reload');
+  await page.locator('[data-mode=text]').click();
+  assert.equal(await page.locator('#comment-scope').textContent(),'请先选择文字');
+  assert(await page.locator('#mode-hint').isVisible());
+  await frame.locator('#page-feedback').evaluate(node=>{const range=document.createRange();range.selectNodeContents(node);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);node.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));});
+  await page.locator('#comment-scope').filter({hasText:'所选文字'}).waitFor();
+  assert(await page.locator('#target-preview').isVisible()); assert(await page.locator('#mode-hint').isHidden());
+  const originalSummary=await page.locator('#target-text').textContent();
+  const closedHeight=(await page.locator('#target-preview').boundingBox()).height;
+  await page.locator('#target-summary-toggle').click();
+  await page.locator('#target-preview').evaluate(async node=>{await Promise.all(node.getAnimations().map(animation=>animation.finished.catch(()=>{})));});
+  assert((await page.locator('#target-preview').boundingBox()).height>closedHeight,'Long target summaries can be opened');
+  assert.equal(await page.locator('#target-text').textContent(),originalSummary);
+  await page.locator('#target-summary-toggle').click();
+  await page.locator('#comment-input').fill('精简这里的内容，保留三个步骤。');
+  await page.locator('#clear-target').click();
+  assert.equal(await page.locator('#comment-scope').textContent(),'请先选择文字');
+  assert.equal(await page.locator('#comment-input').inputValue(),'精简这里的内容，保留三个步骤。');
+  assert(await page.locator('#save-button').isDisabled());
+  await page.locator('[data-mode=browse]').click();
+  assert.equal(await page.locator('#comment-scope').textContent(),'整份文档');
+  await save(page,'全篇统一术语。');
+  await page.locator('[data-mode=element]').click(); await frame.locator('#page-read h2').click();
+  await page.locator('#comment-scope').filter({hasText:'所选元素'}).waitFor();
+  await save(page,'精简这个标题。');
+  await page.locator('.annotation-card').nth(1).locator('[data-action=edit]').click();
+  await page.locator('[data-mode=browse]').click();
+  assert.equal(await page.locator('#comment-scope').textContent(),'所选元素','Browsing while editing keeps the existing local target');
+  assert(await page.locator('#mode-hint').isVisible());
+  await page.locator('#cancel-edit').click();
+  assert.equal(await page.locator('#comment-scope').textContent(),'整份文档');
+  // Pause at an intermediate frame and reverse twice. Geometry must remain continuous.
+  await page.locator('#workflow-details-toggle').click();
+  const reversal=await page.evaluate(()=>{
+    const panel=document.querySelector('#workflow-details'),toggle=document.querySelector('#workflow-details-toggle');
+    for(const animation of panel.getAnimations()){animation.pause();animation.currentTime=140;}
+    const before=panel.getBoundingClientRect().height;toggle.click();const closing=panel.getBoundingClientRect().height;toggle.click();const opening=panel.getBoundingClientRect().height;
+    return {before,closing,opening,inert:panel.inert,expanded:toggle.getAttribute('aria-expanded')};
+  });
+  assert(Math.abs(reversal.before-reversal.closing)<1 && Math.abs(reversal.closing-reversal.opening)<1,'Disclosure reverses from its current size');
+  assert.equal(reversal.inert,false);assert.equal(reversal.expanded,'true');
+  await page.locator('#workflow-details').evaluate(async node=>{await Promise.all(node.getAnimations().map(animation=>animation.finished.catch(()=>{})));});
+  await page.locator('#workflow-details-toggle').click();await page.locator('#workflow-details').waitFor({state:'hidden'});
+  await page.screenshot({path:path.join(designOutput,'workspace-compact.png')});
+  for(const width of [1280,900,760,390,320]) {
+    await page.setViewportSize({width,height:900});
+    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Compact workflow fits '+width+'px');
+    const badge=await page.locator('#comment-scope').boundingBox(),sidebar=await page.locator('.sidebar').boundingBox();
+    assert(badge.x>=sidebar.x && badge.x+badge.width<=sidebar.x+sidebar.width,'Scope badge stays inside the editor');
+  }
+  console.log('PASS compact workflow, persistent preference, accessible reversal, scope changes, preserved drafts and local editing');
+ } catch(error){await page.screenshot({path:path.join(designOutput,'polish-failure.png'),fullPage:true});throw error;} finally {await context.close();}
+ }
  assert.deepEqual(errors,[],'no application errors');
- await writeFile(path.join(output,'ui-report.json'),JSON.stringify({status:'passed',errors,checks:4},null,2));
+ await writeFile(path.join(output,'ui-report.json'),JSON.stringify({status:'passed',errors,checks:5},null,2));
 } finally {if(browser) await browser.close(); console.log('PROCESS_CLEANUP_COMPLETE');}
