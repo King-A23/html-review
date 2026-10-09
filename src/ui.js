@@ -91,7 +91,7 @@
     if (menu?.select === field.select && field.select.disabled) closeMenu();
     if (id === 'sidebar-position') for (const choice of document.querySelectorAll('[data-sidebar-choice]')) choice.setAttribute('aria-pressed', String(choice.dataset.sidebarChoice === field.select.value));
   }
-  const exportDetails = {html: ['file', '可继续编辑 · .review.html'], gzip: ['layers', '完整副本，更小体积 · .html.gz'], annotations: ['code', '配合原文件交给 agent · .json']};
+  const exportDetails = {html: ['file', '可继续编辑 · .review.html'], gzip: ['layers', '完整副本，更小体积 · .html.gz'], annotations: ['code', '仅批注数据，不含原文档 · .json']};
   function openMenu(field, last = false) {
     const {select, trigger} = field;
     if (select.disabled) return;
@@ -104,7 +104,7 @@
     }
     closeMenu(false, true);
     const popup = document.createElement('div'); popup.className = 'select-popover'; popup.id = 'hr-select-popover'; popup.dataset.uiTransient = 'menu'; popup.setAttribute('role', 'listbox'); popup.setAttribute('aria-label', select.getAttribute('aria-label') || '选择选项');
-    if (select.id === 'export-format') { const caption = document.createElement('div'); caption.className = 'popover-caption'; caption.textContent = '选择交付方式'; popup.append(caption); }
+    if (select.id === 'export-format') { const caption = document.createElement('div'); caption.className = 'popover-caption'; caption.textContent = '保存格式'; popup.append(caption); }
     const buttons = [];
     for (const option of select.options) {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'select-option'; button.dataset.value = option.value; button.setAttribute('role', 'option'); button.setAttribute('aria-selected', String(option.selected)); button.disabled = option.disabled; button.tabIndex = -1;
@@ -129,8 +129,8 @@
       {opacity: 1, transform: 'translateY(0)', offset: .87}, {opacity: 1, transform: 'translateY(0)', offset: 1}
     ], {duration: 300, easing: 'linear', fill: 'both'}));
     const motion = surface(popup, [
-      {opacity: 0, transform: 'translateY(' + shift + 'px) scale(.94, .92)', clipPath: 'inset(' + (above ? '18% 0 0' : '0 0 18%') + ' 0 round 14px)', boxShadow: '0 3px 12px #293e2200'},
-      {opacity: 1, transform: 'translateY(0) scale(1)', clipPath: 'inset(0 round 14px)', boxShadow: '0 12px 40px #293e2222, 0 2px 6px #293e2210'}
+      {opacity: 0, transform: 'translateY(' + shift + 'px) scale(.985)', clipPath: 'inset(' + (above ? '18% 0 0' : '0 0 18%') + ' 0 round 14px)', boxShadow: '0 3px 12px #24382b00'},
+      {opacity: 1, transform: 'translateY(0) scale(1)', clipPath: 'inset(0 round 14px)', boxShadow: '0 16px 48px #24382b1c, 0 3px 8px #24382b09'}
     ], 300, rowAnimations);
     trigger.setAttribute('aria-expanded', 'true'); trigger.setAttribute('aria-controls', popup.id); menu = {...field, popup, buttons, motion, anchor: {top: rect.top, left: rect.left}};
     const current = menu; drive(motion, true, () => { motion.state = 'open'; popup.dataset.motion = 'open'; });
@@ -161,6 +161,56 @@
   }
   document.addEventListener('pointerdown', event => { if (menu && !menu.popup.contains(event.target) && !menu.trigger.contains(event.target)) closeMenu(); }, true);
   window.addEventListener('resize', () => closeMenu()); window.addEventListener('scroll', event => { if (menu && !menu.popup.contains(event.target)) { const rect = menu.trigger.getBoundingClientRect(); if (Math.abs(rect.top - menu.anchor.top) > 1 || Math.abs(rect.left - menu.anchor.left) > 1) closeMenu(); } }, true);
+  const backup = $('backup-menu');
+  const backupPanel = backup.querySelector('.backup-panel');
+  let backupMotion = null;
+  function positionBackup() {
+    const edge = backup.getBoundingClientRect().right;
+    const right = Math.min(innerWidth - 12, Math.max(backupPanel.offsetWidth + 12, edge));
+    backupPanel.style.right = (edge - right) + 'px';
+  }
+  window.addEventListener('resize', () => { if (backup.open) positionBackup(); });
+  function toggleBackup() {
+    if (backupMotion?.state === 'closing' || !backup.open) {
+      backup.open = true; positionBackup();
+      if (!backupMotion) {
+        backupPanel.style.transformOrigin = 'top right';
+        backupMotion = surface(backupPanel, [
+          {opacity: 0, transform: 'translateY(-6px) scale(.985)', clipPath: 'inset(0 0 10% 0 round 16px)'},
+          {opacity: 1, transform: 'translateY(0) scale(1)', clipPath: 'inset(0 round 16px)'}
+        ], 300);
+      }
+      backupPanel.inert = false; backupPanel.removeAttribute('aria-hidden');
+      const record = backupMotion;
+      drive(record, true, () => { record.state = 'open'; backupPanel.dataset.motion = 'open'; });
+    } else closeBackup();
+  }
+  function closeBackup(immediate = false) {
+    if (!backup.open || (!immediate && backupMotion?.state === 'closing')) return;
+    if (!backupMotion) { backup.open = false; return; }
+    const record = backupMotion;
+    const returnFocus = backupPanel.contains(document.activeElement);
+    backupPanel.inert = true; backupPanel.setAttribute('aria-hidden', 'true');
+    if (returnFocus) backup.querySelector('summary').focus({preventScroll: true});
+    const finish = () => {
+      backup.open = false;
+      for (const animation of record.animations) animation.cancel();
+      delete backupPanel.dataset.motion;
+      backupPanel.inert = false; backupPanel.removeAttribute('aria-hidden');
+      backupMotion = null;
+    };
+    if (immediate) { ++record.revision; finish(); }
+    else drive(record, false, finish);
+  }
+  // Direct native closure (including a restored copy) must release old timelines.
+  backup.addEventListener('toggle', () => {
+    if (!backup.open && backupMotion) {
+      ++backupMotion.revision;
+      for (const animation of backupMotion.animations) animation.cancel();
+      backupMotion = null; delete backupPanel.dataset.motion;
+      backupPanel.inert = false; backupPanel.removeAttribute('aria-hidden');
+    }
+  });
   const dialogs = new WeakMap();
   const panelAnimations = new Map();
   const panels = Array.from(document.querySelectorAll('[data-settings-panel]'));
@@ -222,19 +272,19 @@
     drive(record, false, () => destroyDialog(dialog, record));
   }
   function openDialog(dialog) {
-    closeMenu(false, true);
+    closeMenu(false, true); closeBackup(true);
     let record = dialogs.get(dialog);
     if (dialog.open && record?.state !== 'closing') return;
     if (!record) {
       const scrim = document.createElement('div'); scrim.className = 'modal-scrim'; scrim.dataset.uiTransient = 'scrim'; scrim.setAttribute('aria-hidden', 'true'); document.body.append(scrim);
       dialog.showModal();
-      const backdrop = reducedMotion.matches ? [] : [scrim.animate([{opacity: 0, backdropFilter: 'blur(0px)'}, {opacity: 1, backdropFilter: 'blur(7px)'}], {duration: 380, easing: ease, fill: 'both'})];
+      const backdrop = reducedMotion.matches ? [] : [scrim.animate([{opacity: 0}, {opacity: 1}], {duration: 380, easing: ease, fill: 'both'})];
       if (dialog.id === 'settings-dialog' && !reducedMotion.matches) backdrop.push(dialog.querySelector('.settings-content').animate([
         {opacity: 0, transform: 'translateY(5px)', offset: 0}, {opacity: 0, transform: 'translateY(5px)', offset: .16, easing: ease},
         {opacity: 1, transform: 'translateY(0)', offset: .88}, {opacity: 1, transform: 'translateY(0)', offset: 1}
       ], {duration: 380, easing: 'linear', fill: 'both'}));
       record = surface(dialog, [
-        {opacity: 0, transform: 'translateY(22px) scale(.94)'},
+        {opacity: 0, transform: 'translateY(16px) scale(.985)'},
         {opacity: 1, transform: 'translateY(0) scale(1)'}
       ], 380, backdrop);
       record.scrim = scrim; dialogs.set(dialog, record);
@@ -286,5 +336,5 @@
   for (const button of document.querySelectorAll('[data-settings-page]')) button.addEventListener('click', () => openSettings(button.dataset.settingsPage));
   for (const choice of document.querySelectorAll('[data-sidebar-choice]')) choice.addEventListener('click', () => { $('sidebar-position').value = choice.dataset.sidebarChoice; $('sidebar-position').dispatchEvent(new Event('change', {bubbles: true})); });
   $('settings-button').addEventListener('click', () => openSettings());
-  window.HRUI = {icon, syncSelect, closeMenu, closeDialog, openDialog, openSettings, enterCards, saved};
+  window.HRUI = {icon, syncSelect, closeMenu, toggleBackup, closeBackup, closeDialog, openDialog, openSettings, enterCards, saved};
 })();

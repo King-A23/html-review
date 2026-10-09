@@ -1106,6 +1106,7 @@
     for(const selector of ['#pdf-search-bar','#pdf-scan-guide','#location-preview-bar','#result-review'])copy.querySelector(selector).hidden=true;
     for(const selector of ['#location-candidates','#location-original','#location-original-context','#location-opinion','#location-review-status','#location-preview-label','#location-feedback','#result-review-position','#result-review-summary'])copy.querySelector(selector).replaceChildren();
     copy.querySelector('#backup-menu').removeAttribute('open');
+    copy.querySelector('.backup-panel').removeAttribute('aria-hidden');
     copy.querySelector('#pdf-controls').hidden=true; copy.querySelector('#pdf-cancel-search').hidden=true;
     copy.querySelector('#preview-width').closest('.select-field')?.removeAttribute('hidden');
     copy.querySelector('#pdf-page-number').value='1'; copy.querySelector('#pdf-page-number').setAttribute('value','1'); copy.querySelector('#pdf-page-number').removeAttribute('max');
@@ -1158,7 +1159,7 @@
     setTimeout(() => URL.revokeObjectURL(url), 30000);
   }
   function finishDownload(format, message) {
-    $('backup-menu').open=false;
+    window.HRUI.closeBackup();
     dirty = false; lastExportFormat = format; updateSaveState(); note(message);
     renderResultReview(); queueAutosave();
   }
@@ -1287,6 +1288,9 @@
       draftTargetChanged = Boolean(draft.targetChanged); dirty = Boolean(record.dirty); lastExportFormat = record.lastExportFormat;
       for (const button of document.querySelectorAll('[data-mode]')) button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
       document.querySelector('.mode-tabs').style.setProperty('--mode-index', (isDocx(data) ? ['browse','text','element','whole'] : ['browse','text','element','page','whole']).indexOf(mode));
+      // Activation starts in browse mode. The iframe may become ready before
+      // the saved draft is restored, so synchronize both sides once more.
+      send('set-mode', {mode: mode === 'whole' ? 'browse' : mode});
       renderPageControls(); updateEditor(); updateSaveState(); renderAnnotations();
       cachedSession = record; autosavePhase = 'saved'; autosaveStatus('本机已保存 · 已恢复工作区与草稿');
       try { sessionStorage.setItem(resumeKey, record.data.source.sha256); } catch (_) {}
@@ -1411,9 +1415,9 @@
   function shortcut(action) {
     if (action === 'escape' && busy) { if (!cancelPicker()) adapters.cancel(); return; }
     if (action === 'escape' && window.HRUI.closeMenu(true)) return;
-    if(action==='escape' && $('backup-menu').open){$('backup-menu').open=false;return;}
     const dialog = document.querySelector('dialog[open]');
     if (dialog) { if (action === 'escape') window.HRUI.closeDialog(dialog); return; }
+    if(action==='escape' && $('backup-menu').open){window.HRUI.closeBackup();return;}
     if (busy) return;
     if (action === 'help') { window.HRUI.openSettings('shortcuts'); return; }
     if (action === 'open') { openHTML(); return; }
@@ -1549,8 +1553,8 @@
   $('return-location-comparison').addEventListener('click',()=>{if(inspectionAnnotation())window.HRUI.openDialog($('location-dialog'));});
   $('reselect-location').addEventListener('click',()=>{const annotation=inspectionAnnotation();window.HRUI.closeDialog($('location-dialog'));$('location-preview-bar').hidden=true;locationInspection=null;if(annotation)reselect(annotation);});
   $('handoff-export-package').addEventListener('click',()=>run(async()=>{if(!data || draftDirty())return;const result=await window.HRHandoff.create(data);downloadBlob(result.blob,result.filename);rememberHandoff();$('copy-agent-status').textContent='交接包已下载。将 ZIP 附给 agent，让它读取包内任务说明。';}));
-  $('backup-menu').querySelector('summary').addEventListener('click',()=>{if(!$('backup-menu').open && $('export-format').value==='annotations'){$('export-format').value='html';updateExportFormat();}});
-  document.addEventListener('click',event=>{if(!$('backup-menu').contains(event.target) && !event.target.closest('.select-popover'))$('backup-menu').open=false;});
+  $('backup-menu').querySelector('summary').addEventListener('click',event=>{event.preventDefault();if(!$('backup-menu').open && $('export-format').value==='annotations'){$('export-format').value='html';updateExportFormat();}window.HRUI.toggleBackup();});
+  document.addEventListener('click',event=>{if(!$('backup-menu').contains(event.target) && !event.target.closest('.select-popover'))window.HRUI.closeBackup();});
   $('pdf-prev-page').addEventListener('click',()=>window.HRPdf.goToPage(Math.max(1,Number($('pdf-page-number').value)-1)));
   $('pdf-next-page').addEventListener('click',()=>window.HRPdf.goToPage(Math.min(Number($('pdf-page-number').max)||1,Number($('pdf-page-number').value)+1)));
   $('pdf-page-number').addEventListener('change',()=>window.HRPdf.goToPage(Number($('pdf-page-number').value)));

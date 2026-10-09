@@ -15,6 +15,21 @@ try {
  const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true}); page.on('pageerror',e=>errors.push(e.message));
  await page.goto(pathToFileURL(path.join(root,'index.html')).href); await page.waitForFunction(()=>!document.querySelector('#open-button').disabled);
  await page.locator('#file-input').setInputFiles(path.join(root,'examples/pages.html')); await page.waitForFunction(()=>!document.querySelector('#open-button').disabled); await page.locator('#preview-frame').waitFor({state:'visible'});
+ await ensureBackup(page);
+ const backupReverse=await page.evaluate(()=>{
+  const panel=document.querySelector('.backup-panel');
+  for(const animation of panel.getAnimations()){animation.pause();animation.currentTime=150;}
+  const before=getComputedStyle(panel).transform;
+  window.HRUI.closeBackup(); const closing=getComputedStyle(panel).transform;
+  window.HRUI.toggleBackup(); const reopening=getComputedStyle(panel).transform;
+  return {before,closing,reopening,open:document.querySelector('#backup-menu').open,inert:panel.inert};
+ });
+ assert.equal(backupReverse.before,backupReverse.closing); assert.equal(backupReverse.closing,backupReverse.reopening); assert(backupReverse.open); assert.equal(backupReverse.inert,false);
+ await page.waitForFunction(()=>document.querySelector('.backup-panel').dataset.motion==='open');
+ await page.locator('#export-format-trigger').focus(); await page.keyboard.press('Escape');
+ await page.waitForFunction(()=>!document.querySelector('#backup-menu').open);
+ assert(await page.locator('#backup-menu summary').evaluate(e=>e===document.activeElement),'closing a disclosure returns focus to its summary');
+ console.log('PASS backup reversal, keyboard dismissal and focus restoration');
  await ensureBackup(page); await page.locator('#export-format-trigger').click();
  const frames=[];
  for(const time of [35,120,300]) {
@@ -67,7 +82,7 @@ try {
  const fullPending=page.waitForEvent('download'); await ensureBackup(page); await page.locator('#download-button').click(); const full=await fullPending; const fullPath=path.join(output,'motion-export.review.html'); await full.saveAs(fullPath);
  const source=await readFile(fullPath,'utf8'); assert(!/<[^>]+data-ui-transient=/.test(source)); assert(!/<[^>]+data-motion=/.test(source));
  await page.goto(pathToFileURL(fullPath).href); await page.waitForFunction(()=>!document.querySelector('#open-button').disabled); assert.equal(await page.locator('.annotation-card').count(),2); await page.locator('#settings-button').click(); await page.keyboard.press('Escape'); await page.locator('#settings-dialog').waitFor({state:'hidden'});
- await page.emulateMedia({reducedMotion:'reduce'}); await ensureBackup(page); await page.locator('#export-format-trigger').click(); assert.equal(await page.locator('.select-popover').evaluate(e=>e.getAnimations({subtree:true}).length),0); await page.keyboard.press('Escape'); assert.equal(await page.locator('.select-popover').count(),0);
+ await page.emulateMedia({reducedMotion:'reduce'}); await ensureBackup(page); assert.equal(await page.locator('.backup-panel').evaluate(e=>e.getAnimations().length),0); await page.locator('#export-format-trigger').click(); assert.equal(await page.locator('.select-popover').evaluate(e=>e.getAnimations({subtree:true}).length),0); await page.keyboard.press('Escape'); assert.equal(await page.locator('.select-popover').count(),0);
  await page.locator('#settings-button').click(); assert.equal(await page.locator('#settings-dialog').evaluate(e=>e.getAnimations({subtree:true}).length),0); await page.keyboard.press('Escape'); assert.equal(await page.locator('.modal-scrim').count(),0);
  assert.deepEqual(errors,[]); console.log('PASS save feedback, transient-free export/reopen and reduced motion');
 } finally {if(browser)await browser.close();console.log('PROCESS_CLEANUP_COMPLETE');}

@@ -6,6 +6,7 @@ import path from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const output = path.join(root, 'test-results'); await mkdir(output, {recursive:true});
+const designOutput = path.join(root, 'output/playwright/design'); await mkdir(designOutput, {recursive:true});
 let modulePath = process.env.PLAYWRIGHT_MODULE_PATH;
 if (modulePath && (await stat(modulePath)).isDirectory()) modulePath = path.join(modulePath,'index.mjs');
 const {chromium} = await import(modulePath ? pathToFileURL(modulePath).href : 'playwright');
@@ -26,27 +27,44 @@ try {
  {
  const {context,page}=await fresh();
  try {
+  await page.locator('#welcome').evaluate(async node=>{await Promise.all(node.getAnimations({subtree:true}).map(animation=>animation.finished.catch(()=>{})));});
+  // The opening action must stay discoverable, including a short laptop window.
+  for (const [width,height] of [[1440,900],[1280,720],[900,900],[760,900],[600,900],[390,844],[320,740]]) {
+   await page.setViewportSize({width,height});
+   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'opening view has no horizontal overflow at '+width);
+   const action=await page.locator('#welcome-open').boundingBox();
+   assert(action && action.y>=0 && action.y+action.height<=height,'open action is in the first viewport at '+width);
+   await page.waitForTimeout(150);
+   await page.screenshot({animations:'disabled',path:path.join(designOutput,'welcome-'+width+'.png'),fullPage:true});
+  }
+  await page.setViewportSize({width:1440,height:1000});
   assert.equal(await page.locator('.save-key-hint').textContent(), process.platform === 'darwin' ? '⌘ ↵' : 'Ctrl ↵');
   assert.equal(await page.locator('.welcome-shortcut kbd').first().textContent(), process.platform === 'darwin' ? '⌘' : 'Ctrl');
   assert.equal(await page.locator('#export-format-trigger').isVisible(),false,'Export controls appear only after opening a document');
   await page.locator('#file-input').setInputFiles(path.join(root,'examples/pages.html')); await page.locator('#preview-frame').waitFor({state:'visible'}); await page.waitForFunction(()=>!document.querySelector('#open-button').disabled);
+  await page.screenshot({path:path.join(designOutput,'workspace.png')});
   await ensureBackup(page); await page.locator('#export-format-trigger').focus(); await page.keyboard.press('ArrowDown'); await page.keyboard.press('End'); await page.keyboard.press('Enter');
   assert.equal(await page.locator('#export-format').inputValue(),'annotations'); assert.equal(await page.locator('#export-format-trigger').getAttribute('aria-expanded'),'false'); assert.equal(await page.locator('#export-format-trigger').evaluate(e=>e===document.activeElement),true);
   await ensureBackup(page); await page.locator('#export-format-trigger').click(); await page.keyboard.press('Escape'); await page.locator('.select-popover').waitFor({state:'detached'}); assert.equal(await page.locator('.select-popover').count(),0);
   await ensureBackup(page); await page.locator('#export-format-trigger').click(); await page.locator('.brand').click(); await page.locator('.select-popover').waitFor({state:'detached'}); assert.equal(await page.locator('.select-popover').count(),0);
   await page.locator('#settings-button').click(); await page.locator('[data-sidebar-choice="right"]').click();
   assert.equal(await page.locator('.workspace').getAttribute('data-sidebar-position'),'right'); assert.equal(await page.locator('[data-sidebar-choice="right"]').getAttribute('aria-pressed'),'true');
+  await page.waitForFunction(()=>document.querySelector('#settings-dialog').dataset.motion==='open');
+  await page.screenshot({path:path.join(designOutput,'settings.png')});
   await page.locator('#help-button').click(); assert(await page.locator('#help-dialog').isVisible()); await page.locator('#workspace-settings').waitFor({state:'hidden'});
   await page.locator('#shortcuts-button').click(); assert(await page.locator('#shortcuts-dialog').isVisible());
   assert(await page.locator('#settings-dialog').evaluate(e=>e.getAnimations().length>0));
   await page.locator('[data-close="settings-dialog"]').click(); await page.locator('#settings-dialog').waitFor({state:'hidden'}); assert.equal(await page.locator('#settings-button').evaluate(e=>e===document.activeElement),true);
   await page.locator('#settings-button').click(); await page.mouse.click(15,15); await page.locator('#settings-dialog').waitFor({state:'hidden'});
+  await save(page,'有批注时，所有主要操作在窄屏也应保持可用。');
+  await page.locator('#handoff-button').waitFor({state:'visible'});
   for (const width of [1440,1280,900,760,600,390,320]) {
    await page.setViewportSize({width,height:900}); assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal app overflow at '+width);
+   if(width<=390){await ensureBackup(page);const menuRect=await page.locator('.backup-panel').boundingBox();assert(menuRect.x>=0 && menuRect.x+menuRect.width<=width+1,'backup remains inside narrow screens');await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.querySelector('#backup-menu').open);await page.screenshot({path:path.join(designOutput,'review-'+width+'.png'),fullPage:true});}
    await page.locator('#settings-button').click(); const rect=await page.locator('#settings-dialog').boundingBox(); assert(rect.x>=0 && rect.x+rect.width<=width+1); await page.keyboard.press('Escape'); await page.locator('#settings-dialog').waitFor({state:'hidden'});
   }
   console.log('PASS custom menus, keyboard, settings navigation, animated close, focus and seven responsive widths');
- } finally {await context.close();}
+ } catch(error) {await page.screenshot({path:path.join(designOutput,'failure.png'),fullPage:true}); console.log(await page.evaluate(()=>({mode:document.querySelector('[data-mode][aria-pressed=true]')?.dataset.mode,target:document.querySelector('#target-text').textContent,status:document.querySelector('#status').textContent}))); throw error;} finally {await context.close();}
  }
  {
  const {context,page}=await fresh();
@@ -59,6 +77,7 @@ try {
   await page.locator('#comment-input').fill('第二页的未保存草稿');
   await page.locator('#autosave-state').filter({hasText:'本机已保存'}).waitFor();
   await page.reload(); await page.locator('#target-text').filter({hasText:'第 2 页'}).waitFor();
+  await page.locator('#preview-frame[aria-busy="false"]').waitFor({state:'visible'});
   assert.equal(await page.locator('[data-mode="page"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('#comment-input').inputValue(),'第二页的未保存草稿');
   await save(page,'第二页的三个步骤，请增加对应的图示。');
@@ -79,7 +98,7 @@ try {
   await page.locator('.annotation-card').first().locator('[data-action="locate"]').click(); await page.locator('.location-status.exact').waitFor();
   await page.screenshot({path:path.join(output,'ui-single-page.png')});
   console.log('PASS semantic page selection, cancellation, whole scope, JSON/full export, rehydrated controls and exact relocation');
- } finally {await context.close();}
+ } catch(error) {await page.screenshot({path:path.join(designOutput,'failure.png'),fullPage:true}); console.log(await page.evaluate(()=>({mode:document.querySelector('[data-mode][aria-pressed=true]')?.dataset.mode,target:document.querySelector('#target-text').textContent,status:document.querySelector('#status').textContent}))); throw error;} finally {await context.close();}
  }
  {
  const {context,page}=await fresh({reducedMotion:'reduce'});
@@ -93,7 +112,7 @@ try {
   await page.locator('#status').filter({hasText:'当前不可见'}).waitFor(); assert.match(await page.locator('#target-text').textContent(),/第 2 页/); await save(page,'只修改第二张幻灯片。');
   const stored=await data(page); assert.equal(stored.annotations[0].target.selector,'#slide-two'); assert.equal(stored.annotations[0].target.pageCount,2);
   console.log('PASS reduced motion, unpaginated content and nested hidden slides');
- } finally {await context.close();}
+ } catch(error) {await page.screenshot({path:path.join(designOutput,'failure.png'),fullPage:true}); console.log(await page.evaluate(()=>({mode:document.querySelector('[data-mode][aria-pressed=true]')?.dataset.mode,target:document.querySelector('#target-text').textContent,status:document.querySelector('#status').textContent}))); throw error;} finally {await context.close();}
  }
  assert.deepEqual(errors,[],'no application errors');
  await writeFile(path.join(output,'ui-report.json'),JSON.stringify({status:'passed',errors,checks:3},null,2));
