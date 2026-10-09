@@ -17,11 +17,10 @@
   let pageInventory = [];
   let renderedIds = new Set();
   const hints = {
-    browse: '可以正常阅读和点击页面。直接填写意见即可批注整个文件；也可切换到文字或元素模式。',
+    browse: '自由阅读。直接填写意见，默认针对整份文档；局部意见请先选择批注范围。',
     text: '在预览中拖选文字，再填写修改意见。可跨越相邻的行内标签。',
     element: '点击预览中的元素；使用「选父级容器」可指定卡片、区块等布局区域。',
-    page: '选择 HTML 中已有的幻灯片或打印页：点击页面，或从下方列表选择。',
-    whole: '针对整个文件提出修改意见，无需选择文字或元素。适合整体内容、结构和视觉风格。'
+    page: '选择 HTML 中已有的幻灯片或打印页：点击页面，或从下方列表选择。'
   };
   let data = null;
   let pendingLight = null;
@@ -179,14 +178,16 @@
     if (channel) adapters.command(command, extra, frame, channel);
   }
   function setMode(next) {
-    if (!['browse', 'text', 'element', 'page', 'whole'].includes(next)) return;
+    // Keep older callers and saved workspaces compatible with the merged mode.
+    if (next === 'whole') next = 'browse';
+    if (!['browse', 'text', 'element', 'page'].includes(next)) return;
     if (next === 'page' && isDocx(data)) return;
     autosavePaused = false;
     mode = next;
     if(next!=='text')$('pdf-scan-guide').hidden=true;
     for (const button of document.querySelectorAll('[data-mode]')) button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
-    send('set-mode', {mode: mode === 'whole' ? 'browse' : mode});
-    if (data && (mode === 'whole' || (mode === 'browse' && !editingId))) {
+    send('set-mode', {mode});
+    if (data && mode === 'browse' && !editingId) {
       send('clear-focus');
       setTarget(pageTarget());
     } else if (mode !== 'browse' && pendingTarget && (pendingTarget.kind !== (isPdf(data) && mode === 'element' ? 'region' : mode) || (mode === 'page' && pendingTarget.scope === 'whole-document'))) {
@@ -195,7 +196,7 @@
       $('target-preview').hidden = true;
       send('clear-focus');
     }
-    document.querySelector('.mode-tabs').style.setProperty('--mode-index', (isDocx(data) ? ['browse','text','element','whole'] : ['browse','text','element','page','whole']).indexOf(mode));
+    document.querySelector('.mode-tabs').style.setProperty('--mode-index', Array.from(document.querySelectorAll('.mode-tabs [data-mode]')).filter(button => !button.hidden).findIndex(button => button.dataset.mode === mode));
     renderPageControls();
     updateEditor();
   }
@@ -258,7 +259,7 @@
     $('comment-input').value = '';
     $('target-preview').hidden = true;
     send('clear-selection',afterSave && !isPdf(data) ? {throughSelectionSerial:latestSelectionSerial} : {});
-    if (data && ['browse', 'whole'].includes(mode)) setTarget(pageTarget());
+    if (data && mode === 'browse') setTarget(pageTarget());
     draftTargetChanged = false;
     updateEditor();
   }
@@ -1062,7 +1063,7 @@
     editingId = annotation.id;
     $('comment-input').value = annotation.comment;
     draftBaseline = annotation.comment;
-    setMode(annotation.kind === 'page' && wholeTarget(annotation.target) ? 'whole' : annotation.kind === 'region' ? 'element' : annotation.kind);
+    setMode(annotation.kind === 'page' && wholeTarget(annotation.target) ? 'browse' : annotation.kind === 'region' ? 'element' : annotation.kind);
     const restoredTarget = structuredClone(annotation.target);
     if (annotation.kind === 'page' && wholeTarget(restoredTarget)) restoredTarget.scope = 'whole-document';
     setTarget(restoredTarget);
@@ -1277,7 +1278,7 @@
       const savedFlow=record.workflow;
       if(savedFlow?.sourceHash===data.source.sha256)workflow={handoffStamp:typeof savedFlow.handoffStamp==='string'?savedFlow.handoffStamp.slice(0,120):'',documentRead:savedFlow.documentRead===true,documentChanged:savedFlow.documentChanged===true,resultsRead:savedFlow.resultsRead===true,needsDocument:savedFlow.needsDocument===true,documentReadAt:typeof savedFlow.documentReadAt==='string' && Number.isFinite(Date.parse(savedFlow.documentReadAt))?savedFlow.documentReadAt:''};
       const draft = record.draft;
-      mode = draft.mode === 'page' && draft.pendingTarget?.scope === 'whole-document' ? 'whole' : draft.mode; editingId = draft.editingId || null;
+      mode = draft.mode === 'whole' || (draft.mode === 'page' && draft.pendingTarget && wholeTarget(draft.pendingTarget)) ? 'browse' : draft.mode; editingId = draft.editingId || null;
       pendingTarget = draft.pendingTarget ? structuredClone(draft.pendingTarget) : null;
       $('comment-input').value = draft.comment; draftBaseline = draft.baseline;
       // An older async session snapshot must not overwrite the latest layout choice.
@@ -1287,10 +1288,10 @@
       if (pendingTarget) setTarget(pendingTarget); else $('target-preview').hidden = true;
       draftTargetChanged = Boolean(draft.targetChanged); dirty = Boolean(record.dirty); lastExportFormat = record.lastExportFormat;
       for (const button of document.querySelectorAll('[data-mode]')) button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
-      document.querySelector('.mode-tabs').style.setProperty('--mode-index', (isDocx(data) ? ['browse','text','element','whole'] : ['browse','text','element','page','whole']).indexOf(mode));
+      document.querySelector('.mode-tabs').style.setProperty('--mode-index', Array.from(document.querySelectorAll('.mode-tabs [data-mode]')).filter(button => !button.hidden).findIndex(button => button.dataset.mode === mode));
       // Activation starts in browse mode. The iframe may become ready before
       // the saved draft is restored, so synchronize both sides once more.
-      send('set-mode', {mode: mode === 'whole' ? 'browse' : mode});
+      send('set-mode', {mode});
       renderPageControls(); updateEditor(); updateSaveState(); renderAnnotations();
       cachedSession = record; autosavePhase = 'saved'; autosaveStatus('本机已保存 · 已恢复工作区与草稿');
       try { sessionStorage.setItem(resumeKey, record.data.source.sha256); } catch (_) {}
@@ -1480,7 +1481,7 @@
     } else if (message.event === 'shortcut') { if (typeof message.action === 'string') shortcut(message.action); }
     else if (message.event === 'file-drag') $('drop-overlay').hidden = false;
     else if (message.event === 'dropped-files') { if (Array.isArray(message.files) && message.files.every(file => file instanceof File)) droppedFiles(message.files); }
-    else if (message.event === 'ready') { previewReady = true; (isPdf(data) ? pdfPreview : frame).setAttribute('aria-busy','false'); send('set-mode', {mode: mode === 'whole' ? 'browse' : mode}); updateEditor(false); startLocationReview(); }
+    else if (message.event === 'ready') { previewReady = true; (isPdf(data) ? pdfPreview : frame).setAttribute('aria-busy','false'); send('set-mode', {mode}); updateEditor(false); startLocationReview(); }
     else if (message.event === 'targets-checked') {
       if (!locationRequest || message.requestId !== locationRequest.id || !Array.isArray(message.items) || message.items.length !== locationRequest.items.length) return;
       const expected = new Map(locationRequest.items.map(item => [item.id,item]));

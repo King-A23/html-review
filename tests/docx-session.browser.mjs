@@ -62,7 +62,7 @@ try {
   const base=await createDocxFixture();const inserted=await createDocxFixture('inserted');const changed=await createDocxFixture('changed');
   await nativeWrite(page,'review.docx',base);await nativeWrite(page,'companion.xhtml',Buffer.from('<!doctype html><title>Companion</title><p>兼容 XHTML 文件</p>'));
   await page.locator('#open-button').click();await ready(page);await frame(page).locator('body').filter({hasText:'正文与定位'}).waitFor();
-  await page.locator('[data-mode=whole]').click();await page.locator('#comment-input').fill('完整文档的保存批注');await page.locator('#save-button').click();
+  await page.locator('[data-mode=browse]').click();await page.locator('#comment-input').fill('完整文档的保存批注');await page.locator('#save-button').click();
   const first=await exported(page,'annotations','first.review.json');const firstData=JSON.parse(await readFile(first,'utf8'));
   await page.locator('#comment-input').fill('原生重载保留草稿');await nativeWrite(page,'review.docx',inserted);
   await page.locator('#reload-preview').click();await ready(page);await frame(page).locator('body').filter({hasText:'Inserted paragraph'}).waitFor();

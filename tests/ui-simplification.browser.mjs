@@ -40,7 +40,7 @@ async function exportJSON(page, filename) {
 async function draftSnapshot(page) {
   return page.evaluate(() => ({comment:document.getElementById('comment-input').value,target:document.getElementById('target-text').textContent,selector:document.getElementById('target-selector').textContent,targetHidden:document.getElementById('target-preview').hidden,count:document.getElementById('annotation-count').textContent,saveDisabled:document.getElementById('save-button').disabled}));
 }
-async function saveWhole(page, text) { await page.locator('[data-mode=whole]').click(); await page.locator('#comment-input').fill(text); await page.locator('#save-button').click(); }
+async function saveWhole(page, text) { await page.locator('[data-mode=browse]').click(); await page.locator('#comment-input').fill(text); await page.locator('#save-button').click(); }
 async function importFeedback(page, annotations, states, filename) {
   const results = {format:'html-review-results',schemaVersion:1,batchId:randomUUID(),results:states.map(([index,status]) => ({id:annotations[index].id,revision:annotations[index].revision,annotationUpdatedAt:annotations[index].updatedAt,status,summary:'已核对修改结果',by:'agent',at:new Date().toISOString()}))};
   const output=path.join(temp,filename); await writeFile(output,JSON.stringify(results));
@@ -132,7 +132,7 @@ try {
   console.log('PASS handoff preserves export preferences, summarizes all task states, and handles unavailable clipboard');
 
   // Re-import results with a fresh batch while drafting, then use the unified next-step chooser.
-  review=await exportJSON(page,'next.json'); await page.locator('[data-mode=whole]').click(); await page.locator('#comment-input').fill('读取修改后仍保留的草稿');
+  review=await exportJSON(page,'next.json'); await page.locator('[data-mode=browse]').click(); await page.locator('#comment-input').fill('读取修改后仍保留的草稿');
   await importFeedback(page,review.annotations,[[3,'open']],'next-feedback.json');
   const beforeReload=await draftSnapshot(page); const reloadChooser=page.waitForEvent('filechooser');
   await page.locator('#result-review-reload').click(); await (await reloadChooser).setFiles(source); await ready(page);

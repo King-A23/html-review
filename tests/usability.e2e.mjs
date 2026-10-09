@@ -231,7 +231,7 @@ try {
       await frame.locator('#holding-b').click();
       await saveAnnotation(page, '表格中的现金流验证状态需要进一步解释。');
 
-      await page.getByText('整体', {exact: true}).first().click();
+      await page.locator('[data-mode="browse"]').click();
       await saveAnnotation(page, '全页的风险提示应始终在主要结论附近可见。');
       assert.equal(await annotationCount(page), 9);
       const cards = await page.locator('.annotation-card').all();
@@ -393,7 +393,7 @@ try {
       const mainChooser = page.waitForEvent('filechooser');
       await page.locator('body').press('Control+o');
       await mainChooser;
-      for (const [key, mode] of [['v', 'browse'], ['t', 'text'], ['e', 'element'], ['p', 'page'], ['a', 'whole']]) {
+      for (const [key, mode] of [['v', 'browse'], ['t', 'text'], ['e', 'element'], ['p', 'page'], ['a', 'browse']]) {
         await page.locator('body').press(key);
         assert.equal(await page.locator(`[data-mode="${mode}"]`).getAttribute('aria-pressed'), 'true');
       }
@@ -407,7 +407,7 @@ try {
       await frame.locator('#topic-input').press('t');
       assert.equal((await frame.locator('#topic-input').inputValue()).length, before.length + 1);
       assert.match(await frame.locator('#topic-input').inputValue(), /现金流质量/);
-      assert.equal(await page.locator('[data-mode="whole"]').getAttribute('aria-pressed'), 'true');
+      assert.equal(await page.locator('[data-mode="browse"]').getAttribute('aria-pressed'), 'true');
       await frame.locator('#topic-input').press(nativeUndo);
       assert.equal(await frame.locator('#topic-input').inputValue(), before);
 
@@ -424,7 +424,7 @@ try {
       await editor.press('t');
       assert.equal((await editor.textContent()).length, 5);
       assert.match(await editor.textContent(), /edit/);
-      assert.equal(await page.locator('[data-mode="whole"]').getAttribute('aria-pressed'), 'true');
+      assert.equal(await page.locator('[data-mode="browse"]').getAttribute('aria-pressed'), 'true');
       await editor.press(nativeUndo);
       assert.equal(await editor.textContent(), 'edit');
 

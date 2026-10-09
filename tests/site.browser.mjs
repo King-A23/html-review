@@ -101,7 +101,7 @@ try {
     assert(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth), `Online workspace fits ${width}px`);
   }
   await page.screenshot({path:path.join(output,'site-online-workspace.png'),fullPage:true});
-  await page.locator('[data-mode="whole"]').click();
+  await page.locator('[data-mode="browse"]').click();
   const comment = '在线体验新增意见：统一章节标题与图表单位。';
   await page.locator('#comment-input').fill(comment); await page.locator('#save-button').click();
   assert.equal(await page.locator('#annotation-count').textContent(),'4');

@@ -48,7 +48,7 @@ try {
   await page.locator('[data-mode=element]').click(); await frame(page).locator('#obsolete').click();
   await page.locator('#target-text').filter({hasText: '这句话需要删除。'}).waitFor();
   await page.locator('#comment-input').fill('删除这句内容'); await page.locator('#save-button').click();
-  await page.locator('[data-mode=whole]').click();
+  await page.locator('[data-mode=browse]').click();
   await page.locator('#comment-input').fill('统一页面风格'); await page.locator('#save-button').click();
   const first = await exported(page, 'report.review.json');
   const [deleted, pending] = first.data.annotations;
@@ -97,7 +97,7 @@ try {
   assert.equal(await card(page, deleted.id).getAttribute('data-review-state'), 'updated');
   await page.locator('#reload-preview').click(); await ready(page);
   assert.equal(await card(page, deleted.id).getAttribute('data-review-state'), 'updated');
-  await page.locator('[data-mode=whole]').click();
+  await page.locator('[data-mode=browse]').click();
   await page.locator('#comment-input').fill('新增要求：补充来源说明'); await page.locator('#save-button').click();
   next = await exported(page, 'next-round.review.json');
   assert.deepEqual(next.data.annotations.map(annotation => annotation.taskState), ['updated', 'pending', 'new']);

@@ -28,5 +28,5 @@ test('editable fields, IME composition and unrelated modifier combinations retai
   assert.equal(classify('f', false, {metaKey: true}), null, 'find is a browser action');
   assert.equal(classify('Escape', true), 'escape');
   assert.equal(classify('?', false, {shiftKey: true}), 'help');
-  assert.deepEqual(['v', 't', 'e', 'p', 'a'].map(key => classify(key)), ['browse', 'text', 'element', 'page', 'whole']);
+  assert.deepEqual(['v', 't', 'e', 'p', 'a'].map(key => classify(key)), ['browse', 'text', 'element', 'page', 'browse']);
 });

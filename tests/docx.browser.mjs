@@ -119,7 +119,7 @@ try {
     getSelection().removeAllRanges(); getSelection().addRange(range); paragraph.dispatchEvent(new MouseEvent('mouseup', {bubbles:true}));
   });
   await page.locator('#target-text').filter({hasText:'中英混排'}).waitFor(); await save(page, '调整这一段的文字');
-  await page.locator('[data-mode=whole]').click(); await save(page, '统一全文风格');
+  await page.locator('[data-mode=browse]').click(); await save(page, '统一全文风格');
   const first = await annotations(page);
   assert.equal(first.data.schemaVersion, 2); assert.equal(first.data.source.type, 'docx');
   assert.equal(first.data.annotations.length, 3);

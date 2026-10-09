@@ -68,8 +68,8 @@ try{
   await selectText(page,deleted);await save(page,'删除原文意见');
   await selectText(page,duplicate,1);await save(page,'第二处重复意见');
   await selectText(page,unique);await save(page,'移动原文意见');
-  await page.locator('[data-mode=whole]').click();await save(page,'整体反馈');
-  for(let i=0;i<10;i++){await page.locator('[data-mode=whole]').click();await save(page,`额外整体反馈 ${i}`);}
+  await page.locator('[data-mode=browse]').click();await save(page,'整体反馈');
+  for(let i=0;i<10;i++){await page.locator('[data-mode=browse]').click();await save(page,`额外整体反馈 ${i}`);}
   const original=await data(page);assert.equal(original.annotations.length,14);
   const complete=original.annotations[13];await card(page,complete.id).locator('[data-action=status]').click();
   const before=await data(page);

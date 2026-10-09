@@ -59,7 +59,7 @@ try {
   browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
   const page=await fresh(); const requests=[];page.on('request',r=>{if(/^https?:/.test(r.url()))requests.push(r.url());});
   await open(page,valid);await frame(page).locator('body').filter({hasText:'正文与定位'}).waitFor();
-  await page.locator('[data-mode=whole]').click();await page.locator('#comment-input').fill('保留已保存的批注');await page.locator('#save-button').click();
+  await page.locator('[data-mode=browse]').click();await page.locator('#comment-input').fill('保留已保存的批注');await page.locator('#save-button').click();
   const exportPath=await lightweight(page,'review.json');
   await page.locator('#comment-input').fill('保留未保存的草稿');const original=await frame(page).locator('body').textContent();
   for(const [name,bytes,error] of cases) {

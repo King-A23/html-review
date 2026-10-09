@@ -49,8 +49,8 @@ svg.icon{width:18px;height:18px;flex-shrink:0;vertical-align:middle;fill:none;st
 .guide-card [data-complete=true]{color:#607253}
 .guide-card [data-complete=true]:before{content:'✓';width:12px;color:#738a60}
 .editor-section{padding:23px 24px;border-bottom:1px solid var(--line)}
-.mode-tabs{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:5px;background:#eef0e9;border:1px solid #e8ebe1;border-radius:11px}
-.mode-indicator{position:absolute;top:5px;bottom:5px;left:5px;width:calc((100% - 18px)/5);background:#fffefc;border-radius:7px;box-shadow:0 2px 5px #353f2912;transform:translateX(calc(var(--mode-index,0) * (100% + 2px)));transition:transform .36s var(--ease);pointer-events:none}
+.mode-tabs{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:5px;background:#eef0e9;border:1px solid #e8ebe1;border-radius:11px}
+.mode-indicator{position:absolute;top:5px;bottom:5px;left:5px;width:calc((100% - 16px)/4);background:#fffefc;border-radius:7px;box-shadow:0 2px 5px #353f2912;transform:translateX(calc(var(--mode-index,0) * (100% + 2px)));transition:transform .36s var(--ease);pointer-events:none}
 .mode-tabs button{z-index:1;background:none;border:0;border-radius:7px;padding:8px 3px;box-shadow:none!important;font-size:11px;color:#8a917e;font-weight:500;transition:color .2s}
 .mode-tabs button[aria-pressed=true]{color:#37432f;font-weight:650}
 .mode-tabs button:hover:not(:disabled){background:transparent;color:#3f4c36}
@@ -390,8 +390,8 @@ kbd{color:#4d6040;font-size:12px}
 .annotation-feedback strong{font-weight:600}
 .annotation-feedback p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 
-.mode-tabs.is-docx{grid-template-columns:repeat(4,1fr)}
-.mode-tabs.is-docx .mode-indicator{width:calc((100% - 16px)/4)}
+.mode-tabs.is-docx{grid-template-columns:repeat(3,1fr)}
+.mode-tabs.is-docx .mode-indicator{width:calc((100% - 14px)/3)}
 
 /* Reveal the workflow when there is something to review. */
 .workspace:not(.has-document) .source-info,.workspace:not(.has-document) .editor-section,.workspace:not(.has-document) .annotations-section,.workspace:not(.has-document) .sidebar-footer{display:none}
@@ -509,7 +509,7 @@ button.primary:hover:not(:disabled){background:linear-gradient(135deg,#a95036,#8
 .source-info{padding:20px 22px;gap:11px}.source-icon{width:33px;height:38px;background:#f0f1e9;color:#6d7b68;border:1px solid #e8eadf;border-radius:8px}
 h1{font-size:14px}.source-copy .eyebrow{color:var(--text-secondary);font-size:10px}
 .editor-section{padding:21px 22px}.section-heading{margin-bottom:14px}h2{font-size:14px;letter-spacing:-.2px}
-.mode-tabs{padding:4px;gap:2px;background:#f0f1eb;border-color:#e9ebe2;border-radius:10px}.mode-indicator{top:4px;bottom:4px;left:4px;width:calc((100% - 16px)/5);border-radius:7px;box-shadow:0 1px 3px #263e3112,0 0 0 1px #263e3104}.mode-tabs.is-docx .mode-indicator{width:calc((100% - 14px)/4)}.mode-tabs button{min-height:33px;font-size:12px;color:#626e5d}.mode-tabs button[aria-pressed=true]{color:#344b3e}.mode-hint{min-height:36px;font-size:12px;line-height:1.7;color:var(--text-secondary);margin:12px 0 17px}
+.mode-tabs{padding:4px;gap:2px;background:#f0f1eb;border-color:#e9ebe2;border-radius:10px}.mode-indicator{top:4px;bottom:4px;left:4px;width:calc((100% - 14px)/4);border-radius:7px;box-shadow:0 1px 3px #263e3112,0 0 0 1px #263e3104}.mode-tabs.is-docx .mode-indicator{width:calc((100% - 12px)/3)}.mode-tabs button{min-height:33px;font-size:12px;color:#626e5d}.mode-tabs button[aria-pressed=true]{color:#344b3e}.mode-hint{min-height:36px;font-size:12px;line-height:1.7;color:var(--text-secondary);margin:12px 0 17px}
 .field-label{font-size:12px;color:#394437}.label-hint{font-size:10px;color:var(--text-tertiary)}
 textarea{background:#fdfdfa;border-color:#dfe2d7;border-radius:11px;font-size:13px;line-height:1.8;min-height:126px;padding:14px}textarea::placeholder{color:#69745e}textarea:focus{background:#fffefb;border-color:#a2b09b;box-shadow:0 0 0 3px #647b5110}
 .editor-actions button{font-size:12px;min-height:36px;padding:8px 14px}.save-key-hint{color:#65725a;font-size:10px}.muted{color:#737d6c}

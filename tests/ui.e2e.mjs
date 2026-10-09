@@ -83,7 +83,7 @@ try {
   await save(page,'第二页的三个步骤，请增加对应的图示。');
   await frame.locator('#page-read h2').click(); await page.locator('#target-text').filter({hasText:'第 1 页'}).waitFor();
   await page.locator('#comment-input').fill('只针对第一页的建议'); await page.locator('#clear-target').click(); assert.equal(await page.locator('#comment-input').inputValue(),'只针对第一页的建议'); assert(await page.locator('#save-button').isDisabled());
-  await page.locator('[data-mode="whole"]').click(); await save(page,'全篇统一标题与页码样式。');
+  await page.locator('[data-mode="browse"]').click(); await save(page,'全篇统一标题与页码样式。');
   let stored=await data(page); assert.equal(stored.annotations.length,2);
   const target=stored.annotations[0].target; assert.equal(target.scope,'page'); assert.equal(target.pageIndex,2); assert.equal(target.pageCount,3); assert.equal(target.selector,'#page-feedback'); assert.equal(target.tag,'section'); assert(target.textFingerprint); assert(target.domPath); assert.equal(stored.annotations[1].target.scope,'whole-document');
   await choose(page,'export-format',/单独批注/); const json=JSON.parse(await readFile(await download(page,'pages.review.json'),'utf8')); assert.deepEqual(json.annotations[0].target,target); assert.equal(json.source.base64,undefined);
@@ -114,6 +114,45 @@ try {
   console.log('PASS reduced motion, unpaginated content and nested hidden slides');
  } catch(error) {await page.screenshot({path:path.join(designOutput,'failure.png'),fullPage:true}); console.log(await page.evaluate(()=>({mode:document.querySelector('[data-mode][aria-pressed=true]')?.dataset.mode,target:document.querySelector('#target-text').textContent,status:document.querySelector('#status').textContent}))); throw error;} finally {await context.close();}
  }
+ {
+ const {context,page}=await fresh();
+ try {
+  await page.locator('#file-input').setInputFiles(path.join(root,'examples/pages.html'));
+  await page.locator('#preview-frame[aria-busy="false"]').waitFor({state:'visible'});
+  assert.deepEqual(await page.locator('.mode-tabs button:not([hidden])').evaluateAll(nodes=>nodes.map(node=>node.dataset.mode)),['browse','text','element','page']);
+  assert.equal(await page.locator('[data-mode="whole"]').count(),0,'whole feedback shares browse instead of adding a duplicate mode');
+  for(const legacyMode of ['whole','page']) {
+   await page.locator('[data-mode="browse"]').click();
+   const comment='旧版 '+legacyMode+' 整体意见草稿';
+   await page.locator('#comment-input').fill(comment);
+   await page.evaluate(async ({legacyMode,comment})=>{
+    const key='workspace:'+location.href.split('#')[0];
+    const deadline=Date.now()+5000;
+    while(Date.now()<deadline){
+     const record=await window.HRSession.load(key);
+     if(record?.draft.comment===comment && record.draft.mode==='browse'){
+      record.draft.mode=legacyMode;
+      await window.HRSession.save(key,record);return;
+     }
+     await new Promise(resolve=>setTimeout(resolve,30));
+    }
+    throw new Error('merged-mode draft was not saved');
+   },{legacyMode,comment});
+   await page.reload();
+   await page.locator('#preview-frame[aria-busy="false"]').waitFor({state:'visible'});
+   assert.equal(await page.locator('[data-mode="browse"]').getAttribute('aria-pressed'),'true');
+   assert.equal(await page.locator('#comment-input').inputValue(),comment);
+   await page.locator('#save-button').click();
+  }
+  const stored=await data(page);
+  assert.equal(stored.annotations.length,2);
+  for(const annotation of stored.annotations){assert.equal(annotation.kind,'page');assert.equal(annotation.target.scope,'whole-document');}
+  await page.locator('.annotation-card').first().locator('[data-action="edit"]').click();
+  assert.equal(await page.locator('[data-mode="browse"]').getAttribute('aria-pressed'),'true');
+  assert.equal(await page.locator('#draft-status').textContent(),'');
+  console.log('PASS merged browse/whole mode, legacy whole/page drafts and existing whole opinion editing');
+ } finally {await context.close();}
+ }
  assert.deepEqual(errors,[],'no application errors');
- await writeFile(path.join(output,'ui-report.json'),JSON.stringify({status:'passed',errors,checks:3},null,2));
+ await writeFile(path.join(output,'ui-report.json'),JSON.stringify({status:'passed',errors,checks:4},null,2));
 } finally {if(browser) await browser.close(); console.log('PROCESS_CLEANUP_COMPLETE');}

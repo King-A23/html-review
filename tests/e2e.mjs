@@ -127,7 +127,7 @@ try {
     await wholeFile.locator('#comment-input').fill('调整整个文件的说明顺序。');
     assert(await wholeFile.locator('#save-button').isDisabled());
     assert(await wholeFile.locator('#target-preview').isHidden());
-    await wholeFile.locator('[data-mode="whole"]').click();
+    await wholeFile.locator('[data-mode="browse"]').click();
     assert.equal(await wholeFile.locator('#comment-input').inputValue(), '调整整个文件的说明顺序。');
     await wholeFile.locator('#save-button').click();
     await waitCount(wholeFile, 3);
@@ -152,7 +152,7 @@ try {
     await wholeFile.goto(pathToFileURL(wholeCopy).href);
     await frameFor(wholeFile); await waitCount(wholeFile, 5);
     await wholeFile.locator('.annotation-card').first().locator('[data-action="edit"]').click();
-    assert.equal(await wholeFile.locator('[data-mode="whole"]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await wholeFile.locator('[data-mode="browse"]').getAttribute('aria-pressed'), 'true');
     assert.equal(await wholeFile.locator('#draft-status').textContent(), '');
     await wholeFile.locator('#comment-input').fill('整个文件统一术语，并合并重复章节。');
     await wholeFile.locator('#save-button').click();
@@ -317,7 +317,7 @@ try {
     await waitCount(page, 2);
   });
   await check('whole-page feedback records responsive viewport and layout instruction', async () => {
-    await page.locator('[data-mode="whole"]').click();
+    await page.locator('[data-mode="browse"]').click();
     await page.locator('#preview-width').selectOption('390');
     await saveNote(page, '手机宽度下缩小标题与说明之间的间距，卡片改为单列，正文保持易读。');
     await waitCount(page, 3);
@@ -379,7 +379,7 @@ try {
   const injection = '把字面量 </script><script>window.__reviewXss=1</script> 当作普通文字保留。';
   let second;
   await check('literal script-closing text survives export and reopening without execution', async () => {
-    await reopened.locator('[data-mode="whole"]').click();
+    await reopened.locator('[data-mode="browse"]').click();
     await saveNote(reopened, injection);
     await waitCount(reopened, 4);
     second = await download(reopened, 'demo.second.review.html');
@@ -447,7 +447,11 @@ try {
     await assets.locator('#file-input').setInputFiles(path.join(root, 'examples/with-assets/index.html'));
     await frameFor(assets);
     assert(await assets.locator('#warnings').isVisible());
+    // File-input handlers are async: wait for the replacement document, not
+    // the previous iframe's already-complete load state.
+    const bundledNavigation = assets.waitForEvent('framenavigated', {predicate: candidate => candidate.parentFrame() === assets.mainFrame()});
     await assets.locator('#folder-input').setInputFiles(path.join(root, 'examples/with-assets'));
+    await bundledNavigation;
     const frame = await frameFor(assets);
     await frame.locator('#landscape').waitFor();
     await frame.locator('#landscape').evaluate(image => image.decode());

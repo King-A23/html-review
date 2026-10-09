@@ -80,8 +80,8 @@ svg.icon{width:18px;height:18px;flex-shrink:0;vertical-align:middle;fill:none;st
 .guide-card [data-complete=true]{color:#607253}
 .guide-card [data-complete=true]:before{content:'✓';width:12px;color:#738a60}
 .editor-section{padding:23px 24px;border-bottom:1px solid var(--line)}
-.mode-tabs{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:5px;background:#eef0e9;border:1px solid #e8ebe1;border-radius:11px}
-.mode-indicator{position:absolute;top:5px;bottom:5px;left:5px;width:calc((100% - 18px)/5);background:#fffefc;border-radius:7px;box-shadow:0 2px 5px #353f2912;transform:translateX(calc(var(--mode-index,0) * (100% + 2px)));transition:transform .36s var(--ease);pointer-events:none}
+.mode-tabs{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:5px;background:#eef0e9;border:1px solid #e8ebe1;border-radius:11px}
+.mode-indicator{position:absolute;top:5px;bottom:5px;left:5px;width:calc((100% - 16px)/4);background:#fffefc;border-radius:7px;box-shadow:0 2px 5px #353f2912;transform:translateX(calc(var(--mode-index,0) * (100% + 2px)));transition:transform .36s var(--ease);pointer-events:none}
 .mode-tabs button{z-index:1;background:none;border:0;border-radius:7px;padding:8px 3px;box-shadow:none!important;font-size:11px;color:#8a917e;font-weight:500;transition:color .2s}
 .mode-tabs button[aria-pressed=true]{color:#37432f;font-weight:650}
 .mode-tabs button:hover:not(:disabled){background:transparent;color:#3f4c36}
@@ -421,8 +421,8 @@ kbd{color:#4d6040;font-size:12px}
 .annotation-feedback strong{font-weight:600}
 .annotation-feedback p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 
-.mode-tabs.is-docx{grid-template-columns:repeat(4,1fr)}
-.mode-tabs.is-docx .mode-indicator{width:calc((100% - 16px)/4)}
+.mode-tabs.is-docx{grid-template-columns:repeat(3,1fr)}
+.mode-tabs.is-docx .mode-indicator{width:calc((100% - 14px)/3)}
 
 /* Reveal the workflow when there is something to review. */
 .workspace:not(.has-document) .source-info,.workspace:not(.has-document) .editor-section,.workspace:not(.has-document) .annotations-section,.workspace:not(.has-document) .sidebar-footer{display:none}
@@ -540,7 +540,7 @@ button.primary:hover:not(:disabled){background:linear-gradient(135deg,#a95036,#8
 .source-info{padding:20px 22px;gap:11px}.source-icon{width:33px;height:38px;background:#f0f1e9;color:#6d7b68;border:1px solid #e8eadf;border-radius:8px}
 h1{font-size:14px}.source-copy .eyebrow{color:var(--text-secondary);font-size:10px}
 .editor-section{padding:21px 22px}.section-heading{margin-bottom:14px}h2{font-size:14px;letter-spacing:-.2px}
-.mode-tabs{padding:4px;gap:2px;background:#f0f1eb;border-color:#e9ebe2;border-radius:10px}.mode-indicator{top:4px;bottom:4px;left:4px;width:calc((100% - 16px)/5);border-radius:7px;box-shadow:0 1px 3px #263e3112,0 0 0 1px #263e3104}.mode-tabs.is-docx .mode-indicator{width:calc((100% - 14px)/4)}.mode-tabs button{min-height:33px;font-size:12px;color:#626e5d}.mode-tabs button[aria-pressed=true]{color:#344b3e}.mode-hint{min-height:36px;font-size:12px;line-height:1.7;color:var(--text-secondary);margin:12px 0 17px}
+.mode-tabs{padding:4px;gap:2px;background:#f0f1eb;border-color:#e9ebe2;border-radius:10px}.mode-indicator{top:4px;bottom:4px;left:4px;width:calc((100% - 14px)/4);border-radius:7px;box-shadow:0 1px 3px #263e3112,0 0 0 1px #263e3104}.mode-tabs.is-docx .mode-indicator{width:calc((100% - 12px)/3)}.mode-tabs button{min-height:33px;font-size:12px;color:#626e5d}.mode-tabs button[aria-pressed=true]{color:#344b3e}.mode-hint{min-height:36px;font-size:12px;line-height:1.7;color:var(--text-secondary);margin:12px 0 17px}
 .field-label{font-size:12px;color:#394437}.label-hint{font-size:10px;color:var(--text-tertiary)}
 textarea{background:#fdfdfa;border-color:#dfe2d7;border-radius:11px;font-size:13px;line-height:1.8;min-height:126px;padding:14px}textarea::placeholder{color:#69745e}textarea:focus{background:#fffefb;border-color:#a2b09b;box-shadow:0 0 0 3px #647b5110}
 .editor-actions button{font-size:12px;min-height:36px;padding:8px 14px}.save-key-hint{color:#65725a;font-size:10px}.muted{color:#737d6c}
@@ -797,7 +797,7 @@ dialog{background:#fffefa;border-color:#e1e3d8;border-radius:20px;box-shadow:0 3
       <section class="source-info"><div class="source-icon" data-icon="file" aria-hidden="true"></div><div class="source-copy"><span class="eyebrow">当前文档</span><h1 id="source-name">尚未打开页面</h1></div><label id="entry-label" class="field-label" hidden>文件夹中的文档<select id="entry-select"></select></label></section>
       <section class="editor-section">
         <div class="section-heading"><h2 id="editor-title">添加批注</h2><button id="cancel-edit" class="text-button" type="button" hidden>取消编辑</button></div>
-        <div class="mode-tabs" role="group" aria-label="批注模式"><span class="mode-indicator" aria-hidden="true"></span><button type="button" data-mode="browse" aria-pressed="true">浏览</button><button type="button" data-mode="text" aria-pressed="false">文字</button><button type="button" data-mode="element" aria-pressed="false">元素</button><button type="button" data-mode="page" aria-pressed="false">单页</button><button type="button" data-mode="whole" aria-pressed="false">整体</button></div>
+        <div class="mode-tabs" role="group" aria-label="批注模式"><span class="mode-indicator" aria-hidden="true"></span><button type="button" data-mode="browse" aria-pressed="true">浏览</button><button type="button" data-mode="text" aria-pressed="false">文字</button><button type="button" data-mode="element" aria-pressed="false">元素</button><button type="button" data-mode="page" aria-pressed="false">单页</button></div>
         <p id="mode-hint" class="mode-hint">先打开 HTML、DOCX 或 PDF，或体验示例。</p>
         <div id="page-controls" class="page-controls" hidden><label for="page-select">选择页面</label><select id="page-select" aria-label="选择分页区块"><option value="">等待页面载入</option></select><p id="page-description"></p></div>
         <div id="target-preview" class="target-preview" hidden><div class="target-caption"><span data-icon="crosshair" aria-hidden="true"></span><span id="target-kind" class="tag"></span></div><p id="target-text"></p><code id="target-selector"></code><div class="target-actions"><button id="parent-target" class="text-button" type="button" hidden>选父级容器</button><button id="clear-target" class="text-button" type="button" hidden>取消选择</button></div></div>
@@ -845,11 +845,11 @@ dialog{background:#fffefa;border-color:#e1e3d8;border-radius:20px;box-shadow:0 3
     <section id="help-dialog" class="settings-page" data-settings-panel="help" hidden><span class="eyebrow">GETTING STARTED</span><h2>把意见，说到点上。</h2><p class="settings-intro">工作区会按进度提示下一步，随时可以回来继续。</p>
       <ol class="help-steps"><li><span>01</span><div><h3>阅读，留下意见</h3><p>打开或拖入 HTML、DOCX 或 PDF。选择文字、图片等目标，填写并保存批注；也可以直接写整体意见。HTML 带本地图片、样式或脚本时，请导入文件夹。</p></div></li><li><span>02</span><div><h3>交给你使用的 agent</h3><p>点击「交给 agent」，复制任务并附上原文档，或下载交接包，把 ZIP 附给 agent。材料准备好后仍需你发送。「保存副本」用于备份和继续审阅。</p></div></li><li><span>03</span><div><h3>读取返回文件，检查修改</h3><p>点击「agent 已返回文件」。读取修改后的文档更新预览，导入处理记录 JSON 更新批注状态；两份文件先读入哪一份都可以。只有 JSON 时正文仍是旧的。读取文档后再「逐条复核」，原意见和完成记录会保留。</p></div></li></ol>
       <div class="help-callout"><span data-icon="history"></span><p>刷新恢复的是本机工作区。原文件被修改后，需要重新读取；顶部重载按钮也可读取最新原文件与资源，保留批注和草稿。首次可能需要选择原文件或文件夹。长期保留或跨设备使用，请保存完整副本。</p></div><button id="restart-guide" class="secondary-button" type="button">重新显示入门引导 <span data-icon="arrow-right"></span></button>
-      <details class="help-details"><summary>怎样选择批注范围？</summary><p>文字模式拖选原文；元素模式点击目标，也可向外选择父级。HTML 单页对应已有的幻灯片、打印页等分页区块，可点击或从列表挑选；识别 data-page、data-slide、print-page、slide 以及多个 page 区块，没有分页结构时用整体或元素。PDF 区域模式拖出矩形，单页对应实际页码；扫描页改用区域框选。DOCX 支持文字、元素和整体。取消选择时已填写的意见会保留。</p></details>
+      <details class="help-details"><summary>怎样选择批注范围？</summary><p>浏览模式可直接填写整份文档的意见。文字模式拖选原文；元素模式点击目标，也可向外选择父级。HTML 单页对应已有的幻灯片、打印页等分页区块，可点击或从列表挑选；识别 data-page、data-slide、print-page、slide 以及多个 page 区块，没有分页结构时用整体或元素。PDF 区域模式拖出矩形，单页对应实际页码；扫描页改用区域框选。DOCX 支持文字、元素和整体。取消选择时已填写的意见会保留。</p></details>
       <details class="help-details"><summary>恢复批注与复核位置</summary><p>完整 HTML 工作区副本可离线继续编辑，压缩副本需先解压。轻量批注不含原文档；打开 DOCX / PDF 轻量 JSON 后选择哈希匹配的原文件可恢复。HTML 轻量 JSON 需配合原 HTML 和资源交付。</p><p>已关联文件夹时，重载会同时读取原文件旁同名处理记录，也可单独导入。没有处理记录也可以检查新文档，完成状态保持不变。编辑已完成意见会重新进入待处理。</p><p>位置检查详情可以展开。遇到无法确认或多个候选时，核对对照再明确确认，或重新选择位置；原定位保留作记录。定位检查与逐条复核都不会自动标记完成。批注支持撤销重做。</p></details>
       <details class="help-details"><summary>支持范围与文件限制</summary><p>DOCX 连续内容预览不还原 Word 页码与原生排版，页眉页脚和复杂图形不保证呈现，Word 原生批注不转为任务。PDF 按原页预览，首版不做 OCR。工具不编辑原文档，查找、位置检查和文件读取可取消。</p><p>仅打开可信 HTML，页面脚本可运行；服务器接口、嵌套 iframe、ES 模块等可能无法完整重现。原始 HTML / DOCX / PDF 上限 20 MiB，副本上限 100 MiB；目录上限 50 MiB、500 个文件。DOCX 解压内容限 100 MiB、3000 项，转换超过 30 秒中止。存储不可用时请保存副本。</p><p>系统文件选择器无法打开时，可使用兼容方式。兼容方式重载时需要重新选择原文件。</p><div class="editor-actions"><button id="compatible-open" class="secondary-button" type="button">兼容打开文档</button><button id="compatible-folder" class="secondary-button" type="button">兼容导入文件夹</button><button id="compatible-reload" class="secondary-button" type="button" disabled>兼容重载当前文档</button></div></details>
     </section>
-    <section id="shortcuts-dialog" class="settings-page" data-settings-panel="shortcuts" hidden><span class="eyebrow">KEYBOARD</span><h2>让思路，保持流动。</h2><p class="settings-intro">主界面和页面预览内，均可使用这些快捷键。</p><div class="shortcut-group"><h3>文件与保存</h3><div class="shortcut-row"><span>打开文档</span><span><kbd data-mod-key>⌘</kbd><kbd>O</kbd></span></div><div class="shortcut-row"><span>下载当前格式</span><span><kbd data-mod-key>⌘</kbd><kbd>S</kbd></span></div><div class="shortcut-row"><span>保存或更新批注</span><span><kbd data-mod-key>⌘</kbd><kbd>↵</kbd></span></div></div><div class="shortcut-group"><h3>阅读与范围</h3><div class="shortcut-row"><span>浏览 / 文字 / 元素</span><span><kbd>V</kbd><kbd>T</kbd><kbd>E</kbd></span></div><div class="shortcut-row" data-docx-hide><span>单页</span><span><kbd>P</kbd></span></div><div class="shortcut-row"><span>整体</span><span><kbd>A</kbd></span></div><div class="shortcut-row"><span>关闭设置、取消选择或退出编辑</span><span><kbd>Esc</kbd></span></div></div><div class="shortcut-group"><h3>批注操作</h3><div class="shortcut-row"><span>撤销</span><span><kbd data-mod-key>⌘</kbd><kbd>Z</kbd></span></div><div class="shortcut-row"><span>重做</span><span><kbd data-mod-key>⌘</kbd><kbd>⇧</kbd><kbd>Z</kbd></span></div><div class="shortcut-row"><span>打开快捷键设置</span><span><kbd>?</kbd></span></div></div><p class="keyboard-note">输入框内保留原生输入、撤销、复制与查找。范围切换仅在输入框外生效；支持 Ctrl 与 ⌘。</p></section>
+    <section id="shortcuts-dialog" class="settings-page" data-settings-panel="shortcuts" hidden><span class="eyebrow">KEYBOARD</span><h2>让思路，保持流动。</h2><p class="settings-intro">主界面和页面预览内，均可使用这些快捷键。</p><div class="shortcut-group"><h3>文件与保存</h3><div class="shortcut-row"><span>打开文档</span><span><kbd data-mod-key>⌘</kbd><kbd>O</kbd></span></div><div class="shortcut-row"><span>下载当前格式</span><span><kbd data-mod-key>⌘</kbd><kbd>S</kbd></span></div><div class="shortcut-row"><span>保存或更新批注</span><span><kbd data-mod-key>⌘</kbd><kbd>↵</kbd></span></div></div><div class="shortcut-group"><h3>阅读与范围</h3><div class="shortcut-row"><span>浏览（可写整体意见） / 文字 / 元素</span><span><kbd>V</kbd><kbd>T</kbd><kbd>E</kbd></span></div><div class="shortcut-row" data-docx-hide><span>单页</span><span><kbd>P</kbd></span></div><div class="shortcut-row"><span>关闭设置、取消选择或退出编辑</span><span><kbd>Esc</kbd></span></div></div><div class="shortcut-group"><h3>批注操作</h3><div class="shortcut-row"><span>撤销</span><span><kbd data-mod-key>⌘</kbd><kbd>Z</kbd></span></div><div class="shortcut-row"><span>重做</span><span><kbd data-mod-key>⌘</kbd><kbd>⇧</kbd><kbd>Z</kbd></span></div><div class="shortcut-row"><span>打开快捷键设置</span><span><kbd>?</kbd></span></div></div><p class="keyboard-note">输入框内保留原生输入、撤销、复制与查找。范围切换仅在输入框外生效；支持 Ctrl 与 ⌘。</p></section>
   </div></dialog>
   <dialog id="agent-task-dialog" class="handoff-dialog" aria-labelledby="agent-task-title"><div class="dialog-heading"><div><span class="eyebrow">HANDOFF</span><h2 id="agent-task-title">交给你使用的 agent</h2></div><button type="button" class="icon-button" data-close="agent-task-dialog" aria-label="关闭修改任务"><span data-icon="close"></span></button></div><div class="dialog-body"><p id="handoff-summary" class="handoff-summary"></p><p class="handoff-source-line">当前文档：<strong id="handoff-source" class="handoff-source"></strong></p><p id="agent-task-help"></p><div class="handoff-choices"><section class="handoff-choice"><span class="eyebrow">复制后粘贴</span><h3>复制任务</h3><p>将任务粘贴到 agent 对话，并附上原文档。</p><button id="copy-agent-text" class="primary" type="button">复制修改任务</button></section><section class="handoff-choice"><span class="eyebrow">一次下载</span><h3>下载交接包</h3><p>原文档、批注和任务说明一起打包。HTML 的本地资源也会附上。</p><button id="handoff-export-package" class="primary" type="button">下载交接包 (.zip)</button></section></div><p id="copy-agent-status" role="status" aria-live="polite"></p><details id="task-details" class="help-details"><summary>查看任务全文 / 手动复制</summary><textarea id="agent-task-text" readonly rows="8" aria-label="agent 修改任务"></textarea></details><div class="handoff-return"><p>agent 返回文件后，在工作区点击「agent 已返回文件」，读取文档并导入处理记录。</p><button id="handoff-show-return" class="text-button" type="button">查看返回步骤</button></div><details class="help-details"><summary>只需要批注文件？</summary><p>不包含原文档，需与同一版本的原文档一起交付。</p><button id="handoff-export-json" class="text-button" type="button">下载单独批注 JSON</button></details></div></dialog>
   <dialog id="return-dialog" class="return-dialog" aria-labelledby="return-title"><div class="dialog-heading"><div><span class="eyebrow">继续这次审阅</span><h2 id="return-title">查看 agent 的修改</h2></div><button type="button" class="icon-button" data-close="return-dialog" aria-label="关闭返回步骤"><span data-icon="close"></span></button></div><div class="dialog-body"><p class="return-intro">请 agent 返回下面两份文件。它们分别更新正文和批注状态，先读入哪一份都可以。</p><section class="return-step"><span class="return-number">01</span><div><h3>修改后的文档</h3><p>读取后，预览正文才会更新。批注和草稿会保留。</p><p id="return-document-name" class="return-file"></p><p id="return-document-state" class="return-state" role="status"></p><button id="handoff-reload" class="primary" type="button">读取修改后的文档</button></div></section><section class="return-step"><span class="return-number">02</span><div><h3>处理记录 JSON</h3><p>记录哪些意见已完成、哪些仍待处理。它不会修改正文。</p><p id="return-results-name" class="return-file"></p><p id="return-results-state" class="return-state" role="status"></p><button id="handoff-import-results" class="quiet" type="button">导入处理记录 JSON</button></div></section><p id="return-help" class="return-help"></p></div><div class="editor-actions location-review-actions"><button id="return-review" class="primary" type="button" disabled>开始复核</button><button type="button" class="quiet" data-close="return-dialog">返回工作区</button></div></dialog>
@@ -4560,7 +4560,7 @@ window.HRShortcut = function HRShortcut(event, editable) {
   if (editable) return null;
   if (key === '?') return 'help';
   if (event.shiftKey) return null;
-  return {v: 'browse', t: 'text', e: 'element', p: 'page', a: 'whole'}[key] || null;
+  return {v: 'browse', t: 'text', e: 'element', p: 'page', a: 'browse'}[key] || null;
 };
 
 </script>
@@ -5604,11 +5604,10 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   let pageInventory = [];
   let renderedIds = new Set();
   const hints = {
-    browse: '可以正常阅读和点击页面。直接填写意见即可批注整个文件；也可切换到文字或元素模式。',
+    browse: '自由阅读。直接填写意见，默认针对整份文档；局部意见请先选择批注范围。',
     text: '在预览中拖选文字，再填写修改意见。可跨越相邻的行内标签。',
     element: '点击预览中的元素；使用「选父级容器」可指定卡片、区块等布局区域。',
-    page: '选择 HTML 中已有的幻灯片或打印页：点击页面，或从下方列表选择。',
-    whole: '针对整个文件提出修改意见，无需选择文字或元素。适合整体内容、结构和视觉风格。'
+    page: '选择 HTML 中已有的幻灯片或打印页：点击页面，或从下方列表选择。'
   };
   let data = null;
   let pendingLight = null;
@@ -5766,14 +5765,16 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     if (channel) adapters.command(command, extra, frame, channel);
   }
   function setMode(next) {
-    if (!['browse', 'text', 'element', 'page', 'whole'].includes(next)) return;
+    // Keep older callers and saved workspaces compatible with the merged mode.
+    if (next === 'whole') next = 'browse';
+    if (!['browse', 'text', 'element', 'page'].includes(next)) return;
     if (next === 'page' && isDocx(data)) return;
     autosavePaused = false;
     mode = next;
     if(next!=='text')$('pdf-scan-guide').hidden=true;
     for (const button of document.querySelectorAll('[data-mode]')) button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
-    send('set-mode', {mode: mode === 'whole' ? 'browse' : mode});
-    if (data && (mode === 'whole' || (mode === 'browse' && !editingId))) {
+    send('set-mode', {mode});
+    if (data && mode === 'browse' && !editingId) {
       send('clear-focus');
       setTarget(pageTarget());
     } else if (mode !== 'browse' && pendingTarget && (pendingTarget.kind !== (isPdf(data) && mode === 'element' ? 'region' : mode) || (mode === 'page' && pendingTarget.scope === 'whole-document'))) {
@@ -5782,7 +5783,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
       $('target-preview').hidden = true;
       send('clear-focus');
     }
-    document.querySelector('.mode-tabs').style.setProperty('--mode-index', (isDocx(data) ? ['browse','text','element','whole'] : ['browse','text','element','page','whole']).indexOf(mode));
+    document.querySelector('.mode-tabs').style.setProperty('--mode-index', Array.from(document.querySelectorAll('.mode-tabs [data-mode]')).filter(button => !button.hidden).findIndex(button => button.dataset.mode === mode));
     renderPageControls();
     updateEditor();
   }
@@ -5845,7 +5846,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     $('comment-input').value = '';
     $('target-preview').hidden = true;
     send('clear-selection',afterSave && !isPdf(data) ? {throughSelectionSerial:latestSelectionSerial} : {});
-    if (data && ['browse', 'whole'].includes(mode)) setTarget(pageTarget());
+    if (data && mode === 'browse') setTarget(pageTarget());
     draftTargetChanged = false;
     updateEditor();
   }
@@ -6649,7 +6650,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     editingId = annotation.id;
     $('comment-input').value = annotation.comment;
     draftBaseline = annotation.comment;
-    setMode(annotation.kind === 'page' && wholeTarget(annotation.target) ? 'whole' : annotation.kind === 'region' ? 'element' : annotation.kind);
+    setMode(annotation.kind === 'page' && wholeTarget(annotation.target) ? 'browse' : annotation.kind === 'region' ? 'element' : annotation.kind);
     const restoredTarget = structuredClone(annotation.target);
     if (annotation.kind === 'page' && wholeTarget(restoredTarget)) restoredTarget.scope = 'whole-document';
     setTarget(restoredTarget);
@@ -6864,7 +6865,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
       const savedFlow=record.workflow;
       if(savedFlow?.sourceHash===data.source.sha256)workflow={handoffStamp:typeof savedFlow.handoffStamp==='string'?savedFlow.handoffStamp.slice(0,120):'',documentRead:savedFlow.documentRead===true,documentChanged:savedFlow.documentChanged===true,resultsRead:savedFlow.resultsRead===true,needsDocument:savedFlow.needsDocument===true,documentReadAt:typeof savedFlow.documentReadAt==='string' && Number.isFinite(Date.parse(savedFlow.documentReadAt))?savedFlow.documentReadAt:''};
       const draft = record.draft;
-      mode = draft.mode === 'page' && draft.pendingTarget?.scope === 'whole-document' ? 'whole' : draft.mode; editingId = draft.editingId || null;
+      mode = draft.mode === 'whole' || (draft.mode === 'page' && draft.pendingTarget && wholeTarget(draft.pendingTarget)) ? 'browse' : draft.mode; editingId = draft.editingId || null;
       pendingTarget = draft.pendingTarget ? structuredClone(draft.pendingTarget) : null;
       $('comment-input').value = draft.comment; draftBaseline = draft.baseline;
       // An older async session snapshot must not overwrite the latest layout choice.
@@ -6874,10 +6875,10 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
       if (pendingTarget) setTarget(pendingTarget); else $('target-preview').hidden = true;
       draftTargetChanged = Boolean(draft.targetChanged); dirty = Boolean(record.dirty); lastExportFormat = record.lastExportFormat;
       for (const button of document.querySelectorAll('[data-mode]')) button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
-      document.querySelector('.mode-tabs').style.setProperty('--mode-index', (isDocx(data) ? ['browse','text','element','whole'] : ['browse','text','element','page','whole']).indexOf(mode));
+      document.querySelector('.mode-tabs').style.setProperty('--mode-index', Array.from(document.querySelectorAll('.mode-tabs [data-mode]')).filter(button => !button.hidden).findIndex(button => button.dataset.mode === mode));
       // Activation starts in browse mode. The iframe may become ready before
       // the saved draft is restored, so synchronize both sides once more.
-      send('set-mode', {mode: mode === 'whole' ? 'browse' : mode});
+      send('set-mode', {mode});
       renderPageControls(); updateEditor(); updateSaveState(); renderAnnotations();
       cachedSession = record; autosavePhase = 'saved'; autosaveStatus('本机已保存 · 已恢复工作区与草稿');
       try { sessionStorage.setItem(resumeKey, record.data.source.sha256); } catch (_) {}
@@ -7067,7 +7068,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     } else if (message.event === 'shortcut') { if (typeof message.action === 'string') shortcut(message.action); }
     else if (message.event === 'file-drag') $('drop-overlay').hidden = false;
     else if (message.event === 'dropped-files') { if (Array.isArray(message.files) && message.files.every(file => file instanceof File)) droppedFiles(message.files); }
-    else if (message.event === 'ready') { previewReady = true; (isPdf(data) ? pdfPreview : frame).setAttribute('aria-busy','false'); send('set-mode', {mode: mode === 'whole' ? 'browse' : mode}); updateEditor(false); startLocationReview(); }
+    else if (message.event === 'ready') { previewReady = true; (isPdf(data) ? pdfPreview : frame).setAttribute('aria-busy','false'); send('set-mode', {mode}); updateEditor(false); startLocationReview(); }
     else if (message.event === 'targets-checked') {
       if (!locationRequest || message.requestId !== locationRequest.id || !Array.isArray(message.items) || message.items.length !== locationRequest.items.length) return;
       const expected = new Map(locationRequest.items.map(item => [item.id,item]));
