@@ -10,7 +10,7 @@
     'file-plus': '<path d="M6 3h8l4 4v7M14 3v5h4M6 3v18h7M18 16v6M15 19h6"/>',
     'arrow-right': '<path d="M4 12h16m-6-6 6 6-6 6"/>',
     'arrow-up-right': '<path d="M6 18 18 6M6 6h12v12"/>',
-    'chevron-down': '<path d="m6 9 6 6 6-6"/>', check: '<path d="m5 12 4 4L19 6"/>', close: '<path d="m6 6 12 12M6 18 18 6"/>',
+    'chevron-up': '<path d="m6 15 6-6 6 6"/>', 'chevron-down': '<path d="m6 9 6 6 6-6"/>', check: '<path d="m5 12 4 4L19 6"/>', close: '<path d="m6 6 12 12M6 18 18 6"/>',
     crosshair: '<circle cx="12" cy="12" r="6"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>',
     layout: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>',
     shield: '<path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM8 12l3 3 5-6"/>',

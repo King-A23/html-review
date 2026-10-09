@@ -87,6 +87,15 @@ try{
   assert.equal(await page.locator('#target-text').textContent(),oldDraftTarget);
   for(const [index,status] of [[0,'missing'],[1,'ambiguous'],[2,'fallback'],[3,'exact']])await card(page,original.annotations[index].id).locator(`.location-status.${status}`).waitFor();
   assert.equal(await card(page,complete.id).locator('.location-status').count(),0);
+  // Clicking a compact uncertain opinion opens comparison without guessing or losing a draft.
+  const uncertain=card(page,original.annotations[1].id);
+  await uncertain.locator('[data-action=select]').click();await page.locator('#location-dialog').waitFor({state:'visible'});
+  assert.equal(await page.locator('#location-dialog-title').textContent(),'确认批注位置');
+  await page.waitForFunction(()=>!document.getElementById('location-review-status').textContent.includes('正在读取'));
+  if(await page.locator('.location-candidate').count()>1)assert(await page.locator('#confirm-location').isDisabled(), 'multiple candidates require explicit selection');
+  await page.keyboard.press('Escape');await page.locator('#location-dialog').waitFor({state:'hidden'});
+  assert.equal(await page.locator('#comment-input').inputValue(),'保留未保存草稿');assert.equal(await page.locator('#target-text').textContent(),oldDraftTarget);
+  assert.deepEqual((await data(page)).annotations,before.annotations);
   await mkdir(path.join(root,'output/playwright'),{recursive:true});await card(page,original.annotations[0].id).scrollIntoViewIfNeeded();await page.screenshot({path:path.join(root,`output/playwright/reload-review-${type}-before.png`),fullPage:true});
   const refreshed=await data(page);assert.notEqual(refreshed.source.sha256,before.source.sha256);assert.deepEqual(refreshed.annotations,before.annotations);
   await page.locator('#review-attention').click();assert.equal(await page.locator('#annotation-filter').inputValue(),'attention');assert.equal(await page.locator('.annotation-card').count(),3);

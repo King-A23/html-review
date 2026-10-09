@@ -1,3 +1,4 @@
+import {waitPreviewLayout} from './preview-layout.mjs';
 import {ensureBackup} from './backup-ui.mjs';
 import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
@@ -50,6 +51,7 @@ async function frameFor(page) {
     if (document.readyState === 'complete') resolve();
     else window.addEventListener('load', resolve, {once: true});
   }));
+  await waitPreviewLayout(page);
   return frame;
 }
 async function waitCount(page, count) {
@@ -211,7 +213,8 @@ try {
       assert.equal(await portable.locator('#target-kind').textContent(), '文字');
       await portable.locator('#sidebar-position').selectOption('right');
       await portable.setViewportSize({width: 900, height: 900});
-      assert.equal((await portable.locator('.sidebar').boundingBox()).width, 320);
+      assert.equal((await portable.locator('.sidebar').boundingBox()).width, 352, 'retain the preferred width while the document still has sufficient room');
+      assert((await portable.locator('.preview-section').boundingBox()).width >= 360, 'adaptive sidebar preserves usable document space');
       assert((await portable.locator('.sidebar').boundingBox()).x > (await portable.locator('.preview-section').boundingBox()).x);
       await portable.setViewportSize({width: 600, height: 900});
       assert((await portable.locator('.sidebar').boundingBox()).y >= (await portable.locator('.preview-section').boundingBox()).y + (await portable.locator('.preview-section').boundingBox()).height);
@@ -458,6 +461,7 @@ try {
     assert((await frame.locator('#landscape').evaluate(image => image.naturalWidth)) > 0);
     assert.equal(await frame.locator('body').evaluate(element => getComputedStyle(element).backgroundColor), 'rgb(246, 244, 235)');
     const before = await frame.locator('#save-status').textContent();
+    await waitPreviewLayout(assets);
     await frame.locator('#save-note').click();
     assert.notEqual(await frame.locator('#save-status').textContent(), before);
     await assets.locator('[data-mode="element"]').click();

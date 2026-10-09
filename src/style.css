@@ -592,3 +592,61 @@ dialog{background:#fffefa;border-color:#e1e3d8;border-radius:20px;box-shadow:0 3
 @media(max-width:760px){.workflow-card{padding:10px 12px}.workflow-copy>strong{font-size:12px}.workflow-card .result-review-actions button{min-height:34px;font-size:10px}.workflow-details>p{font-size:11px}.comment-scope{font-size:10px}.workflow-details .workflow-steps{gap:8px}.workflow-details .workflow-steps ol{flex-wrap:wrap;gap:10px}}
 @media(prefers-reduced-motion:reduce){.workflow-details-toggle .icon{transition:none}}
 .workflow-card[data-expanded=false]:is([data-stage=handoff],[data-stage=prepared],[data-stage=draft]) #workflow-primary{display:none}
+
+/* Adjustable reading space. Width follows the pointer without interpolation. */
+.sidebar-rail,.sidebar-resizer{display:none}
+.workspace.has-document{grid-template-columns:var(--sidebar-width) 8px minmax(0,1fr)}
+.workspace.has-document>.sidebar{grid-column:1;grid-row:1;min-width:0;border-right:0}
+.workspace.has-document>.preview-section{grid-column:3;grid-row:1;min-width:0}
+.workspace.has-document[data-sidebar-position=right]{grid-template-columns:minmax(0,1fr) 8px var(--sidebar-width)}
+.workspace.has-document[data-sidebar-position=right]>.sidebar{grid-column:3;border-left:0}
+.workspace.has-document[data-sidebar-position=right]>.preview-section{grid-column:1}
+.workspace.has-document>.sidebar-resizer{display:flex;grid-column:2;grid-row:1;align-items:center;justify-content:center;background:#f7f8f1;border-inline:1px solid #e4e8dc;cursor:col-resize;touch-action:none;outline-offset:-2px;z-index:2}
+.sidebar-resizer:focus-visible{outline:3px solid #8fa778;outline-offset:-2px}
+.sidebar-resizer>span{width:2px;height:30px;border-radius:3px;background:#cbd4c0;transition:height .2s var(--ease),background .18s}
+.sidebar-resizer:hover>span,.sidebar-resizer:focus-visible>span,.is-resizing>.sidebar-resizer>span{height:48px;background:#788e69}
+.workspace.is-resizing,.workspace.is-resizing *{cursor:col-resize!important;user-select:none!important}
+.workspace.is-resizing iframe{pointer-events:none}
+.workspace.has-document[data-sidebar-collapsed=true]{grid-template-columns:46px minmax(0,1fr)}
+.workspace.has-document[data-sidebar-collapsed=true]>.sidebar,.workspace.has-document[data-sidebar-collapsed=true]>.sidebar-resizer{display:none}
+.workspace.has-document[data-sidebar-collapsed=true]>.sidebar-rail{display:flex;grid-column:1;grid-row:1;align-items:center;flex-direction:column;gap:22px;padding:10px 5px;background:linear-gradient(#fffefa,#f5f7ef);border-right:1px solid var(--line)}
+.workspace.has-document[data-sidebar-collapsed=true]>.preview-section{grid-column:2}
+.workspace.has-document[data-sidebar-collapsed=true][data-sidebar-position=right]{grid-template-columns:minmax(0,1fr) 46px}
+.workspace.has-document[data-sidebar-collapsed=true][data-sidebar-position=right]>.sidebar-rail{grid-column:2;border-right:0;border-left:1px solid var(--line)}
+.workspace.has-document[data-sidebar-collapsed=true][data-sidebar-position=right]>.preview-section{grid-column:1}
+.sidebar-rail .icon-button,.preview-toolbar .sidebar-toggle{width:30px;height:30px;flex-shrink:0;color:#64785b;border-radius:7px}
+.rail-label{writing-mode:vertical-rl;display:flex;align-items:center;gap:12px;font-size:11px;color:#748268;letter-spacing:2px}
+.rail-label .count{writing-mode:horizontal-tb;letter-spacing:0;margin:0;font-size:10px}
+.preview-breadcrumb{flex:1;overflow:hidden}
+
+/* Compact summaries keep primary actions and uncertain locations visible. */
+.list-tools{justify-content:space-between;align-items:center;gap:12px}
+.annotation-navigation{display:flex;align-items:center;gap:3px;color:#6c7a61;font-size:10px;font-variant-numeric:tabular-nums}
+.annotation-navigation .icon-button{width:30px;height:30px}
+#annotation-position{min-width:39px;text-align:center}
+.annotation-card{padding:13px;overflow:hidden}
+.annotation-card.is-current{border-color:#98af87;box-shadow:0 0 0 2px #8ca87914;background:#fcfdf7}
+.annotation-card.active{border-color:#c9b28e;background:#fffbf4}
+.annotation-top{gap:7px;flex-wrap:wrap;justify-content:flex-start}
+.annotation-top-meta{margin-left:auto;gap:6px}
+.annotation-details-toggle{font-size:10px;min-height:30px;padding:5px 3px;color:#63745b}
+button.annotation-comment{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;width:100%;min-height:0;padding:0;margin:5px 0 9px;background:none;border:0;border-radius:3px;box-shadow:none;font-size:13px;font-weight:400;line-height:1.8;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink);cursor:pointer;transform:none}
+button.annotation-comment:hover:not(:disabled){background:none;color:#36523b;border:0;box-shadow:none;transform:none}
+button.annotation-comment:focus-visible{outline-offset:4px}
+.annotation-card:not([data-expanded=true]) .annotation-quote{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;max-height:none;overflow:hidden}
+.annotation-card:not([data-expanded=true]) .location-status.exact{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden}
+.annotation-card:not([data-expanded=true]) .annotation-feedback p{-webkit-line-clamp:2}
+.annotation-card:not([data-expanded=true])>.annotation-history{display:none}
+.annotation-card[data-expanded=true] button.annotation-comment{display:block;overflow:visible;-webkit-line-clamp:unset}
+.annotation-card[data-expanded=true] .annotation-quote{max-height:none}
+.annotation-card[data-expanded=true] .annotation-feedback p{display:block;overflow:visible;-webkit-line-clamp:unset}
+.annotation-actions{flex-wrap:wrap;gap:4px 12px;margin-top:9px}
+.annotation-actions button{min-height:30px;padding-block:5px}
+@media(max-width:760px){
+  .workspace.has-document>.sidebar{border-top:1px solid var(--line)}
+  .workspace.has-document>.sidebar-resizer,.workspace.has-document[data-sidebar-collapsed=true]>.sidebar-rail{display:none}
+  .preview-breadcrumb{max-width:none;flex:1 1 0}
+  #preview-label{max-width:100%}
+  .annotation-details-toggle,.annotation-actions button{min-height:36px}
+}
+@media(prefers-reduced-motion:reduce){.sidebar-resizer>span{transition:none}}

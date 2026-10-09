@@ -624,6 +624,64 @@ dialog{background:#fffefa;border-color:#e1e3d8;border-radius:20px;box-shadow:0 3
 @media(prefers-reduced-motion:reduce){.workflow-details-toggle .icon{transition:none}}
 .workflow-card[data-expanded=false]:is([data-stage=handoff],[data-stage=prepared],[data-stage=draft]) #workflow-primary{display:none}
 
+/* Adjustable reading space. Width follows the pointer without interpolation. */
+.sidebar-rail,.sidebar-resizer{display:none}
+.workspace.has-document{grid-template-columns:var(--sidebar-width) 8px minmax(0,1fr)}
+.workspace.has-document>.sidebar{grid-column:1;grid-row:1;min-width:0;border-right:0}
+.workspace.has-document>.preview-section{grid-column:3;grid-row:1;min-width:0}
+.workspace.has-document[data-sidebar-position=right]{grid-template-columns:minmax(0,1fr) 8px var(--sidebar-width)}
+.workspace.has-document[data-sidebar-position=right]>.sidebar{grid-column:3;border-left:0}
+.workspace.has-document[data-sidebar-position=right]>.preview-section{grid-column:1}
+.workspace.has-document>.sidebar-resizer{display:flex;grid-column:2;grid-row:1;align-items:center;justify-content:center;background:#f7f8f1;border-inline:1px solid #e4e8dc;cursor:col-resize;touch-action:none;outline-offset:-2px;z-index:2}
+.sidebar-resizer:focus-visible{outline:3px solid #8fa778;outline-offset:-2px}
+.sidebar-resizer>span{width:2px;height:30px;border-radius:3px;background:#cbd4c0;transition:height .2s var(--ease),background .18s}
+.sidebar-resizer:hover>span,.sidebar-resizer:focus-visible>span,.is-resizing>.sidebar-resizer>span{height:48px;background:#788e69}
+.workspace.is-resizing,.workspace.is-resizing *{cursor:col-resize!important;user-select:none!important}
+.workspace.is-resizing iframe{pointer-events:none}
+.workspace.has-document[data-sidebar-collapsed=true]{grid-template-columns:46px minmax(0,1fr)}
+.workspace.has-document[data-sidebar-collapsed=true]>.sidebar,.workspace.has-document[data-sidebar-collapsed=true]>.sidebar-resizer{display:none}
+.workspace.has-document[data-sidebar-collapsed=true]>.sidebar-rail{display:flex;grid-column:1;grid-row:1;align-items:center;flex-direction:column;gap:22px;padding:10px 5px;background:linear-gradient(#fffefa,#f5f7ef);border-right:1px solid var(--line)}
+.workspace.has-document[data-sidebar-collapsed=true]>.preview-section{grid-column:2}
+.workspace.has-document[data-sidebar-collapsed=true][data-sidebar-position=right]{grid-template-columns:minmax(0,1fr) 46px}
+.workspace.has-document[data-sidebar-collapsed=true][data-sidebar-position=right]>.sidebar-rail{grid-column:2;border-right:0;border-left:1px solid var(--line)}
+.workspace.has-document[data-sidebar-collapsed=true][data-sidebar-position=right]>.preview-section{grid-column:1}
+.sidebar-rail .icon-button,.preview-toolbar .sidebar-toggle{width:30px;height:30px;flex-shrink:0;color:#64785b;border-radius:7px}
+.rail-label{writing-mode:vertical-rl;display:flex;align-items:center;gap:12px;font-size:11px;color:#748268;letter-spacing:2px}
+.rail-label .count{writing-mode:horizontal-tb;letter-spacing:0;margin:0;font-size:10px}
+.preview-breadcrumb{flex:1;overflow:hidden}
+
+/* Compact summaries keep primary actions and uncertain locations visible. */
+.list-tools{justify-content:space-between;align-items:center;gap:12px}
+.annotation-navigation{display:flex;align-items:center;gap:3px;color:#6c7a61;font-size:10px;font-variant-numeric:tabular-nums}
+.annotation-navigation .icon-button{width:30px;height:30px}
+#annotation-position{min-width:39px;text-align:center}
+.annotation-card{padding:13px;overflow:hidden}
+.annotation-card.is-current{border-color:#98af87;box-shadow:0 0 0 2px #8ca87914;background:#fcfdf7}
+.annotation-card.active{border-color:#c9b28e;background:#fffbf4}
+.annotation-top{gap:7px;flex-wrap:wrap;justify-content:flex-start}
+.annotation-top-meta{margin-left:auto;gap:6px}
+.annotation-details-toggle{font-size:10px;min-height:30px;padding:5px 3px;color:#63745b}
+button.annotation-comment{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;width:100%;min-height:0;padding:0;margin:5px 0 9px;background:none;border:0;border-radius:3px;box-shadow:none;font-size:13px;font-weight:400;line-height:1.8;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink);cursor:pointer;transform:none}
+button.annotation-comment:hover:not(:disabled){background:none;color:#36523b;border:0;box-shadow:none;transform:none}
+button.annotation-comment:focus-visible{outline-offset:4px}
+.annotation-card:not([data-expanded=true]) .annotation-quote{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;max-height:none;overflow:hidden}
+.annotation-card:not([data-expanded=true]) .location-status.exact{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden}
+.annotation-card:not([data-expanded=true]) .annotation-feedback p{-webkit-line-clamp:2}
+.annotation-card:not([data-expanded=true])>.annotation-history{display:none}
+.annotation-card[data-expanded=true] button.annotation-comment{display:block;overflow:visible;-webkit-line-clamp:unset}
+.annotation-card[data-expanded=true] .annotation-quote{max-height:none}
+.annotation-card[data-expanded=true] .annotation-feedback p{display:block;overflow:visible;-webkit-line-clamp:unset}
+.annotation-actions{flex-wrap:wrap;gap:4px 12px;margin-top:9px}
+.annotation-actions button{min-height:30px;padding-block:5px}
+@media(max-width:760px){
+  .workspace.has-document>.sidebar{border-top:1px solid var(--line)}
+  .workspace.has-document>.sidebar-resizer,.workspace.has-document[data-sidebar-collapsed=true]>.sidebar-rail{display:none}
+  .preview-breadcrumb{max-width:none;flex:1 1 0}
+  #preview-label{max-width:100%}
+  .annotation-details-toggle,.annotation-actions button{min-height:36px}
+}
+@media(prefers-reduced-motion:reduce){.sidebar-resizer>span{transition:none}}
+
 /* PDF.js 6.4.299 text layer styles, Apache-2.0; see bundled licenses. */
 #pdf-preview .textLayer {
   color-scheme: only light;
@@ -820,7 +878,7 @@ dialog{background:#fffefa;border-color:#e1e3d8;border-radius:20px;box-shadow:0 3
   <button id="cancel-conversion" class="text-button" type="button" hidden>取消转换</button>
   <div id="pair-source" class="recovery-banner" hidden><span>轻量批注已读取，请选择配套原始 DOCX 或 PDF。</span><button id="pair-source-button" type="button">选择配套原文件</button><button id="pair-compatible" class="text-button" type="button" title="系统文件选择器无法打开时使用">兼容选择</button><button id="cancel-pair" class="text-button" type="button">取消恢复</button></div>
   <main class="workspace" data-sidebar-position="left">
-    <aside class="sidebar" aria-label="批注工作区">
+    <aside id="review-sidebar" class="sidebar" aria-label="批注工作区">
       <section class="source-info"><div class="source-icon" data-icon="file" aria-hidden="true"></div><div class="source-copy"><span class="eyebrow">当前文档</span><h1 id="source-name">尚未打开页面</h1></div><label id="entry-label" class="field-label" hidden>文件夹中的文档<select id="entry-select"></select></label></section>
       <section class="editor-section">
         <div class="section-heading"><h2 id="editor-title">添加批注</h2><button id="cancel-edit" class="text-button" type="button" hidden>取消编辑</button></div>
@@ -832,11 +890,13 @@ dialog{background:#fffefa;border-color:#e1e3d8;border-radius:20px;box-shadow:0 3
         <textarea id="comment-input" aria-describedby="comment-scope mode-hint" rows="4" maxlength="20000" placeholder="你希望这里如何改进？&#10;例如：缩短这段介绍，并保留核心结论。" disabled></textarea>
         <div class="editor-actions"><button id="save-button" class="primary" type="button" disabled>保存批注</button><span id="draft-status" class="muted"></span><span class="save-key-hint" aria-hidden="true">⌘ ↵</span></div>
       </section>
-      <section class="annotations-section"><div class="section-heading"><h2>批注 <span id="annotation-count" class="count">0</span></h2><button id="data-button" class="text-button" type="button" disabled>查看数据</button></div><div class="list-tools"><div class="history-controls"><button id="undo-button" class="icon-button" type="button" aria-label="撤销" title="撤销（Ctrl/⌘+Z，输入框外）" disabled><span data-icon="undo"></span></button><button id="redo-button" class="icon-button" type="button" aria-label="重做" title="重做（Ctrl/⌘+Shift+Z，输入框外）" disabled><span data-icon="redo"></span></button></div></div><div class="review-progress"><span id="review-progress" aria-live="polite">意见与处理记录</span><select id="annotation-filter" aria-label="筛选批注"><option value="all">全部记录</option><option value="open">待处理</option><option value="resolved">已完成</option><option value="attention">需确认位置</option><option value="new">新增 / 已更新</option></select></div><button id="import-results" class="text-button results-import" type="button" disabled>导入处理记录 JSON <span data-icon="file"></span></button><div id="annotation-list" class="annotation-list"><p class="empty-list">每一次改进，<br>从一条清晰的建议开始。</p></div></section>
+      <section class="annotations-section"><div class="section-heading"><h2>批注 <span id="annotation-count" class="count">0</span></h2><button id="data-button" class="text-button" type="button" disabled>查看数据</button></div><div class="list-tools"><div class="history-controls"><button id="undo-button" class="icon-button" type="button" aria-label="撤销" title="撤销（Ctrl/⌘+Z，输入框外）" disabled><span data-icon="undo"></span></button><button id="redo-button" class="icon-button" type="button" aria-label="重做" title="重做（Ctrl/⌘+Shift+Z，输入框外）" disabled><span data-icon="redo"></span></button></div><nav class="annotation-navigation" aria-label="逐条浏览批注"><button id="annotation-previous" class="icon-button" type="button" aria-label="上一条批注" title="上一条批注" disabled><span data-icon="chevron-up"></span></button><span id="annotation-position" aria-live="polite">— / 0</span><button id="annotation-next" class="icon-button" type="button" aria-label="下一条批注" title="下一条批注" disabled><span data-icon="chevron-down"></span></button></nav></div><div class="review-progress"><span id="review-progress" aria-live="polite">意见与处理记录</span><select id="annotation-filter" aria-label="筛选批注"><option value="all">全部记录</option><option value="open">待处理</option><option value="resolved">已完成</option><option value="attention">需确认位置</option><option value="new">新增 / 已更新</option></select></div><button id="import-results" class="text-button results-import" type="button" disabled>导入处理记录 JSON <span data-icon="file"></span></button><div id="annotation-list" class="annotation-list"><p class="empty-list">每一次改进，<br>从一条清晰的建议开始。</p></div></section>
       <footer class="sidebar-footer"><span id="save-state">下载副本，保留审阅结果</span><span id="autosave-state" role="status" aria-live="polite">自动恢复：等待打开文件</span><div class="recovery-tools"><button id="retry-recovery" class="text-button" type="button" hidden>重试本机保存</button><button id="clear-recovery" class="text-button" type="button" disabled>清除恢复记录</button></div><span class="privacy-dot"><span data-icon="shield"></span> 文件和草稿仅在本机处理</span></footer>
     </aside>
+    <div class="sidebar-rail" aria-label="批注栏已收起"><button id="sidebar-rail-toggle" class="icon-button" type="button" aria-label="展开批注栏" aria-controls="review-sidebar" aria-expanded="false"><span data-icon="layout"></span></button><span class="rail-label" aria-hidden="true">批注 <span id="sidebar-rail-count">0</span></span></div>
+    <div id="sidebar-resizer" class="sidebar-resizer" role="separator" tabindex="0" aria-orientation="vertical" aria-label="调整批注栏宽度" aria-controls="review-sidebar" aria-valuemin="300" aria-valuemax="560" aria-valuenow="352" title="拖动调整宽度 · 双击恢复默认 · 方向键微调"><span aria-hidden="true"></span></div>
     <section class="preview-section" aria-label="HTML 页面预览">
-      <div class="preview-toolbar"><div class="preview-breadcrumb"><span data-icon="layout" aria-hidden="true"></span><span id="preview-label">页面预览</span><span class="preview-live-dot" aria-hidden="true"></span></div><div class="preview-controls"><button id="document-nav-button" class="quiet" type="button" hidden disabled>目录与查找</button><select id="sidebar-position" aria-label="批注栏位置"><option value="left">左侧批注</option><option value="right">右侧批注</option></select><select id="preview-width" aria-label="预览视口"><option value="fluid">自适应</option><option value="390">手机 · 390px</option><option value="768">平板 · 768px</option><option value="1280">桌面 · 1280px</option></select><button id="reload-preview" class="icon-button" type="button" aria-label="重载页面" title="读取最新原文件与资源，保留批注和草稿" disabled><span data-icon="refresh"></span></button></div></div>
+      <div class="preview-toolbar"><button id="sidebar-toggle" class="icon-button sidebar-toggle" type="button" aria-label="收起批注栏" aria-controls="review-sidebar" aria-expanded="true" title="收起批注栏"><span data-icon="layout"></span></button><div class="preview-breadcrumb"><span data-icon="file" aria-hidden="true"></span><span id="preview-label">页面预览</span><span class="preview-live-dot" aria-hidden="true"></span></div><div class="preview-controls"><button id="document-nav-button" class="quiet" type="button" hidden disabled>目录与查找</button><select id="sidebar-position" aria-label="批注栏位置"><option value="left">左侧批注</option><option value="right">右侧批注</option></select><select id="preview-width" aria-label="预览视口"><option value="fluid">自适应</option><option value="390">手机 · 390px</option><option value="768">平板 · 768px</option><option value="1280">桌面 · 1280px</option></select><button id="reload-preview" class="icon-button" type="button" aria-label="重载页面" title="读取最新原文件与资源，保留批注和草稿" disabled><span data-icon="refresh"></span></button></div></div>
       <div id="warnings" class="warnings" hidden></div><div id="status" class="status" role="status" aria-live="polite" hidden></div>
       <section id="result-review" class="result-review workflow-card" aria-label="审阅进度与下一步" hidden>
         <div class="workflow-next"><div class="workflow-copy"><strong id="result-review-title">先读文档，再写下你的意见。</strong></div><div class="result-review-actions"><button id="workflow-primary" class="primary" type="button">写第一条意见</button><button id="result-review-reload" class="primary" type="button" hidden>读取修改后的文档</button><button id="result-review-start" class="primary" type="button" hidden>逐条复核</button><button id="workflow-return" class="quiet" type="button" hidden>agent 已返回文件</button><button id="review-attention" class="text-button" type="button" hidden>查看需确认的批注</button><button id="review-retry" class="text-button" type="button" hidden>重新检查位置</button><button id="workflow-details-toggle" class="quiet workflow-details-toggle" type="button" aria-expanded="false" aria-controls="workflow-details"><span>流程详情</span><span data-icon="chevron-down"></span></button></div></div>
@@ -871,10 +931,11 @@ dialog{background:#fffefa;border-color:#e1e3d8;border-radius:20px;box-shadow:0 3
   </main>
   <div id="drop-overlay" class="drop-overlay" hidden><div class="drop-card"><span data-icon="file-plus"></span><strong>把文档放在这里</strong><p>松开即可开始审阅 · 一次一个 HTML / DOCX / PDF 文件</p></div></div>
   <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title"><aside class="settings-nav"><div class="settings-brand"><span data-icon="settings"></span><h2 id="settings-title">设置</h2></div><span class="nav-eyebrow">你的工作空间</span><nav aria-label="设置分区"><button type="button" id="workspace-settings-button" data-settings-page="workspace" aria-current="page"><span data-icon="layout"></span>工作区</button><button type="button" id="help-button" data-settings-page="help"><span data-icon="book"></span>使用说明</button><button type="button" id="shortcuts-button" data-settings-page="shortcuts"><span data-icon="command"></span>快捷键</button></nav><div class="settings-local"><span class="local-dot"></span><span>本地优先<br><small>你的内容，始终由你掌握</small></span></div></aside><div class="settings-content"><div class="settings-topbar"><span id="settings-breadcrumb">设置 / 工作区</span><button type="button" class="icon-button" data-close="settings-dialog" aria-label="关闭设置"><span data-icon="close"></span></button></div>
-    <section id="workspace-settings" class="settings-page" data-settings-panel="workspace"><span class="eyebrow">WORKSPACE</span><h2>按你的习惯工作。</h2><p class="settings-intro">让工具适应你，从一个顺手的位置开始。</p><div class="setting-card"><div><h3>批注栏的位置</h3><p>左侧或右侧，你的意见都会保留。</p></div><div class="position-choice"><button type="button" data-sidebar-choice="left"><span data-icon="panel-left"></span>左侧</button><button type="button" data-sidebar-choice="right"><span data-icon="panel-right"></span>右侧</button></div></div><div class="settings-section-label">随时找得到的帮助</div><div class="settings-entry-grid"><button type="button" class="settings-entry" data-settings-page="help"><span data-icon="book"></span><strong>使用说明</strong><p>从打开文档，到交付修改意见。</p><span data-icon="arrow-up-right"></span></button><button type="button" class="settings-entry" data-settings-page="shortcuts"><span data-icon="command"></span><strong>快捷键</strong><p>让常用操作，少一点点击。</p><span data-icon="arrow-up-right"></span></button></div><div class="settings-note"><span data-icon="shield"></span><p>批注与草稿自动保存在本机。下载副本后，可在其他设备继续审阅。工具不会覆盖你的原文件。</p></div></section>
+    <section id="workspace-settings" class="settings-page" data-settings-panel="workspace"><span class="eyebrow">WORKSPACE</span><h2>按你的习惯工作。</h2><p class="settings-intro">让工具适应你，从一个顺手的位置开始。</p><div class="setting-card"><div><h3>批注栏的位置</h3><p>左侧或右侧，你的意见都会保留。拖动中间分隔线调整宽度，双击复位；预览左上角可收起批注栏。</p></div><div class="position-choice"><button type="button" data-sidebar-choice="left"><span data-icon="panel-left"></span>左侧</button><button type="button" data-sidebar-choice="right"><span data-icon="panel-right"></span>右侧</button></div></div><div class="settings-section-label">随时找得到的帮助</div><div class="settings-entry-grid"><button type="button" class="settings-entry" data-settings-page="help"><span data-icon="book"></span><strong>使用说明</strong><p>从打开文档，到交付修改意见。</p><span data-icon="arrow-up-right"></span></button><button type="button" class="settings-entry" data-settings-page="shortcuts"><span data-icon="command"></span><strong>快捷键</strong><p>让常用操作，少一点点击。</p><span data-icon="arrow-up-right"></span></button></div><div class="settings-note"><span data-icon="shield"></span><p>批注与草稿自动保存在本机。下载副本后，可在其他设备继续审阅。工具不会覆盖你的原文件。</p></div></section>
     <section id="help-dialog" class="settings-page" data-settings-panel="help" hidden><span class="eyebrow">GETTING STARTED</span><h2>把意见，说到点上。</h2><p class="settings-intro">工作区会按进度提示下一步，随时可以回来继续。</p>
       <ol class="help-steps"><li><span>01</span><div><h3>阅读，留下意见</h3><p>打开或拖入 HTML、DOCX 或 PDF。选择文字、图片等目标，填写并保存批注；也可以直接写整体意见。HTML 带本地图片、样式或脚本时，请导入文件夹。</p></div></li><li><span>02</span><div><h3>交给你使用的 agent</h3><p>点击「交给 agent」，复制任务并附上原文档，或下载交接包，把 ZIP 附给 agent。材料准备好后仍需你发送。「保存副本」用于备份和继续审阅。</p></div></li><li><span>03</span><div><h3>读取返回文件，检查修改</h3><p>点击「agent 已返回文件」。读取修改后的文档更新预览，导入处理记录 JSON 更新批注状态；两份文件先读入哪一份都可以。只有 JSON 时正文仍是旧的。读取文档后再「逐条复核」，原意见和完成记录会保留。</p></div></li></ol>
       <div class="help-callout"><span data-icon="history"></span><p>刷新恢复的是本机工作区。原文件被修改后，需要重新读取；顶部重载按钮也可读取最新原文件与资源，保留批注和草稿。首次可能需要选择原文件或文件夹。长期保留或跨设备使用，请保存完整副本。</p></div><button id="restart-guide" class="secondary-button" type="button">重新显示入门引导 <span data-icon="arrow-right"></span></button>
+      <details class="help-details"><summary>让阅读与批注更顺手</summary><p>拖动预览与批注栏之间的分隔线调整宽度，双击恢复默认；聚焦分隔线后可用左右方向键微调，按 Shift 加快、Enter 复位、Esc 取消正在进行的拖动。预览左上角可以收起或展开批注栏，本机会记住布局。</p><p>批注卡片默认显示摘要，点击「展开」查看完整意见与记录。点击意见可查看对应内容；列表上方的箭头按当前筛选逐条浏览，位置有疑问时先查看对照，已完成意见进入只读复核。</p></details>
       <details class="help-details"><summary>怎样选择批注范围？</summary><p>浏览模式可直接填写整份文档的意见。文字模式拖选原文；元素模式点击目标，也可向外选择父级。HTML 单页对应已有的幻灯片、打印页等分页区块，可点击或从列表挑选；识别 data-page、data-slide、print-page、slide 以及多个 page 区块，没有分页结构时用整体或元素。PDF 区域模式拖出矩形，单页对应实际页码；扫描页改用区域框选。DOCX 支持文字、元素和整体。取消选择时已填写的意见会保留。</p></details>
       <details class="help-details"><summary>恢复批注与复核位置</summary><p>完整 HTML 工作区副本可离线继续编辑，压缩副本需先解压。轻量批注不含原文档；打开 DOCX / PDF 轻量 JSON 后选择哈希匹配的原文件可恢复。HTML 轻量 JSON 需配合原 HTML 和资源交付。</p><p>已关联文件夹时，重载会同时读取原文件旁同名处理记录，也可单独导入。没有处理记录也可以检查新文档，完成状态保持不变。编辑已完成意见会重新进入待处理。</p><p>位置检查详情可以展开。遇到无法确认或多个候选时，核对对照再明确确认，或重新选择位置；原定位保留作记录。定位检查与逐条复核都不会自动标记完成。批注支持撤销重做。</p></details>
       <details class="help-details"><summary>支持范围与文件限制</summary><p>DOCX 连续内容预览不还原 Word 页码与原生排版，页眉页脚和复杂图形不保证呈现，Word 原生批注不转为任务。PDF 按原页预览，首版不做 OCR。工具不编辑原文档，查找、位置检查和文件读取可取消。</p><p>仅打开可信 HTML，页面脚本可运行；服务器接口、嵌套 iframe、ES 模块等可能无法完整重现。原始 HTML / DOCX / PDF 上限 20 MiB，副本上限 100 MiB；目录上限 50 MiB、500 个文件。DOCX 解压内容限 100 MiB、3000 项，转换超过 30 秒中止。存储不可用时请保存副本。</p><p>系统文件选择器无法打开时，可使用兼容方式。兼容方式重载时需要重新选择原文件。</p><div class="editor-actions"><button id="compatible-open" class="secondary-button" type="button">兼容打开文档</button><button id="compatible-folder" class="secondary-button" type="button">兼容导入文件夹</button><button id="compatible-reload" class="secondary-button" type="button" disabled>兼容重载当前文档</button></div></details>
@@ -5284,7 +5345,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     'file-plus': '<path d="M6 3h8l4 4v7M14 3v5h4M6 3v18h7M18 16v6M15 19h6"/>',
     'arrow-right': '<path d="M4 12h16m-6-6 6 6-6 6"/>',
     'arrow-up-right': '<path d="M6 18 18 6M6 6h12v12"/>',
-    'chevron-down': '<path d="m6 9 6 6 6-6"/>', check: '<path d="m5 12 4 4L19 6"/>', close: '<path d="m6 6 12 12M6 18 18 6"/>',
+    'chevron-up': '<path d="m6 15 6-6 6 6"/>', 'chevron-down': '<path d="m6 9 6 6 6-6"/>', check: '<path d="m5 12 4 4L19 6"/>', close: '<path d="m6 6 12 12M6 18 18 6"/>',
     crosshair: '<circle cx="12" cy="12" r="6"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>',
     layout: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>',
     shield: '<path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM8 12l3 3 5-6"/>',
@@ -5653,6 +5714,119 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
 })();
 
 </script>
+<script id="hr-workspace-layout">
+/* Local layout preferences never change document or annotation data. */
+(function (global) {
+  'use strict';
+  const STORAGE_KEY = 'html-review.workspace-layout';
+  const DEFAULT_WIDTH = 352;
+  function normalize(value, fallback = {sidebarWidth:DEFAULT_WIDTH, sidebarCollapsed:false}) {
+    return {
+      sidebarWidth: Number.isFinite(value?.sidebarWidth) && value.sidebarWidth >= 280 && value.sidebarWidth <= 560 ? Math.round(value.sidebarWidth) : fallback.sidebarWidth,
+      sidebarCollapsed: typeof value?.sidebarCollapsed === 'boolean' ? value.sidebarCollapsed : fallback.sidebarCollapsed
+    };
+  }
+  function bounds(width) {
+    const max = Math.max(280, Math.min(560, Math.floor(width / 2), Math.floor(width - 368)));
+    return {min:Math.min(300,max), max};
+  }
+  function mount({workspace, sidebar, separator, toggles, onChange}) {
+    let preferences = normalize({sidebarWidth:Number(workspace.dataset.sidebarWidth),sidebarCollapsed:workspace.dataset.sidebarCollapsed==='true'});
+    let drag = null, frame = null;
+    const mobile = matchMedia('(max-width:760px)');
+    function saved(fallback) {
+      try { return normalize(JSON.parse(localStorage.getItem(STORAGE_KEY)),fallback); } catch (_) { return fallback; }
+    }
+    function apply() {
+      const range = bounds(workspace.clientWidth);
+      const width = Math.max(range.min,Math.min(range.max,preferences.sidebarWidth));
+      workspace.style.setProperty('--sidebar-width',width+'px');
+      workspace.dataset.sidebarWidth = String(preferences.sidebarWidth);
+      workspace.dataset.sidebarCollapsed = String(preferences.sidebarCollapsed);
+      sidebar.inert = preferences.sidebarCollapsed && workspace.classList.contains('has-document');
+      separator.setAttribute('aria-valuemin',String(range.min));
+      separator.setAttribute('aria-valuemax',String(range.max));
+      separator.setAttribute('aria-valuenow',String(width));
+      separator.setAttribute('aria-valuetext',width+' 像素');
+      separator.tabIndex = !workspace.classList.contains('has-document') || mobile.matches || preferences.sidebarCollapsed ? -1 : 0;
+      for (const toggle of toggles) {
+        toggle.setAttribute('aria-expanded',String(!preferences.sidebarCollapsed));
+        const label = preferences.sidebarCollapsed ? '展开批注栏' : '收起批注栏';
+        toggle.setAttribute('aria-label',label); toggle.title = label;
+      }
+    }
+    function commit() {
+      try { localStorage.setItem(STORAGE_KEY,JSON.stringify(preferences)); } catch (_) { /* Still usable without storage. */ }
+      onChange?.();
+    }
+    function setCollapsed(collapsed, remember = true) {
+      if (preferences.sidebarCollapsed === collapsed) return;
+      if (collapsed && sidebar.contains(document.activeElement)) toggles[0].focus({preventScroll:true});
+      preferences.sidebarCollapsed = collapsed; apply();
+      if (remember) commit();
+    }
+    function setWidth(value, remember = true) {
+      const range = bounds(workspace.clientWidth);
+      preferences.sidebarWidth = Math.round(Math.max(range.min,Math.min(range.max,value)));
+      apply(); if (remember) commit();
+    }
+    function finishDrag(cancel = false) {
+      if (!drag) return;
+      const current = drag; drag = null;
+      if (frame !== null) {cancelAnimationFrame(frame);frame=null;}
+      if (cancel) preferences.sidebarWidth = current.initial;
+      else setWidth(current.next,false);
+      workspace.classList.remove('is-resizing');
+      if (separator.hasPointerCapture(current.id)) separator.releasePointerCapture(current.id);
+      apply(); if (!cancel) commit();
+    }
+    separator.addEventListener('pointerdown',event => {
+      if (drag || event.button !== 0 || event.isPrimary === false || mobile.matches || preferences.sidebarCollapsed) return;
+      event.preventDefault(); separator.focus({preventScroll:true});
+      const width=Number(separator.getAttribute('aria-valuenow'));
+      drag={id:event.pointerId,x:event.clientX,width,initial:preferences.sidebarWidth,next:width};
+      separator.setPointerCapture(event.pointerId); workspace.classList.add('is-resizing');
+    });
+    separator.addEventListener('pointermove',event => {
+      if (!drag || drag.id !== event.pointerId) return;
+      const direction = workspace.dataset.sidebarPosition === 'right' ? -1 : 1;
+      drag.next=drag.width+(event.clientX-drag.x)*direction;
+      if (frame === null) frame=requestAnimationFrame(()=>{frame=null;if(drag)setWidth(drag.next,false);});
+    });
+    separator.addEventListener('pointerup',event=>{if(drag?.id===event.pointerId)finishDrag();});
+    separator.addEventListener('pointercancel',()=>finishDrag(true));
+    separator.addEventListener('lostpointercapture',()=>finishDrag(true));
+    separator.addEventListener('dblclick',()=>setWidth(DEFAULT_WIDTH));
+    separator.addEventListener('keydown',event=>{
+      if (event.key==='Escape' && drag) {event.preventDefault();event.stopPropagation();finishDrag(true);return;}
+      if (event.key==='Home'||event.key==='End'||event.key==='Enter'||event.key==='ArrowLeft'||event.key==='ArrowRight') {
+        event.preventDefault(); const range=bounds(workspace.clientWidth);
+        const direction=workspace.dataset.sidebarPosition==='right' ? -1 : 1;
+        const step=event.shiftKey ? 40 : 16;
+        setWidth(event.key==='Home' ? range.min : event.key==='End' ? range.max : event.key==='Enter' ? DEFAULT_WIDTH : Number(separator.getAttribute('aria-valuenow'))+(event.key==='ArrowRight' ? step : -step)*direction);
+      }
+    });
+    for(const toggle of toggles) toggle.addEventListener('click',()=>setCollapsed(!preferences.sidebarCollapsed));
+    const cancelDrag=()=>finishDrag(true);
+    window.addEventListener('blur',cancelDrag);
+    const onVisibility=()=>{if(document.visibilityState==='hidden')cancelDrag();};
+    document.addEventListener('visibilitychange',onVisibility);
+    const onResize=()=>{if(mobile.matches)cancelDrag();apply();};
+    const observer=new ResizeObserver(onResize);observer.observe(workspace);
+    mobile.addEventListener('change',onResize);
+    preferences=saved(preferences); apply();
+    return {
+      preferences:()=>({...preferences}), refresh(){cancelDrag();apply();},
+      restore(value){preferences=saved(normalize(value,preferences));apply();},
+      reveal(){setCollapsed(false);},
+      cleanCopy(copy){const stage=copy.querySelector('.workspace');stage.classList.remove('is-resizing');stage.dataset.sidebarWidth=String(preferences.sidebarWidth);stage.dataset.sidebarCollapsed=String(preferences.sidebarCollapsed);},
+      destroy(){cancelDrag();observer.disconnect();mobile.removeEventListener('change',onResize);window.removeEventListener('blur',cancelDrag);document.removeEventListener('visibilitychange',onVisibility);}
+    };
+  }
+  global.HRWorkspaceLayout = Object.freeze({normalize,bounds,mount});
+})(typeof window === 'undefined' ? globalThis : window);
+
+</script>
 <script id="hr-app">
 (function () {
   'use strict';
@@ -5672,6 +5846,9 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   const targetLabel = target => target.kind === 'page' && wholeTarget(target) ? '整体' : labels[target.kind];
   let pageInventory = [];
   let renderedIds = new Set();
+  const expandedAnnotations = new Set();
+  let activeAnnotationId = null;
+  let layout = null;
   const hints = {
     browse: '自由阅读。直接填写意见，默认针对整份文档；局部意见请先选择批注范围。',
     text: '在预览中拖选文字，再填写修改意见。可跨越相邻的行内标签。',
@@ -5960,6 +6137,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   function renderSource() {
     const docx = isDocx(data), pdf = isPdf(data);
     workspace.classList.add('has-document');
+    layout?.refresh();
     $('format-note').hidden = !docx && !pdf;
     $('format-note').textContent = pdf ? 'PDF 按实际页面预览，可选择文字、区域、单页或整体。扫描页可使用区域批注。' : docx ? 'Word 内容预览：可以批注文字、表格和图片；排版可能与 Word 不同。' : '';
     frame.title = docx ? 'DOCX 文档内容预览' : '原始 HTML 页面';
@@ -5986,14 +6164,19 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   function renderAnnotations() {
     const list = $('annotation-list');
     const previousIds = renderedIds; renderedIds = new Set(data?.annotations.map(item => item.id));
+    const focusedButton = document.activeElement?.closest('#annotation-list button[data-action]');
+    const focused = focusedButton ? {id:focusedButton.dataset.id,action:focusedButton.dataset.action} : null;
     list.replaceChildren();
     const annotations = data?.annotations || [];
     $('annotation-count').textContent = annotations.length;
+    $('sidebar-rail-count').textContent = annotations.length;
+    if (!annotations.some(item=>item.id===activeAnnotationId)) activeAnnotationId=null;
+    for (const id of expandedAnnotations) if (!annotations.some(item=>item.id===id)) expandedAnnotations.delete(id);
     const pendingCount = annotations.filter(annotation => core.annotationStatus(annotation) === 'open').length;
     $('review-progress').textContent = `待处理 ${pendingCount} · 已完成 ${annotations.length - pendingCount}`;
     renderLocationReview();
     const filter = $('annotation-filter').value;
-    if (!annotations.length) { list.append(textNode('p', 'empty-list', '还没有批注。直接填写整体意见，或选择具体内容后批注。')); return; }
+    if (!annotations.length) { list.append(textNode('p', 'empty-list', '还没有批注。直接填写整体意见，或选择具体内容后批注。')); updateAnnotationNavigation(); return; }
     annotations.forEach((annotation, index) => {
       const resolved = core.annotationStatus(annotation) === 'resolved';
       if (filter === 'attention' ? !needsLocationReview(annotation) : filter === 'new' ? !['new','updated'].includes(core.taskState(annotation)) : filter !== 'all' && (resolved ? 'resolved' : 'open') !== filter) return;
@@ -6002,19 +6185,29 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
       const card = document.createElement('article');
       card.className = 'annotation-card' + (resolved ? ' is-resolved' : '') + (!previousIds.has(annotation.id) ? ' is-new' : '') + (editingId === annotation.id ? ' active' : '');
       card.dataset.annotationId = annotation.id; card.dataset.reviewState = state;
+      const expanded = expandedAnnotations.has(annotation.id) || editingId===annotation.id;
+      card.dataset.expanded = String(expanded);
+      const body = document.createElement('div'); body.className='annotation-body'; body.id='annotation-body-'+index;
+      const toggle = textNode('button','text-button annotation-details-toggle',expanded ? '收起' : '展开');
+      toggle.type='button';toggle.dataset.action='details';toggle.dataset.id=annotation.id;
+      toggle.setAttribute('aria-expanded',String(expanded));toggle.setAttribute('aria-controls',body.id);
+      toggle.setAttribute('aria-label',`${expanded ? '收起' : '展开'}第 ${index+1} 条批注详情`);
       const top = document.createElement('div'); top.className = 'annotation-top';
       const meta = document.createElement('div'); meta.className = 'annotation-top-meta';
       meta.append(textNode('span', 'annotation-state ' + state, stateLabels[state]), textNode('span', 'annotation-number', String(index + 1).padStart(2, '0')));
-      top.append(textNode('span', 'tag', targetLabel(annotation.target)), meta);
-      card.append(top, textNode('p', 'annotation-comment', annotation.comment));
-      card.append(textNode('div', 'annotation-quote', targetText(annotation.target).slice(0, 180)));
+      top.append(textNode('span', 'tag', targetLabel(annotation.target)), meta, toggle);
+      const comment = textNode('button','annotation-comment annotation-select',annotation.comment);
+      comment.type='button';comment.dataset.action='select';comment.dataset.id=annotation.id;
+      comment.setAttribute('aria-label',`查看第 ${index+1} 条批注：${annotation.comment}`);
+      body.append(comment, textNode('div', 'annotation-quote', targetText(annotation.target).slice(0, 180)));
+      card.append(top,body);
       const location = locations.get(annotation.id);
-      if (location && !resolved) { const line = textNode('div', 'location-status ' + location.status, location.message); card.append(line); }
+      if (location && !resolved) { const line = textNode('div', 'location-status ' + location.status, location.message); body.append(line); }
       const latest = annotation.history?.[annotation.history.length - 1];
       if (['pending','completed'].includes(state) && latest?.summary) {
         const feedback = textNode('div', 'annotation-feedback', '');
         feedback.append(textNode('strong', '', resolved ? '完成说明' : '未完成说明'), textNode('p', '', latest.summary));
-        card.append(feedback);
+        body.append(feedback);
       }
       const actions = document.createElement('div'); actions.className = 'annotation-actions';
       for (const [action, label] of [['locate', '定位'], ['edit', '编辑'], ['status', resolved ? '重新待处理' : '标记完成'], ['delete', '删除']]) {
@@ -6051,7 +6244,44 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     if (!list.childElementCount) list.append(textNode('p', 'empty-list', filter === 'attention' ? '目前没有需要确认位置的批注。' : filter === 'new' ? '目前没有新增或更新的意见。' : filter === 'open' ? '目前没有待处理意见。' : '还没有已完成的处理记录。'));
     renderLocationReview();
     renderResultReview();
+    updateAnnotationNavigation();
+    if (focused && document.activeElement===document.body) Array.from(list.querySelectorAll('button[data-action]')).find(button=>button.dataset.id===focused.id && button.dataset.action===focused.action)?.focus({preventScroll:true});
     window.HRUI.enterCards(list);
+  }
+  function updateAnnotationNavigation() {
+    const cards = Array.from($('annotation-list').querySelectorAll('.annotation-card'));
+    const index = cards.findIndex(card=>card.dataset.annotationId===activeAnnotationId);
+    for (const card of cards) {
+      const current=card.dataset.annotationId===activeAnnotationId;card.classList.toggle('is-current',current);
+      if(current)card.setAttribute('aria-current','true');else card.removeAttribute('aria-current');
+    }
+    const position = `${index<0 ? '—' : index+1} / ${cards.length}`;
+    if($('annotation-position').textContent!==position)$('annotation-position').textContent=position;
+    $('annotation-previous').disabled=!cards.length || index<=0;
+    $('annotation-next').disabled=!cards.length || index===cards.length-1;
+  }
+  function toggleAnnotationDetails(annotation, card) {
+    const expanded = card.dataset.expanded!=='true';
+    if(expanded)expandedAnnotations.add(annotation.id);else expandedAnnotations.delete(annotation.id);
+    window.HRUI.reflow(card,()=>{
+      card.dataset.expanded=String(expanded);
+      const toggle=card.querySelector('[data-action=details]');toggle.textContent=expanded ? '收起' : '展开';
+      toggle.setAttribute('aria-expanded',String(expanded));
+      const index=data.annotations.indexOf(annotation)+1;toggle.setAttribute('aria-label',`${expanded ? '收起' : '展开'}第 ${index} 条批注详情`);
+    });
+  }
+  function selectAnnotation(annotation) {
+    activeAnnotationId=annotation.id;updateAnnotationNavigation();
+    if(core.annotationStatus(annotation)==='resolved') startResultReview(annotation.id);
+    else if(needsLocationReview(annotation)) {resultReviewQueue=null;inspectLocation(annotation);}
+    else locate(annotation);
+  }
+  function moveAnnotation(direction) {
+    const cards=Array.from($('annotation-list').querySelectorAll('.annotation-card'));
+    const index=cards.findIndex(card=>card.dataset.annotationId===activeAnnotationId);
+    const next=cards[index<0 ? 0 : index+direction];
+    const annotation=next && data?.annotations.find(item=>item.id===next.dataset.annotationId);
+    if(annotation){selectAnnotation(annotation);Array.from($('annotation-list').querySelectorAll('.annotation-card')).find(card=>card.dataset.annotationId===annotation.id)?.scrollIntoView({block:'nearest',behavior:'instant'});}
   }
   function locationDescription(status, reason = '') {
     const description = {exact:'位置与原文已匹配',fallback:'原定位已变化，通过原文找到候选，请核对',ambiguous:'有多个候选，不能自动确认原位置',missing:'原文或元素已变化，无法确认原位置'}[status];
@@ -6220,6 +6450,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     const prepared = await preparePreview(nextData);
     autosavePaused = false;
     data = nextData;
+    activeAnnotationId=null;expandedAnnotations.clear();
     workflowDetailsOpen = null; workflowDisclosureAlert = '';
     locationReview = null; $('reload-review').hidden = true;
     if ($('annotation-filter').value === 'attention') { $('annotation-filter').value = 'all'; window.HRUI.syncSelect('annotation-filter'); }
@@ -6612,8 +6843,10 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     note(redo ? '已重做批注操作，下载可保存最新结果。' : '已撤销上次批注操作，原批注内容和位置已恢复。');
   }
   function locate(annotation) {
+    activeAnnotationId=annotation.id;updateAnnotationNavigation();
     if (core.annotationStatus(annotation) === 'resolved') { note('这条批注已完成，原文与位置保留作处理记录。需要继续修改时可编辑意见或重新待处理。'); return; }
     if (annotation.kind === 'page' && wholeTarget(annotation.target)) {
+      send('clear-focus');
       const width = annotation.view?.width || annotation.target.viewport?.width;
       const available = ['390', '768', '1280'];
       note(`整体批注：${data.source.name}。意见适用于整个文件；记录视口 ${width || '未知'} × ${annotation.view?.height || annotation.target.viewport?.height || '未知'}px。`);
@@ -6736,6 +6969,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   }
   function edit(annotation) {
     if (draftDirty() && !confirm('编辑框中有未保存的修改。确定切换到这条批注吗？')) return;
+    layout.reveal();activeAnnotationId=annotation.id;expandedAnnotations.add(annotation.id);
     editingId = annotation.id;
     $('comment-input').value = annotation.comment;
     draftBaseline = annotation.comment;
@@ -6746,11 +6980,12 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     locate(annotation);
     draftTargetChanged = false;
     updateEditor(); renderAnnotations();
-    $('comment-input').focus();
+    layout?.reveal(); $('comment-input').focus();
   }
   function reselect(annotation) {
     if (busy || !previewReady) { note('文档还在载入，请稍后重新选择位置。',true); return; }
     if (draftDirty() && !confirm('编辑框中有未保存的修改。确定切换到这条批注并重新选择位置吗？')) return;
+    layout.reveal();activeAnnotationId=annotation.id;expandedAnnotations.add(annotation.id);
     editingId = annotation.id; draftBaseline = annotation.comment;
     $('comment-input').value = annotation.comment;
     pendingTarget = null; draftTargetChanged = false;
@@ -6771,6 +7006,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
       return;
     }
     const copy = document.documentElement.cloneNode(true);
+    layout.cleanCopy(copy);
     copy.querySelector('#html-review-data').textContent = core.serialize(data);
     const copiedFrame = copy.querySelector('#preview-frame');
     copiedFrame.removeAttribute('srcdoc'); copiedFrame.removeAttribute('src'); copiedFrame.hidden = true;
@@ -6794,6 +7030,8 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     // Rebuilt on startup. Do not serialize transient editor/list state or duplicate page bytes.
     copy.querySelector('#annotation-list').replaceChildren();
     copy.querySelector('#review-progress').textContent = '意见与处理记录';
+    copy.querySelector('#annotation-position').textContent='— / 0';
+    copy.querySelector('#annotation-previous').disabled=true;copy.querySelector('#annotation-next').disabled=true;
     copy.querySelector('#comment-input').textContent = '';
     copy.querySelector('#target-preview').hidden = true;
     copy.querySelector('#target-preview').dataset.expanded = 'false';
@@ -6867,6 +7105,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     autosavePaused = false;
     const value = position === 'right' ? 'right' : 'left';
     workspace.dataset.sidebarPosition = value;
+    layout?.refresh();
     $('sidebar-position').value = value;
     window.HRUI.syncSelect('sidebar-position');
     if (remember) {
@@ -6916,7 +7155,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   }
   function sessionSnapshot() {
     return structuredClone({version: 1, data, localAccess, exampleWorkspace, guideAnnotated, workflow:{...workflow,sourceHash:data.source.sha256}, draft: {comment: $('comment-input').value, pendingTarget, editingId, baseline: draftBaseline, targetChanged: draftTargetChanged, mode}, dirty, lastExportFormat,
-      preferences: {width: $('preview-width').value, sidebar: $('sidebar-position').value, exportFormat: $('export-format').value}});
+      preferences: {...layout.preferences(), width: $('preview-width').value, sidebar: $('sidebar-position').value, exportFormat: $('export-format').value}});
   }
   function queueAutosave() {
     if (!data || !persistenceReady || restoringSession || autosavePaused || !$('recovery-banner').hidden) return;
@@ -6983,6 +7222,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
       $('comment-input').value = draft.comment; draftBaseline = draft.baseline;
       // An older async session snapshot must not overwrite the latest layout choice.
       setSidebarPosition(preferredSidebarPosition(record.preferences.sidebar), false);
+      layout.restore(record.preferences);
       $('preview-width').value = record.preferences.width; applyWidth();
       $('export-format').value = record.preferences.exportFormat; updateExportFormat();
       if (pendingTarget) setTarget(pendingTarget); else $('target-preview').hidden = true;
@@ -7130,7 +7370,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
       if (pendingTarget && pendingTarget.scope !== 'whole-document') clearTarget();
       else if (editingId || $('comment-input').value) cancelEditor();
       else setMode('browse');
-    } else if (['browse', 'text', 'element', 'page', 'whole'].includes(action)) setMode(action);
+    } else if (['browse', 'text', 'element', 'page', 'whole'].includes(action)) { if(['text','element','page'].includes(action) && !(action==='page' && isDocx(data)))layout.reveal();setMode(action); }
   }
   async function droppedFiles(files) {
     $('drop-overlay').hidden = true;
@@ -7220,7 +7460,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
         if (!target || target.kind !== (isPdf(data) && mode === 'element' ? 'region' : mode) || typeof target.selector !== 'string' || target.selector.length > 4096) return;
         core.validateTarget(target, target.kind);
         if(Number.isSafeInteger(message.selectionSerial) && message.selectionSerial>=0)latestSelectionSerial=message.selectionSerial;
-        setTarget(target); note(editingId ? '新位置已选中，点击「更新批注」保存；原位置会保留作记录。' : '目标已选中，请填写修改意见。');
+        layout.reveal();setTarget(target); note(editingId ? '新位置已选中，点击「更新批注」保存；原位置会保留作记录。' : '目标已选中，请填写修改意见。');
       } catch (error) { note(error.message, true); }
     } else if (message.event === 'located') {
       const request = manualLocationRequests.get(message.requestId);
@@ -7244,7 +7484,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   $('confirm-location').addEventListener('click',confirmLocation);$('confirm-preview-location').addEventListener('click',confirmLocation);
   $('result-review-start').addEventListener('click',()=>startResultReview());
   $('result-review-reload').addEventListener('click',reloadSource);
-  $('workflow-primary').addEventListener('click',()=>{if(busy || !data)return;const action=$('workflow-primary').dataset.action;if(action==='handoff')openHandoff();else if(action==='save')saveAnnotation();else {$('comment-input').focus();$('comment-input').scrollIntoView({block:'nearest',behavior:'smooth'});}});
+  $('workflow-primary').addEventListener('click',()=>{if(busy || !data)return;const action=$('workflow-primary').dataset.action;if(action==='handoff')openHandoff();else if(action==='save')saveAnnotation();else {layout?.reveal(); $('comment-input').focus();$('comment-input').scrollIntoView({block:'nearest',behavior:'smooth'});}});
   $('workflow-return').addEventListener('click',openReturnSteps);
   $('handoff-show-return').addEventListener('click',openReturnSteps);
   $('return-review').addEventListener('click',()=>{if($('return-review').disabled)return;window.HRUI.closeDialog($('return-dialog'));startResultReview();});
@@ -7335,7 +7575,9 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     if (!button || !data) return;
     const annotation = data.annotations.find(item => item.id === button.dataset.id);
     if (!annotation) return;
-    if (button.dataset.action === 'review-result') startResultReview(annotation.id);
+    if (button.dataset.action === 'details') toggleAnnotationDetails(annotation,button.closest('.annotation-card'));
+    else if (button.dataset.action === 'select') selectAnnotation(annotation);
+    else if (button.dataset.action === 'review-result') startResultReview(annotation.id);
     else if (button.dataset.action === 'review-location') {resultReviewQueue=null;inspectLocation(annotation);}
     else if (button.dataset.action === 'locate') locate(annotation);
     else if (button.dataset.action === 'edit') edit(annotation);
@@ -7358,6 +7600,8 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   $('undo-button').addEventListener('click', () => reverseChange());
   $('redo-button').addEventListener('click', () => reverseChange(true));
 
+  $('annotation-previous').addEventListener('click',()=>moveAnnotation(-1));
+  $('annotation-next').addEventListener('click',()=>moveAnnotation(1));
   $('annotation-filter').addEventListener('change', renderAnnotations);
   $('import-results').addEventListener('click', () => $('results-input').click());
   $('results-input').addEventListener('change', async event => {
@@ -7385,6 +7629,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   $('clear-recovery').addEventListener('click', () => run(clearRecovery));
   $('retry-recovery').addEventListener('click', () => run(retryRecovery));
   window.addEventListener('keydown', event => {
+    if(event.key==='Escape' && event.target===$('sidebar-resizer') && workspace.classList.contains('is-resizing')) return;
     const editable = event.composedPath().some(node => node instanceof Element && (node.matches('input,textarea,select') || node.isContentEditable));
     if (event.key !== 'Escape' && event.composedPath().some(node => node instanceof Element && node.matches('[role=combobox],[role=option]'))) return;
     const action = window.HRShortcut(event, editable);
@@ -7399,6 +7644,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   window.addEventListener('beforeunload', event => { if ((dirty || draftDirty()) && autosavePhase !== 'saved') { saveSessionNow(); event.preventDefault(); event.returnValue = ''; } });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && autosavePhase === 'saving') saveSessionNow(); });
   // Exports carry the runtime, not transient DOM. Rehydrate only validated data.
+  layout=window.HRWorkspaceLayout.mount({workspace,sidebar:$('review-sidebar'),separator:$('sidebar-resizer'),toggles:[$('sidebar-toggle'),$('sidebar-rail-toggle')],onChange:queueAutosave});
   restoreSidebarPosition(); updateExportFormat(); resetFolder(); clearEditor(); setMode('browse'); applyWidth();
   for (const dialog of document.querySelectorAll('dialog[open]')) dialog.removeAttribute('open');
   bootPromise = initialize();

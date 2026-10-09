@@ -1,3 +1,4 @@
+import {waitPreviewLayout} from './preview-layout.mjs';
 import {ensureBackup} from './backup-ui.mjs';
 /* Real-browser acceptance for custom controls, settings and semantic page targets. */
 import assert from 'node:assert/strict';
@@ -81,7 +82,7 @@ try {
   assert.equal(await page.locator('[data-mode="page"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('#comment-input').inputValue(),'第二页的未保存草稿');
   await save(page,'第二页的三个步骤，请增加对应的图示。');
-  await frame.locator('#page-read h2').click(); await page.locator('#target-text').filter({hasText:'第 1 页'}).waitFor();
+  await waitPreviewLayout(page); await frame.locator('#page-read h2').click(); await page.locator('#target-text').filter({hasText:'第 1 页'}).waitFor();
   await page.locator('#comment-input').fill('只针对第一页的建议'); await page.locator('#clear-target').click(); assert.equal(await page.locator('#comment-input').inputValue(),'只针对第一页的建议'); assert(await page.locator('#save-button').isDisabled());
   await page.locator('[data-mode="browse"]').click(); await save(page,'全篇统一标题与页码样式。');
   let stored=await data(page); assert.equal(stored.annotations.length,2);
@@ -196,7 +197,7 @@ try {
   await page.locator('[data-mode=browse]').click();
   assert.equal(await page.locator('#comment-scope').textContent(),'整份文档');
   await save(page,'全篇统一术语。');
-  await page.locator('[data-mode=element]').click(); await frame.locator('#page-read h2').click();
+  await page.locator('[data-mode=element]').click(); await waitPreviewLayout(page); await frame.locator('#page-read h2').click();
   await page.locator('#comment-scope').filter({hasText:'所选元素'}).waitFor();
   await save(page,'精简这个标题。');
   await page.locator('.annotation-card').nth(1).locator('[data-action=edit]').click();
