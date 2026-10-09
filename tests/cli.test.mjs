@@ -118,3 +118,22 @@ test('a linked CLI entrypoint still runs without opening a browser',{skip:proces
   assert.equal(stdout.trim(),path.join(root,'index.html'));
  } finally {await rm(dir,{recursive:true,force:true});}
 });
+test('CLI runs through a differently cased directory and linked entry on case-insensitive filesystems',async t=>{
+ const alias=path.join(root,'BIN','html-review.mjs');
+ const actual=await realpath(cli);
+ const resolved=await realpath(alias).catch(()=>null);
+ if(resolved!==actual){t.skip('Filesystem does not resolve the alternate directory casing to this CLI');return;}
+ const direct=await run(process.execPath,[alias,'--no-open']);
+ assert.equal(direct.stdout.trim(),path.join(root,'index.html'));
+ assert.equal(direct.stderr,'');
+ const help=await run(process.execPath,[alias,'--help']);
+ assert.match(help.stdout,/用法：html-review/);
+ if(process.platform==='win32')return;
+ const dir=await mkdtemp(path.join(tmpdir(),'html-review-case-'));
+ try {
+  const linked=path.join(dir,'html-review');await symlink(alias,linked);
+  const result=await run(linked,['--no-open']);
+  assert.equal(result.stdout.trim(),path.join(root,'index.html'));
+  assert.equal(result.stderr,'');
+ } finally {await rm(dir,{recursive:true,force:true});}
+});

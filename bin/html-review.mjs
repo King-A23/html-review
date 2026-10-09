@@ -6,7 +6,10 @@ import {spawn} from 'node:child_process';
 import vm from 'node:vm';
 import {webcrypto} from 'node:crypto';
 
-const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+// Both argv and the ESM URL can retain different casing on a case-insensitive
+// filesystem. Canonicalize both before deciding whether this is the CLI entry.
+const moduleFilename = await realpath(fileURLToPath(import.meta.url));
+const root = path.dirname(path.dirname(moduleFilename));
 function validatePendingAnnotations(data, core) {
   const source = data?.source;
   const validTime = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
@@ -107,6 +110,6 @@ export async function main(args = process.argv.slice(2), {openFile = openReview,
     return 0;
   } catch (error) {errorLog('HTML Review：' + error.message); return 1;}
 }
-if (process.argv[1] && await realpath(process.argv[1]).catch(() => '') === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && await realpath(process.argv[1]).catch(() => '') === moduleFilename) {
   process.exitCode = await main();
 }
