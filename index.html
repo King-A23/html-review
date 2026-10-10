@@ -694,6 +694,9 @@ button.annotation-comment:focus-visible{outline-offset:4px}
 }
 body {background: #f5f4ef;}
 .app-header {padding-inline: 28px;}
+/* Lift the header's whole stacking context while its menu is open. A child
+   z-index cannot escape behind workflow overlays or the mobile review sheet. */
+.app-header:has(#backup-menu[open]) {z-index: 100;}
 .brand-subtitle {font-size: 11px; letter-spacing: .025em;}
 .brand-period {color: var(--copper);}
 .workspace {border-radius: 18px; box-shadow: 0 12px 38px #263c3005;}

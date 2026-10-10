@@ -23,6 +23,18 @@ async function choose(page, id, label) {if(id==='export-format') await ensureBac
 async function save(page, text) {await page.locator('#comment-input').fill(text); await page.locator('#save-button').click();}
 async function data(page) {await page.locator('#data-button').click(); const value = JSON.parse(await page.locator('#data-preview').textContent()); await page.keyboard.press('Escape'); await page.locator('#data-dialog').waitFor({state:'hidden'}); return value;}
 async function download(page, filename) {const pending=page.waitForEvent('download'); await ensureBackup(page); await page.locator('#download-button').click(); const item=await pending; const destination=path.join(output,filename); await item.saveAs(destination); assert.equal(await item.failure(),null); return destination;}
+async function assertSurfaceOnTop(page,selector) {
+ const covered=await page.locator(selector).evaluate(surface=>{
+  const r=surface.getBoundingClientRect(),covered=[];
+  for(let y=r.top+12;y<Math.min(r.bottom-12,innerHeight-12);y+=16)
+   for(let x=r.left+12;x<Math.min(r.right-12,innerWidth-12);x+=32){
+    const top=document.elementFromPoint(x,y);
+    if(!surface.contains(top))covered.push({x,y,cover:top?.id || top?.className || top?.tagName});
+   }
+  return covered;
+ });
+ assert.deepEqual(covered,[],selector+' stays above underlying workspace controls');
+}
 try {
  browser = await chromium.launch({headless:true,...(process.env.BROWSER_PATH ? {executablePath:process.env.BROWSER_PATH}: {})});
  {
@@ -61,10 +73,16 @@ try {
   await page.locator('#handoff-button').waitFor({state:'visible'});
   for (const width of [1440,1280,900,760,600,390,320]) {
    await page.setViewportSize({width,height:900}); assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal app overflow at '+width);
-   if(width<=390){await ensureBackup(page);const menuRect=await page.locator('.backup-panel').boundingBox();assert(menuRect.x>=0 && menuRect.x+menuRect.width<=width+1,'backup remains inside narrow screens');await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.querySelector('#backup-menu').open);await page.screenshot({path:path.join(designOutput,'review-'+width+'.png'),fullPage:true});}
+   if(width<=760){await page.locator('#mobile-write').click();await page.locator('#review-sidebar').waitFor({state:'visible'});}
+   await ensureBackup(page);await page.waitForFunction(()=>document.querySelector('.backup-panel').dataset.motion==='open');
+   const menuRect=await page.locator('.backup-panel').boundingBox();assert(menuRect.x>=0 && menuRect.x+menuRect.width<=width+1,'backup remains inside screen');await assertSurfaceOnTop(page,'.backup-panel');
+   await page.screenshot({path:path.join(designOutput,'backup-layering-'+width+'.png')});
+   await page.locator('#export-format-trigger').click();await page.waitForFunction(()=>document.querySelector('.select-popover')?.dataset.motion==='open');await assertSurfaceOnTop(page,'.select-popover');await page.keyboard.press('Escape');await page.locator('.select-popover').waitFor({state:'detached'});
+   await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.querySelector('#backup-menu').open);
+   if(width<=390)await page.screenshot({path:path.join(designOutput,'review-'+width+'.png'),fullPage:true});
    await page.locator('#settings-button').click(); const rect=await page.locator('#settings-dialog').boundingBox(); assert(rect.x>=0 && rect.x+rect.width<=width+1); await page.keyboard.press('Escape'); await page.locator('#settings-dialog').waitFor({state:'hidden'});
   }
-  console.log('PASS custom menus, keyboard, settings navigation, animated close, focus and seven responsive widths');
+  console.log('PASS custom menus, keyboard, settings navigation, animated close, focus and seven responsive widths; backup and format menus stay above workflow/mobile sheet');
  } catch(error) {await page.screenshot({path:path.join(designOutput,'failure.png'),fullPage:true}); console.log(await page.evaluate(()=>({mode:document.querySelector('[data-mode][aria-pressed=true]')?.dataset.mode,target:document.querySelector('#target-text').textContent,status:document.querySelector('#status').textContent}))); throw error;} finally {await context.close();}
  }
  {
