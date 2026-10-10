@@ -133,18 +133,25 @@
     window.addEventListener('blur',cancelDrag);
     const onVisibility=()=>{if(document.visibilityState==='hidden')cancelDrag();};
     document.addEventListener('visibilitychange',onVisibility);
-    const onResize=()=>{if(mobile.matches)cancelDrag();if(!mobile.matches && sheetAnimation){++sheetRevision;sheetAnimation.cancel();sheetAnimation=null;}apply();};
+    const onResize=()=>{if(mobile.matches)cancelDrag();if(!mobile.matches && sheetAnimation){++sheetRevision;sheetAnimation.cancel();sheetAnimation=null;}apply();onViewport();};
     const observer=new ResizeObserver(onResize);observer.observe(workspace);
     mobile.addEventListener('change',onResize);
     const onReduced=()=>{if(reduced.matches && sheetAnimation)sheetAnimation.finish();};
     reduced.addEventListener('change',onReduced);
     const viewport=window.visualViewport;
-    const onViewport=()=>{
-      const keyboard=mobile.matches && sidebar.contains(document.activeElement) && document.activeElement.matches('input,textarea') && viewport && innerHeight-viewport.height>120;
+    function onViewport(){
+      const unzoomed=!viewport || Math.abs(viewport.scale-1)<.01;
+      const height=unzoomed ? viewport?.height || innerHeight : innerHeight;
+      // Blurring the textarea precedes a Save click. Keep the surface still until
+      // the keyboard actually retreats, rather than moving it on focusout.
+      const keyboard=mobile.matches && unzoomed && innerHeight-height>120;
+      const bottom=Math.max(0,innerHeight-height-(unzoomed ? viewport?.offsetTop || 0 : 0))+'px';
       workspace.dataset.keyboard=String(Boolean(keyboard));
-      workspace.style.setProperty('--visible-height',(viewport?.height || innerHeight)+'px');
-      workspace.style.setProperty('--viewport-bottom',Math.max(0,innerHeight-(viewport?.height || innerHeight)-(viewport?.offsetTop || 0))+'px');
-    };
+      workspace.style.setProperty('--visible-height',height+'px');
+      workspace.style.setProperty('--viewport-bottom',bottom);
+      // The dock is a sibling of the workspace, so it cannot inherit its value.
+      mobileDock.style.setProperty('--viewport-bottom',bottom);
+    }
     viewport?.addEventListener('resize',onViewport);viewport?.addEventListener('scroll',onViewport);
     document.addEventListener('focusin',onViewport);document.addEventListener('focusout',onViewport);
     onViewport();
@@ -157,7 +164,7 @@
       reviewing(){if(mobile.matches)showMobile('list');else setCollapsed(false);},
       reading(){if(mobile.matches)showMobile('closed');},
       closeMobile(){if(!mobile.matches || mobilePanel==='closed')return false;showMobile('closed');return true;},
-      cleanCopy(copy){const stage=copy.querySelector('.workspace');stage.classList.remove('is-resizing');stage.dataset.sidebarWidth=String(preferences.sidebarWidth);stage.dataset.sidebarCollapsed=String(preferences.sidebarCollapsed);stage.dataset.mobilePanel='closed';delete stage.dataset.mobileView;delete stage.dataset.keyboard;stage.style.removeProperty('--visible-height');stage.style.removeProperty('--viewport-bottom');copy.querySelector('#review-sidebar').hidden=false;copy.querySelector('#mobile-dock').hidden=true;},
+      cleanCopy(copy){const stage=copy.querySelector('.workspace');stage.classList.remove('is-resizing');stage.dataset.sidebarWidth=String(preferences.sidebarWidth);stage.dataset.sidebarCollapsed=String(preferences.sidebarCollapsed);stage.dataset.mobilePanel='closed';delete stage.dataset.mobileView;delete stage.dataset.keyboard;stage.style.removeProperty('--visible-height');stage.style.removeProperty('--viewport-bottom');copy.querySelector('#review-sidebar').hidden=false;const dock=copy.querySelector('#mobile-dock');dock.hidden=true;dock.style.removeProperty('--viewport-bottom');},
       destroy(){cancelDrag();sheetAnimation?.cancel();observer.disconnect();mobile.removeEventListener('change',onResize);reduced.removeEventListener('change',onReduced);viewport?.removeEventListener('resize',onViewport);viewport?.removeEventListener('scroll',onViewport);document.removeEventListener('focusin',onViewport);document.removeEventListener('focusout',onViewport);window.removeEventListener('blur',cancelDrag);document.removeEventListener('visibilitychange',onVisibility);}
     };
   }

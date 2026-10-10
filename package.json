@@ -36,7 +36,8 @@
     "test:roundtrip": "node tests/real-roundtrip.browser.mjs",
     "test:performance": "node tests/performance.browser.mjs",
     "test:reading-workspace": "node tests/reading-workspace.browser.mjs",
-    "test:product": "node tests/product-experience.browser.mjs"
+    "test:product": "node tests/product-experience.browser.mjs",
+    "test:frontend-robustness": "node tests/frontend-robustness.browser.mjs"
   },
   "engines": {
     "node": ">=22.13.0"

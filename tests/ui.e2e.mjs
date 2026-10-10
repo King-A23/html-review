@@ -245,8 +245,11 @@ try {
     await page.setViewportSize({width,height:900});
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Compact workflow fits '+width+'px');
     if(width<=760)await page.locator('#mobile-write').click();
-    const badge=await page.locator('#comment-scope').boundingBox(),sidebar=await page.locator('.sidebar').boundingBox();
-    assert(badge.x>=sidebar.x && badge.x+badge.width<=sidebar.x+sidebar.width,'Scope badge stays inside the editor');
+    await waitPreviewLayout(page);
+    // The ResizeObserver may clamp the sidebar between separate protocol reads.
+    // Measure the badge and its container together after responsive layout settles.
+    const {badge,sidebar}=await page.evaluate(()=>({badge:document.getElementById('comment-scope').getBoundingClientRect().toJSON(),sidebar:document.querySelector('.sidebar').getBoundingClientRect().toJSON()}));
+    assert(badge.x>=sidebar.x && badge.right<=sidebar.right,'Scope badge stays inside the editor at '+width+'px: '+JSON.stringify({badge,sidebar}));
   }
   console.log('PASS compact workflow, persistent preference, accessible reversal, scope changes, preserved drafts and local editing');
  } catch(error){await page.screenshot({path:path.join(designOutput,'polish-failure.png'),fullPage:true});throw error;} finally {await context.close();}

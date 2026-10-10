@@ -13,6 +13,8 @@ body {background: #f5f4ef;}
 /* Lift the header's whole stacking context while its menu is open. A child
    z-index cannot escape behind workflow overlays or the mobile review sheet. */
 .app-header:has(#backup-menu[open]) {z-index: 100;}
+/* Content scrolls inside the dialog even in a short or landscape window. */
+.settings-dialog {min-height: 0; max-height: calc(100dvh - 24px);}
 .brand-subtitle {font-size: 11px; letter-spacing: .025em;}
 .brand-period {color: var(--copper);}
 .workspace {border-radius: 18px; box-shadow: 0 12px 38px #263c3005;}
@@ -141,10 +143,11 @@ button.annotation-comment {font-size: 14px; line-height: 1.75;}
 @media (max-width: 760px) {
   .app-header {min-height: 112px; padding: 15px 16px;}
   .workspace.has-document {
-    margin: 0 8px; height: calc(100dvh - 112px - 80px); min-height: 280px;
+    margin: 0 8px; height: calc(100dvh - 112px - 80px); min-height: 0;
     display: block; overflow: hidden; border-radius: 13px;
   }
   .workspace.has-document>.preview-section {height: 100%; min-height: 0;}
+  .workspace.has-document .preview-stage iframe {min-height: 0;}
   .online-bar~.workspace.has-document {height: calc(100dvh - 112px - 118px);}
   .workspace.has-document>.sidebar,.workspace.has-document[data-sidebar-collapsed=true]>.sidebar {
     display: flex; position: fixed; z-index: 60; inset: auto 8px calc(76px + env(safe-area-inset-bottom) + var(--viewport-bottom,0px));

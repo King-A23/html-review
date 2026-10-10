@@ -1094,7 +1094,7 @@
     $('location-preview-label').textContent=candidate.label;
     $('location-preview-bar').hidden=false;$('confirm-preview-location').hidden=locationInspection.readOnly;$('confirm-preview-location').disabled=locationInspection.readOnly;
     $('confirm-location').disabled=locationInspection.readOnly;
-    window.HRUI.closeDialog($('location-dialog'));send('preview-candidate',{target:candidate.target});
+    layout.reading();window.HRUI.closeDialog($('location-dialog'));send('preview-candidate',{target:candidate.target});
   }
   function receiveLocationCandidates(message) {
     if(!inspectionAnnotation() || message.requestId!==locationInspection.id || message.locationToken!==locationInspection.token)return;
@@ -1658,7 +1658,7 @@
   $('pdf-search-prev').addEventListener('click',()=>send('search-step',{direction:-1}));
   $('pdf-search-next').addEventListener('click',()=>send('search-step',{direction:1}));
   $('pdf-search-close').addEventListener('click',()=>{$('document-search').value='';clearTimeout(searchTimer);send('cancel-search');$('pdf-search-bar').hidden=true;renderDocumentNavigation();});
-  $('pdf-use-region').addEventListener('click',()=>{setMode('element');$('pdf-scan-guide').hidden=true;});
+  $('pdf-use-region').addEventListener('click',()=>{layout.selecting();setMode('element');$('pdf-scan-guide').hidden=true;});
   $('confirm-location').addEventListener('click',confirmLocation);$('confirm-preview-location').addEventListener('click',confirmLocation);
   $('result-review-start').addEventListener('click',()=>startResultReview());
   $('result-review-reload').addEventListener('click',reloadSource);
@@ -1668,7 +1668,7 @@
   $('return-review').addEventListener('click',()=>{if($('return-review').disabled)return;window.HRUI.closeDialog($('return-dialog'));startResultReview();});
   $('review-previous').addEventListener('click',()=>moveResultReview(-1));
   $('review-next').addEventListener('click',()=>moveResultReview(1));
-  $('review-current-document').addEventListener('click',()=>{if(inspectionAnnotation()){window.HRUI.closeDialog($('location-dialog'));$('location-preview-bar').hidden=false;$('location-preview-label').textContent='正在核对当前文档。返回对照后可以继续下一条。';$('confirm-preview-location').hidden=true;}});
+  $('review-current-document').addEventListener('click',()=>{if(inspectionAnnotation()){layout.reading();window.HRUI.closeDialog($('location-dialog'));$('location-preview-bar').hidden=false;$('location-preview-label').textContent='正在核对当前文档。返回对照后可以继续下一条。';$('confirm-preview-location').hidden=true;}});
   $('return-location-comparison').addEventListener('click',()=>{if(inspectionAnnotation())window.HRUI.openDialog($('location-dialog'));});
   $('reselect-location').addEventListener('click',()=>{const annotation=inspectionAnnotation();window.HRUI.closeDialog($('location-dialog'));$('location-preview-bar').hidden=true;locationInspection=null;if(annotation)reselect(annotation);});
   $('handoff-export-package').addEventListener('click',()=>run(async()=>{if(!data || draftDirty())return;const result=await window.HRHandoff.create(data);downloadBlob(result.blob,result.filename);rememberHandoff();$('copy-agent-status').textContent='交接包已下载。将 ZIP 附给 agent，让它读取包内任务说明。';}));
