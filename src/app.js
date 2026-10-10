@@ -116,10 +116,8 @@
   }
 
   function id() { return crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint32Array(4)), n => n.toString(16)).join('-'); }
-  function note(message, error = false) {
-    $('status').textContent = message;
-    $('status').classList.toggle('error', error);
-    $('status').hidden = !message;
+  function note(message, error = false, options = {}) {
+    window.HRUI.feedback(message,{error,...options});
   }
   function showWarnings(warnings) {
     const box = $('warnings');
@@ -256,7 +254,10 @@
     $('save-button').disabled = !data || busy || !pendingTarget || !$('comment-input').value.trim();
     $('draft-status').textContent = draftDirty() ? '尚未保存' : '';
     $('save-button').textContent = editingId ? '更新批注' : '保存批注';
-    $('editor-title').textContent = editingId ? '编辑批注' : '添加批注';
+    const editingNumber=editingId ? data.annotations.findIndex(item=>item.id===editingId)+1 : 0;
+    $('editor-title').textContent = editingId ? `编辑批注 · ${String(editingNumber).padStart(2,'0')}` : '添加批注';
+    document.querySelector('.editor-section').dataset.state=editingId ? 'editing' : 'new';
+    $('cancel-edit').textContent=editingId ? '取消编辑' : '清空草稿';
     $('cancel-edit').hidden = !editingId && (!pendingTarget || pendingTarget.kind === 'page') && !$('comment-input').value;
     renderPageControls();
     updateGuide();
@@ -264,7 +265,7 @@
   }
   function updateScopeSummary() {
     const target = pendingTarget;
-    const label = !data ? '等待打开文档' : !target ? ({text:'请先选择文字',element:isPdf(data) ? '请先框选区域' : '请先选择元素',page:'请先选择页面'}[mode] || '请先选择范围') : wholeTarget(target) ? '整份文档' : target.kind === 'page' ? `第 ${target.pageIndex || '?'} 页` : {text:'所选文字',region:'所选区域',element:'所选元素'}[target.kind] || '所选范围';
+    const label = !data ? '等待打开文档' : !target ? ({text:'请先选择文字',element:isPdf(data) ? '请先框选区域' : '请先选择元素',page:'请先选择页面'}[mode] || '请先选择范围') : wholeTarget(target) ? '整份文档' : target.kind === 'page' ? `第 ${target.pageIndex || '?'} 页` : {text:`所选文字 · ${Array.from(target.quote?.exact || target.text || '').length.toLocaleString('zh-CN')} 字`,region:'所选区域',element:'所选元素'}[target.kind] || '所选范围';
     const badge = $('comment-scope');
     if (badge.textContent !== label) badge.textContent = label;
     badge.dataset.state = !data ? 'idle' : target ? 'ready' : 'waiting';
@@ -340,6 +341,7 @@
     const annotations = data?.annotations || [];
     $('annotation-count').textContent = annotations.length;
     $('sidebar-rail-count').textContent = annotations.length;
+    $('mobile-annotation-count').textContent=annotations.length;
     if (!annotations.some(item=>item.id===activeAnnotationId)) activeAnnotationId=null;
     for (const id of expandedAnnotations) if (!annotations.some(item=>item.id===id)) expandedAnnotations.delete(id);
     const pendingCount = annotations.filter(annotation => core.annotationStatus(annotation) === 'open').length;
@@ -365,7 +367,9 @@
       const top = document.createElement('div'); top.className = 'annotation-top';
       const meta = document.createElement('div'); meta.className = 'annotation-top-meta';
       meta.append(textNode('span', 'annotation-state ' + state, stateLabels[state]), textNode('span', 'annotation-number', String(index + 1).padStart(2, '0')));
-      top.append(textNode('span', 'tag', targetLabel(annotation.target)), meta, toggle);
+      top.append(textNode('span', 'tag', targetLabel(annotation.target)));
+      if(editingId===annotation.id)top.append(textNode('span','annotation-editing','正在编辑'));
+      top.append(meta,toggle);
       const comment = textNode('button','annotation-comment annotation-select',annotation.comment);
       comment.type='button';comment.dataset.action='select';comment.dataset.id=annotation.id;
       comment.setAttribute('aria-label',`查看第 ${index+1} 条批注：${annotation.comment}`);
@@ -442,6 +446,7 @@
   }
   function selectAnnotation(annotation) {
     activeAnnotationId=annotation.id;updateAnnotationNavigation();
+    layout.reading();
     if(core.annotationStatus(annotation)==='resolved') startResultReview(annotation.id);
     else if(needsLocationReview(annotation)) {resultReviewQueue=null;inspectLocation(annotation);}
     else locate(annotation);
@@ -508,7 +513,8 @@
     if(locationReview?.checking && !workflow.needsDocument)help+=' 正在检查待处理意见的位置…';
     $('result-review').hidden=!data;
     $('result-review').dataset.stage=stage;
-    $('result-review-title').textContent=title;
+    $('result-review-title').textContent=title;$('result-review-title').title=title;
+    $('workflow-number').textContent=['read-return','review'].includes(stage) ? '03' : ['handoff','prepared'].includes(stage) ? '02' : '01';
     $('workflow-stage').textContent=stage==='review'||stage==='read-return' ? '03 / 读取与复核' : stage==='handoff'||stage==='prepared' ? '02 / 交给 agent' : '01 / 阅读与批注';
     $('result-review-summary').hidden=!annotations.length;
     const summary = `完成记录 ${done} · 待处理 ${annotations.length-done} · 新增 / 已更新 ${fresh} · 需确认位置 ${attention}`;
@@ -639,7 +645,7 @@
     renderAnnotations();
     ++renderGeneration;
     installPreview(prepared);
-    note(`已打开 ${data.source.name}，载入 ${data.annotations.length} 条批注。`);
+    note(`已打开 ${data.source.name}，载入 ${data.annotations.length} 条批注。`,false,{duration:4500});
   }
   async function readFile(file, path = file.name, resources = []) {
     if (file.size > 100 * 1024 * 1024) throw new Error('待导入文件超过 100 MiB。');
@@ -981,7 +987,7 @@
     guideAnnotated = true;
     markDirty(); clearEditor(true); renderAnnotations(); window.HRUI.saved($('save-button'));
     startLocationReview();
-    note(targetChanged ? '新位置已保存，原定位保留作记录；交给 agent 时会使用新的位置。' : existing ? '批注已更新。准备好后，点击「交给 agent」交付本轮意见。' : '批注已添加。准备好后，点击「交给 agent」；下载副本可留作备份。');
+    note(targetChanged ? '新位置已保存，原定位保留作记录；交给 agent 时会使用新的位置。' : existing ? '批注已更新。准备好后，点击「交给 agent」交付本轮意见。' : '批注已添加。准备好后，点击「交给 agent」；下载副本可留作备份。',false,{duration:4500});
   }
   function recordChange(before, after, index) {
     undoStack.push({before: before ? structuredClone(before) : null, after: after ? structuredClone(after) : null, index});
@@ -1150,7 +1156,7 @@
     locate(annotation);
     draftTargetChanged = false;
     updateEditor(); renderAnnotations();
-    layout?.reveal(); $('comment-input').focus();
+    layout?.reveal(); $('comment-input').focus({preventScroll:true}); $('editor-title').scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches ? 'instant' : 'smooth'});
   }
   function reselect(annotation) {
     if (busy || !previewReady) { note('文档还在载入，请稍后重新选择位置。',true); return; }
@@ -1162,6 +1168,7 @@
     $('target-preview').hidden = true; send('clear-selection'); send('clear-focus');
     setMode(annotation.kind === 'page' ? 'page' : annotation.kind === 'region' ? 'element' : annotation.kind);
     updateEditor(); renderAnnotations();
+    layout.reading();
     note('在预览中重新选择位置，再点击「更新批注」。意见会保留，保存后原位置也会留作记录。');
   }
   async function download(requestedFormat) {
@@ -1226,7 +1233,7 @@
     copy.querySelector('#drop-overlay').hidden = true;
     copy.querySelector('#entry-select').replaceChildren();
     copy.querySelector('#entry-label').hidden = true;
-    copy.querySelector('#status').hidden = true;
+    copy.querySelector('#status').hidden = true;copy.querySelector('#status-dismiss').hidden=true;copy.querySelector('.notice-surface').removeAttribute('data-motion');
     copy.querySelector('#warnings').replaceChildren(); copy.querySelector('#warnings').hidden = true;
     copy.querySelector('#html-review-example').textContent = 'null';
     copy.querySelector('#pair-source').hidden=true;
@@ -1309,7 +1316,7 @@
       if (alert !== 'needs-document') $('workflow-check-details').open = true;
     }
     workflowDisclosureAlert = alert;
-    const expanded = Boolean(data && (workflowDetailsOpen ?? (!guideDismissed || Boolean(alert))));
+    const expanded = Boolean(data && (workflowDetailsOpen ?? Boolean(alert)));
     $('result-review').dataset.expanded = String(expanded);
     $('result-review').dataset.attention = String(Boolean(alert));
     $('workflow-details-toggle').setAttribute('aria-expanded', String(expanded));
@@ -1530,6 +1537,7 @@
     if (dialog) { if (action === 'escape') window.HRUI.closeDialog(dialog); return; }
     if(action==='escape' && $('backup-menu').open){window.HRUI.closeBackup();return;}
     if (busy) return;
+    if (action==='escape' && layout.closeMobile())return;
     if (action === 'help') { window.HRUI.openSettings('shortcuts'); return; }
     if (action === 'open') { openHTML(); return; }
     if (action === 'download') { if (data) run(download); return; }
@@ -1540,7 +1548,7 @@
       if (pendingTarget && pendingTarget.scope !== 'whole-document') clearTarget();
       else if (editingId || $('comment-input').value) cancelEditor();
       else setMode('browse');
-    } else if (['browse', 'text', 'element', 'page', 'whole'].includes(action)) { if(['text','element','page'].includes(action) && !(action==='page' && isDocx(data)))layout.reveal();setMode(action); }
+    } else if (['browse', 'text', 'element', 'page', 'whole'].includes(action)) { if(['text','element','page'].includes(action) && !(action==='page' && isDocx(data)))layout.selecting();setMode(action); }
   }
   async function droppedFiles(files) {
     $('drop-overlay').hidden = true;
@@ -1630,7 +1638,7 @@
         if (!target || target.kind !== (isPdf(data) && mode === 'element' ? 'region' : mode) || typeof target.selector !== 'string' || target.selector.length > 4096) return;
         core.validateTarget(target, target.kind);
         if(Number.isSafeInteger(message.selectionSerial) && message.selectionSerial>=0)latestSelectionSerial=message.selectionSerial;
-        layout.reveal();setTarget(target); note(editingId ? '新位置已选中，点击「更新批注」保存；原位置会保留作记录。' : '目标已选中，请填写修改意见。');
+        workflowDetailsOpen=false;layout.reveal();setTarget(target); note(editingId ? '新位置已选中，点击「更新批注」保存；原位置会保留作记录。' : '目标已选中，请填写修改意见。',false,{duration:3500});
       } catch (error) { note(error.message, true); }
     } else if (message.event === 'located') {
       const request = manualLocationRequests.get(message.requestId);
@@ -1654,7 +1662,7 @@
   $('confirm-location').addEventListener('click',confirmLocation);$('confirm-preview-location').addEventListener('click',confirmLocation);
   $('result-review-start').addEventListener('click',()=>startResultReview());
   $('result-review-reload').addEventListener('click',reloadSource);
-  $('workflow-primary').addEventListener('click',()=>{if(busy || !data)return;const action=$('workflow-primary').dataset.action;if(action==='handoff')openHandoff();else if(action==='save')saveAnnotation();else {layout?.reveal(); $('comment-input').focus();$('comment-input').scrollIntoView({block:'nearest',behavior:'smooth'});}});
+  $('workflow-primary').addEventListener('click',()=>{if(busy || !data)return;const action=$('workflow-primary').dataset.action;if(action==='handoff')openHandoff();else if(action==='save')saveAnnotation();else {layout?.reveal(); $('comment-input').focus({preventScroll:true}); $('editor-title').scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches ? 'instant' : 'smooth'});}});
   $('workflow-return').addEventListener('click',openReturnSteps);
   $('handoff-show-return').addEventListener('click',openReturnSteps);
   $('return-review').addEventListener('click',()=>{if($('return-review').disabled)return;window.HRUI.closeDialog($('return-dialog'));startResultReview();});
@@ -1687,7 +1695,7 @@
   $('handoff-import-results').addEventListener('click', () => { window.HRUI.closeDialog($('return-dialog')); $('results-input').click(); });
   $('handoff-reload').addEventListener('click', () => { window.HRUI.closeDialog($('return-dialog')); reloadSource(); });
   $('handoff-export-json').addEventListener('click', () => run(() => download('annotations')));
-  $('review-attention').addEventListener('click', () => { $('annotation-filter').value = 'attention'; window.HRUI.syncSelect('annotation-filter'); renderAnnotations(); $('annotation-list').scrollIntoView({block:'nearest',behavior:'smooth'}); });
+  $('review-attention').addEventListener('click', () => { layout.reviewing();$('annotation-filter').value = 'attention'; window.HRUI.syncSelect('annotation-filter'); renderAnnotations(); $('annotation-list').scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'}); });
   $('review-retry').addEventListener('click', startLocationReview);
   $('review-dismiss').addEventListener('click', () => { if (locationReview) locationReview.dismissed = true; renderLocationReview(); });
   $('compatible-open').addEventListener('click', () => { window.HRUI.closeDialog($('settings-dialog')); openCompatible(); });
@@ -1724,7 +1732,11 @@
     await activate(seedExample(nextData)); resetFolder(); exampleWorkspace = true; queueAutosave();
   }
   $('example-button').addEventListener('click', () => run(openExample));
-  for (const button of document.querySelectorAll('[data-mode]')) button.addEventListener('click', () => { if (data) setMode(button.dataset.mode); });
+  for (const button of document.querySelectorAll('[data-mode]')) button.addEventListener('click', () => {
+    if(!data)return;
+    setMode(button.dataset.mode);
+    if(button.dataset.mode!=='browse')layout.selecting();
+  });
   $('comment-input').addEventListener('input', () => { autosavePaused = false; updateEditor(); });
   $('save-button').addEventListener('click', saveAnnotation);
   $('cancel-edit').addEventListener('click', cancelEditor);
@@ -1783,6 +1795,8 @@
     try { await navigator.clipboard.writeText($('agent-task-text').value); $('copy-agent-status').textContent = '已复制。请附上原文档，再粘贴到 agent 对话中。'; rememberHandoff(stamp); }
     catch (_) { $('task-details').open = true; $('agent-task-text').focus(); $('agent-task-text').select(); $('copy-agent-status').textContent = '已选中，请按 Ctrl / ⌘ + C 复制。'; }
   });
+  document.addEventListener('pointerdown',event=>{if($('result-review').dataset.expanded==='true' && !event.target.closest('#result-review,dialog')){workflowDetailsOpen=false;updateGuide();}});
+  window.addEventListener('blur',()=>{if(document.activeElement===frame && $('result-review').dataset.expanded==='true'){workflowDetailsOpen=false;updateGuide();}});
   $('workflow-details-toggle').addEventListener('click', () => { workflowDetailsOpen = $('workflow-details-toggle').getAttribute('aria-expanded') !== 'true'; if (!workflowDetailsOpen && !guideDismissed) { guideDismissed = true; try { localStorage.setItem(guideKey,'true'); } catch (_) {} } updateGuide(); });
   $('target-summary-toggle').addEventListener('click', () => {
     const expanded = $('target-summary-toggle').getAttribute('aria-expanded') !== 'true';
@@ -1793,7 +1807,7 @@
     });
   });
   $('onboarding-dismiss').addEventListener('click', () => { workflowDetailsOpen = null; guideDismissed = true; try { localStorage.setItem(guideKey, 'true'); } catch (_) {} updateGuide(); });
-  $('restart-guide').addEventListener('click', () => { workflowDetailsOpen = null; guideDismissed = false; try { localStorage.removeItem(guideKey); } catch (_) {} window.HRUI.closeDialog($('settings-dialog')); updateGuide(); });
+  $('restart-guide').addEventListener('click', () => { workflowDetailsOpen = true; guideDismissed = false; try { localStorage.removeItem(guideKey); } catch (_) {} window.HRUI.closeDialog($('settings-dialog')); updateGuide(); });
   $('recover-session').addEventListener('click', () => run(async () => { const record = cachedSession; if (record && (!data || confirmDiscard())) await restoreSession(record); }));
   $('discard-session').addEventListener('click', () => run(clearRecovery));
   $('clear-recovery').addEventListener('click', () => run(clearRecovery));
@@ -1814,7 +1828,7 @@
   window.addEventListener('beforeunload', event => { if ((dirty || draftDirty()) && autosavePhase !== 'saved') { saveSessionNow(); event.preventDefault(); event.returnValue = ''; } });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && autosavePhase === 'saving') saveSessionNow(); });
   // Exports carry the runtime, not transient DOM. Rehydrate only validated data.
-  layout=window.HRWorkspaceLayout.mount({workspace,sidebar:$('review-sidebar'),separator:$('sidebar-resizer'),toggles:[$('sidebar-toggle'),$('sidebar-rail-toggle')],onChange:queueAutosave});
+  layout=window.HRWorkspaceLayout.mount({workspace,sidebar:$('review-sidebar'),separator:$('sidebar-resizer'),toggles:[$('sidebar-toggle'),$('sidebar-rail-toggle')],mobileDock:$('mobile-dock'),mobileButtons:{reading:$('mobile-reading'),editor:$('mobile-write'),list:$('mobile-annotations'),close:$('mobile-panel-close')},onChange:queueAutosave});
   restoreSidebarPosition(); updateExportFormat(); resetFolder(); clearEditor(); setMode('browse'); applyWidth();
   for (const dialog of document.querySelectorAll('dialog[open]')) dialog.removeAttribute('open');
   bootPromise = initialize();

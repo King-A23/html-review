@@ -62,7 +62,7 @@
     record.animation = animate(element, [
       {height: height + 'px', opacity},
       {height: (open ? element.scrollHeight : 0) + 'px', opacity: open ? 1 : 0}
-    ], {duration: open ? 300 : 190, fill: 'both'});
+    ], {duration: open ? 230 : 150, fill: 'both'});
     record.animation.finished.then(() => {
       if (disclosures.get(element) !== record) return;
       element.hidden = !open; record.animation.cancel(); record.animation = null;
@@ -74,7 +74,7 @@
     reflows.get(element)?.cancel();
     change();
     const nextHeight = element.getBoundingClientRect().height;
-    const animation = animate(element, [{height: height + 'px'}, {height: nextHeight + 'px'}], {duration: 280});
+    const animation = animate(element, [{height: height + 'px'}, {height: nextHeight + 'px'}], {duration: 210});
     if (animation) reflows.set(element, animation);
   }
   const scopeAnimations = new WeakMap();
@@ -82,10 +82,44 @@
     if (preview) reflows.get(preview)?.cancel();
     for (const element of [badge, preview].filter(Boolean)) {
       scopeAnimations.get(element)?.cancel();
-      const animation = animate(element, [{opacity: .5, transform: 'translateY(3px)'}, {opacity: 1, transform: 'translateY(0)'}], {duration: 220});
+      const animation = animate(element, [{opacity: .5, transform: 'translateY(3px)'}, {opacity: 1, transform: 'translateY(0)'}], {duration: 170});
       if (animation) scopeAnimations.set(element, animation);
     }
   }
+  const notice = $('status').closest('.notice-surface');
+  let noticeAnimation=null,noticeTimer=null,noticeRevision=0,noticeDeadline=0,noticeRemaining=0;
+  function stopNoticeTimer(){clearTimeout(noticeTimer);noticeTimer=null;}
+  function dismissFeedback() {
+    stopNoticeTimer();noticeRemaining=0;
+    const status=$('status');if(status.hidden)return;
+    const revision=++noticeRevision,opacity=Number(getComputedStyle(notice).opacity),transform=getComputedStyle(notice).transform;
+    noticeAnimation?.cancel();notice.inert=true;notice.dataset.motion='closing';
+    const finish=()=>{if(revision!==noticeRevision)return;status.hidden=true;$('status-dismiss').hidden=true;noticeAnimation?.cancel();noticeAnimation=null;notice.inert=false;delete notice.dataset.motion;};
+    noticeAnimation=animate(notice,[{opacity,transform},{opacity:0,transform:'translateY(6px)'}],{duration:140,fill:'both'});
+    if(noticeAnimation)noticeAnimation.finished.then(finish,()=>{});else finish();
+  }
+  function scheduleNotice() {
+    stopNoticeTimer();if(!noticeRemaining)return;
+    noticeDeadline=performance.now()+noticeRemaining;noticeTimer=setTimeout(()=>{
+      noticeTimer=null;
+      if(notice.matches(':hover,:focus-within') || $('status').querySelector('button')){noticeRemaining=1500;return;}
+      dismissFeedback();
+    },noticeRemaining);
+  }
+  function feedback(message,{error=false,duration=0}={}) {
+    stopNoticeTimer();const status=$('status');
+    if(!message){dismissFeedback();return;}
+    const hidden=status.hidden,opacity=hidden?0:Number(getComputedStyle(notice).opacity),transform=hidden?'translateY(8px)':getComputedStyle(notice).transform;
+    ++noticeRevision;noticeAnimation?.cancel();noticeAnimation=null;notice.inert=false;
+    status.textContent=message;status.hidden=false;status.classList.toggle('error',error);
+    notice.dataset.tone=error?'attention':'neutral';notice.dataset.motion='open';$('status-dismiss').hidden=false;
+    noticeAnimation=animate(notice,[{opacity,transform},{opacity:1,transform:'translateY(0)'}],{duration:190});
+    noticeRemaining=error?0:duration;scheduleNotice();
+  }
+  function pauseNotice(){if(noticeTimer){noticeRemaining=Math.max(0,noticeDeadline-performance.now());stopNoticeTimer();}}
+  notice.addEventListener('pointerenter',pauseNotice);notice.addEventListener('focusin',pauseNotice);
+  notice.addEventListener('pointerleave',scheduleNotice);notice.addEventListener('focusout',()=>{if(!notice.matches(':focus-within'))scheduleNotice();});
+  $('status-dismiss').addEventListener('click',()=>{document.querySelector('#sidebar-toggle:not(:disabled)')?.focus({preventScroll:true});dismissFeedback();});
   // Each surface keeps one timeline. Reversing it preserves its current geometry.
   function drive(record, opening, finish) {
     const revision = ++record.revision;
@@ -166,11 +200,11 @@
       {opacity: 0, transform: 'translateY(' + shift / 2 + 'px)', offset: 0},
       {opacity: 0, transform: 'translateY(' + shift / 2 + 'px)', offset: .12 + Math.min(index, 5) * .06, easing: ease},
       {opacity: 1, transform: 'translateY(0)', offset: .87}, {opacity: 1, transform: 'translateY(0)', offset: 1}
-    ], {duration: 300, easing: 'linear', fill: 'both'}));
+    ], {duration: 220, easing: 'linear', fill: 'both'}));
     const motion = surface(popup, [
       {opacity: 0, transform: 'translateY(' + shift + 'px) scale(.985)', clipPath: 'inset(' + (above ? '18% 0 0' : '0 0 18%') + ' 0 round 14px)', boxShadow: '0 3px 12px #24382b00'},
       {opacity: 1, transform: 'translateY(0) scale(1)', clipPath: 'inset(0 round 14px)', boxShadow: '0 16px 48px #24382b1c, 0 3px 8px #24382b09'}
-    ], 300, rowAnimations);
+    ], 220, rowAnimations);
     trigger.setAttribute('aria-expanded', 'true'); trigger.setAttribute('aria-controls', popup.id); menu = {...field, popup, buttons, motion, anchor: {top: rect.top, left: rect.left}};
     const current = menu; drive(motion, true, () => { motion.state = 'open'; popup.dataset.motion = 'open'; });
     (last ? buttons.at(-1) : buttons.find(button => button.getAttribute('aria-selected') === 'true') || buttons[0])?.focus({preventScroll: true});
@@ -317,15 +351,15 @@
     if (!record) {
       const scrim = document.createElement('div'); scrim.className = 'modal-scrim'; scrim.dataset.uiTransient = 'scrim'; scrim.setAttribute('aria-hidden', 'true'); document.body.append(scrim);
       dialog.showModal();
-      const backdrop = reducedMotion.matches ? [] : [scrim.animate([{opacity: 0}, {opacity: 1}], {duration: 380, easing: ease, fill: 'both'})];
+      const backdrop = reducedMotion.matches ? [] : [scrim.animate([{opacity: 0}, {opacity: 1}], {duration: 280, easing: ease, fill: 'both'})];
       if (dialog.id === 'settings-dialog' && !reducedMotion.matches) backdrop.push(dialog.querySelector('.settings-content').animate([
         {opacity: 0, transform: 'translateY(5px)', offset: 0}, {opacity: 0, transform: 'translateY(5px)', offset: .16, easing: ease},
         {opacity: 1, transform: 'translateY(0)', offset: .88}, {opacity: 1, transform: 'translateY(0)', offset: 1}
-      ], {duration: 380, easing: 'linear', fill: 'both'}));
+      ], {duration: 280, easing: 'linear', fill: 'both'}));
       record = surface(dialog, [
         {opacity: 0, transform: 'translateY(16px) scale(.985)'},
         {opacity: 1, transform: 'translateY(0) scale(1)'}
-      ], 380, backdrop);
+      ], 280, backdrop);
       record.scrim = scrim; dialogs.set(dialog, record);
 
     }
@@ -345,11 +379,10 @@
     if (reducedMotion.matches) return;
     const visible = Array.from(list.querySelectorAll('.is-new')).filter(card => { const rect = card.getBoundingClientRect(); return rect.bottom > 0 && rect.top < innerHeight; }).slice(0, 8);
     for (const card of visible) {
-      const style = getComputedStyle(card);
       animate(card, [
-        {height: '0px', opacity: 0, paddingTop: '0px', paddingBottom: '0px', marginBottom: '0px', transform: 'translateY(-6px)', overflow: 'hidden'},
-        {height: card.offsetHeight + 'px', opacity: 1, paddingTop: style.paddingTop, paddingBottom: style.paddingBottom, marginBottom: style.marginBottom, transform: 'translateY(0)', overflow: 'hidden'}
-      ], {duration: 360});
+        {opacity: 0, transform: 'translateY(5px)'},
+        {opacity: 1, transform: 'translateY(0)'}
+      ], {duration: 190});
     }
   }
   let saveFeedback = null;
@@ -375,5 +408,5 @@
   for (const button of document.querySelectorAll('[data-settings-page]')) button.addEventListener('click', () => openSettings(button.dataset.settingsPage));
   for (const choice of document.querySelectorAll('[data-sidebar-choice]')) choice.addEventListener('click', () => { $('sidebar-position').value = choice.dataset.sidebarChoice; $('sidebar-position').dispatchEvent(new Event('change', {bubbles: true})); });
   $('settings-button').addEventListener('click', () => openSettings());
-  window.HRUI = {icon, syncSelect, closeMenu, toggleBackup, closeBackup, closeDialog, openDialog, openSettings, enterCards, saved, disclose, reflow, scopeChanged};
+  window.HRUI = {icon, syncSelect, closeMenu, toggleBackup, closeBackup, closeDialog, openDialog, openSettings, enterCards, saved, disclose, reflow, scopeChanged, feedback};
 })();

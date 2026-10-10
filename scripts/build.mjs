@@ -47,8 +47,9 @@ const [template, css, core, session, localFiles, shortcuts, bridge, ui, layout, 
   read('src/session.js'), read('src/local-files.js'), read('src/shortcuts.js'), read('src/bridge.js'), read('src/ui.js'), read('src/workspace-layout.js'), read('src/app.js'), readFile(path.join(root, 'examples/demo.html')),
 ]);
 const awaitPdfCss = await read('src/pdf-text-layer.css');
+const productCss = await read('src/product.css');
 const output = template
-  .replace('<!-- HR_STYLES -->', () => `<style>\n${css}\n${awaitPdfCss}\n</style>`)
+  .replace('<!-- HR_STYLES -->', () => `<style>\n${css}\n${productCss}\n${awaitPdfCss}\n</style>`)
   .replace('<!-- HR_EXAMPLE -->', () => `<script type="application/json" id="html-review-example">${JSON.stringify({ name: 'demo.html', base64: example.toString('base64') })}</script>`)
   .replace('<!-- HR_SCRIPTS -->', () => [licenseBlock,'<script id="hr-docx-worker" type="text/plain">'+Buffer.from(worker.outputFiles[0].text).toString('base64')+'</script>',script('hr-core', core),script('hr-docx',docx), ...pdfBlocks, script('hr-handoff-library',handoffLibrary.outputFiles[0].text),script('hr-handoff',handoff), script('hr-session', session), script('hr-local-files', localFiles), script('hr-shortcuts', shortcuts), script('hr-bridge', bridge), script('hr-ui', ui), script('hr-workspace-layout', layout), script('hr-app', app)].join('\n'));
 if (process.argv.includes('--check')) {

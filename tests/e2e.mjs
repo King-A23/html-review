@@ -213,11 +213,15 @@ try {
       assert.equal(await portable.locator('#target-kind').textContent(), '文字');
       await portable.locator('#sidebar-position').selectOption('right');
       await portable.setViewportSize({width: 900, height: 900});
-      assert.equal((await portable.locator('.sidebar').boundingBox()).width, 352, 'retain the preferred width while the document still has sufficient room');
+      await portable.waitForFunction(()=>document.querySelector('#sidebar-resizer').getAttribute('aria-valuenow')==='300');
+      assert.equal((await portable.locator('.sidebar').boundingBox()).width, 300, 'default sidebar becomes compact on narrow laptops');
       assert((await portable.locator('.preview-section').boundingBox()).width >= 360, 'adaptive sidebar preserves usable document space');
       assert((await portable.locator('.sidebar').boundingBox()).x > (await portable.locator('.preview-section').boundingBox()).x);
       await portable.setViewportSize({width: 600, height: 900});
-      assert((await portable.locator('.sidebar').boundingBox()).y >= (await portable.locator('.preview-section').boundingBox()).y + (await portable.locator('.preview-section').boundingBox()).height);
+      const mobilePreview=await portable.locator('.preview-section').boundingBox();
+      await portable.locator('#mobile-write').click();
+      assert.deepEqual(await portable.locator('.preview-section').boundingBox(),mobilePreview,'mobile editor overlays without resizing the document');
+      const panel=await portable.locator('.sidebar').boundingBox();assert(panel.x>=0&&panel.x+panel.width<=600&&panel.y>=0&&panel.y+panel.height<=900,'bottom panel fits the viewport');
       assert(await portable.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
       await portable.screenshot({path: path.join(resultDir, '05-narrow-sidebar.png')});
     } finally { await isolated.close(); }

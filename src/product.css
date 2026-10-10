@@ -1,0 +1,210 @@
+/* Reading-first product surfaces. Brand expression stays outside the document. */
+:root {
+  --paper: #fffefa;
+  --paper-line: #e2e3da;
+  --reading-ground: #eeefea;
+  --ink-strong: #2c3c32;
+  --ink-soft: #626f61;
+  --copper: #a75b3c;
+  --lift: 0 18px 56px #263c3020, 0 3px 9px #263c3009;
+}
+body {background: #f5f4ef;}
+.app-header {padding-inline: 28px;}
+.brand-subtitle {font-size: 11px; letter-spacing: .025em;}
+.brand-period {color: var(--copper);}
+.workspace {border-radius: 18px; box-shadow: 0 12px 38px #263c3005;}
+.online-bar~.workspace.has-document {height: calc(100dvh - var(--header-height) - 56px);}
+.source-info {padding: 15px 22px;}
+.source-icon {width: 30px; height: 34px;}
+.source-copy .eyebrow {font-size: 10px; letter-spacing: .04em;}
+.editor-section, .annotations-section {padding: 19px 22px;}
+.editor-section {transition: background .18s;}
+.editor-section[data-state=editing] {background: linear-gradient(125deg,#fcf6ed,#fffdfa);}
+.editor-section[data-state=editing] #editor-title {color: #915232;}
+.editor-section[data-state=editing] #editor-title::before {
+  content: ''; display: inline-block; width: 5px; height: 5px;
+  margin: 0 8px 2px 0; border-radius: 50%; background: #b27649;
+}
+#editor-title {font-size: 14px;}
+.mode-tabs button {min-height: 36px; font-size: 12px;}
+.mode-hint {font-size: 12px; line-height: 1.75;}
+textarea {font-size: 14px; line-height: 1.85; min-height: 136px;}
+textarea:focus {border-color: #97aa8a; box-shadow: 0 0 0 3px #627b4c10;}
+.comment-scope {font-size: 11px; padding: 4px 8px;}
+#save-button {min-height: 38px;}
+.annotation-comment {font-size: 14px;}
+button.annotation-comment {font-size: 14px; line-height: 1.75;}
+.annotation-details-toggle, .annotation-actions button, .results-import {font-size: 12px;}
+.annotation-quote, .location-status, .annotation-history, .annotation-feedback {font-size: 11px;}
+.annotation-state {font-size: 10px;}
+.annotation-editing {font-size: 10px; color: #92512d; background: #f8ead8; padding: 3px 6px; border-radius: 5px;}
+.annotation-card {padding: 13px 14px; box-shadow: none;}
+.annotation-card.is-current {border-color: #a8b69a; box-shadow: inset 3px 0 #788e66;}
+.annotation-card.active {border-color: #d1b18a; box-shadow: inset 3px 0 #bc8d5c;}
+.annotation-actions {gap: 4px 13px;}
+.sidebar-footer {font-size: 11px; padding: 15px 22px;}
+.sidebar-footer .text-button {font-size: 11px;}
+.preview-section {position: relative;}
+.preview-toolbar {height: 52px; padding-inline: 18px; background: #fbfcf7;}
+.preview-controls .select-trigger {font-size: 12px;}
+#preview-label {font-size: 13px;}
+.preview-stage {padding: 22px; background: var(--reading-ground);}
+.preview-stage iframe {border-radius: 5px; box-shadow: 0 8px 28px #263c3006;}
+
+/* One line of guidance, with optional details floating above the document. */
+.workflow-card {
+  position: relative; z-index: 20; padding: 7px 18px; min-height: 48px;
+  border-bottom: 1px solid var(--paper-line); background: #f8f9f3;
+}
+.workflow-next {flex-wrap: nowrap; gap: 12px; min-height: 33px;}
+.workflow-copy {display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; flex-basis: auto;}
+.workflow-copy>strong {font-size: 12px; color: #4e6048; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.workflow-number {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 26px; height: 26px; border: 1px solid #dce4d2; border-radius: 8px;
+  font: 11px/1 ui-monospace, SFMono-Regular, Consolas, monospace; color: #647a55; background: #f1f5e9;
+}
+.workflow-card .result-review-actions {flex-shrink: 0; gap: 5px; justify-content: flex-end;}
+.workflow-card .result-review-actions button {font-size: 11px; min-height: 32px; padding: 6px 8px;}
+.workflow-card[data-attention=true] {background: #fbf7ed; border-bottom-color: #e7dcc9;}
+.workflow-card[data-attention=true] .workflow-number {border-color: #e6d9c1; background: #f9f0df; color: #8c6740;}
+.workflow-card:is([data-stage=handoff],[data-stage=prepared],[data-stage=draft]) #workflow-primary {display: none;}
+.workflow-details {
+  position: absolute; inset: calc(100% + 9px) 12px auto auto;
+  width: min(440px,calc(100% - 24px)); max-height: min(480px,calc(100dvh - 220px));
+  overflow: auto; padding: 20px; border: 1px solid #dfe5d5; border-radius: 14px;
+  background: linear-gradient(135deg,#fffefa,#f8faf2); box-shadow: var(--lift);
+  scrollbar-width: thin; overscroll-behavior: contain; transform-origin: top right;
+}
+.workflow-details>.eyebrow {padding-top: 2px; font-size: 11px; letter-spacing: .08em;}
+.workflow-details>p {font-size: 12px; line-height: 1.85;}
+.workflow-details .workflow-steps {margin-top: 0; margin-bottom: 18px; padding-top: 0; border-top: 0;}
+.workflow-details .workflow-steps ol {flex-wrap: wrap; gap: 12px; font-size: 11px;}
+.workflow-details .workflow-steps #onboarding-dismiss {margin-top: 12px; font-size: 11px;}
+.workflow-details .workflow-check {font-size: 12px;}
+
+/* Acknowledgements never change the document's geometry. */
+.preview-feedback {
+  position: absolute; z-index: 32; inset: auto 18px 18px;
+  display: flex; flex-direction: column; align-items: center; gap: 9px; pointer-events: none;
+}
+.notice-surface {
+  position: relative; display: flex; align-items: flex-start; width: fit-content; max-width: min(640px,100%);
+  border: 1px solid #d9e1ce; border-radius: 12px; padding: 11px 44px 11px 15px;
+  background: #fffefaf5; box-shadow: 0 8px 30px #263c3016; pointer-events: auto;
+}
+.notice-surface:has(#status[hidden]) {display: none;}
+#status {padding: 0; border: 0; background: transparent; font-size: 12px; line-height: 1.75; color: #4c6247; overflow-wrap: anywhere;}
+#status.error {background: transparent; color: #8f4b31;}
+.notice-surface[data-tone=attention] {background: #fffaf2; border-color: #e7d3b5;}
+#status-dismiss {position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; color: #68765e;}
+#status-dismiss .icon {width: 14px; height: 14px;}
+.preview-feedback .warnings {
+  width: fit-content; max-width: min(640px,100%); max-height: min(260px,35dvh); overflow: auto;
+  padding: 12px 15px; border: 1px solid #e5d5b9; border-radius: 12px; background: #fffaf0f7;
+  box-shadow: 0 8px 30px #263c3012; pointer-events: auto; font-size: 12px; line-height: 1.8;
+}
+.preview-feedback .warnings summary {cursor: pointer; font-weight: 500; color: #84603b;}
+.preview-feedback .warnings button {font-size: 12px;}
+
+/* Editorial character, using local typography and light rather than heavy decoration. */
+.welcome h2 {font-family: 'Songti SC','STSong','Noto Serif CJK SC',serif; font-weight: 600; letter-spacing: -2px; line-height: 1.22;}
+.welcome-copy>p {font-size: 15px; line-height: 2; max-width: 440px;}
+.welcome-eyebrow {font-size: 11px; letter-spacing: .12em;}
+.welcome-emphasis {background-image: linear-gradient(115deg,#304935 15%,#798563 95%);}
+.welcome-art {filter: drop-shadow(0 12px 35px #485a3605);}
+.art-window {box-shadow: 0 26px 70px #33442c13,0 3px 9px #33442c06;}
+.art-document-title {font-family: 'Songti SC','STSong',serif; font-size: 28px; font-weight: 600;}
+.art-review-note {border-color: #dfddce; box-shadow: 0 14px 40px #34452f15;}
+.settings-dialog {border-radius: 22px;}
+.settings-page>h2 {font-size: 28px; letter-spacing: -.8px;}
+.settings-page {padding: 32px;}
+.settings-intro {font-size: 14px; line-height: 1.9;}
+.settings-entry p, .help-steps p, .help-details {font-size: 13px; line-height: 1.85;}
+.setting-card p {font-size: 12px; line-height: 1.8;}
+.dialog-heading h2 {font-size: 23px;}
+.handoff-choice {background: linear-gradient(140deg,#fffefa,#f8faf3);}
+.handoff-choice h3 {font-size: 19px; letter-spacing: -.4px;}
+.handoff-choice p, .return-step p {font-size: 13px; line-height: 1.85;}
+.mobile-dock, .sheet-heading {display: none;}
+
+@media (max-width: 1100px) {
+  .workflow-next {flex-wrap: nowrap;}
+  .workflow-copy {flex-basis: auto;}
+  .workflow-card .result-review-actions {justify-content: flex-end;}
+  .workflow-card .result-review-actions button {padding-inline: 6px;}
+  .preview-toolbar {padding-inline: 12px;}
+}
+@media (max-width: 760px) {
+  .app-header {min-height: 112px; padding: 15px 16px;}
+  .workspace.has-document {
+    margin: 0 8px; height: calc(100dvh - 112px - 80px); min-height: 280px;
+    display: block; overflow: hidden; border-radius: 13px;
+  }
+  .workspace.has-document>.preview-section {height: 100%; min-height: 0;}
+  .online-bar~.workspace.has-document {height: calc(100dvh - 112px - 118px);}
+  .workspace.has-document>.sidebar,.workspace.has-document[data-sidebar-collapsed=true]>.sidebar {
+    display: flex; position: fixed; z-index: 60; inset: auto 8px calc(76px + env(safe-area-inset-bottom) + var(--viewport-bottom,0px));
+    height: min(62dvh,620px); min-height: 0; max-height: max(160px,calc(var(--visible-height,100dvh) - 140px));
+    border: 1px solid #dce1d2; border-radius: 20px; box-shadow: 0 -12px 60px #263c3020,0 3px 12px #263c3012;
+    background: #fffefa; overscroll-behavior: contain;
+  }
+  .sheet-heading {
+    position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 19px 10px; background: #fffefa; z-index: 3; border-bottom: 1px solid #edf0e7;
+  }
+  .sheet-heading strong {font-size: 13px; color: #4b6045;}
+  .sheet-handle {display: none;}
+  .sheet-heading .icon-button {width: 34px; height: 34px;}
+  .workspace.has-document .source-info {display: none;}
+  .workspace.has-document .source-info:has(#entry-label:not([hidden])) {display: block; padding: 12px 19px;}
+  .workspace.has-document .source-info:has(#entry-label:not([hidden]))>.source-icon,.workspace.has-document .source-info:has(#entry-label:not([hidden]))>.source-copy {display: none;}
+  .workspace[data-mobile-view=editor] .annotations-section {display: none;}
+  .workspace[data-mobile-view=list] .editor-section {display: none;}
+  .workspace.has-document .sidebar-footer {margin-top: auto; padding: 9px 19px; font-size: 10px;}
+  .workspace.has-document .sidebar-footer .privacy-dot,.workspace.has-document .sidebar-footer #save-state,.workspace.has-document .sidebar-footer .recovery-tools {display: none;}
+  .workspace.has-document .sidebar-footer:has(#autosave-state.error) .recovery-tools {display: flex;}
+  .editor-section,.annotations-section {padding: 16px 19px;}
+  .workspace.has-document .editor-actions {position: sticky; bottom: 0; min-height: 60px; padding-block: 10px; background: #fffefa; box-shadow: 0 -8px 12px #fffefa; z-index: 4;}
+  #save-button {min-height: 42px;}
+  .mode-tabs button {min-height: 40px;}
+  textarea {font-size: 16px;}
+  .workspace[data-keyboard=true]>.sidebar {bottom: calc(8px + var(--viewport-bottom,0px)); max-height: max(160px,calc(var(--visible-height,100dvh) - 32px));}
+  .workspace[data-keyboard=true]~.mobile-dock {display: none;}
+  .annotation-actions button,.annotation-details-toggle {min-height: 38px;}
+  .mobile-dock:not([hidden]) {
+    position: fixed; z-index: 65; inset: auto 8px calc(8px + var(--viewport-bottom,0px)); padding: 6px 7px calc(6px + env(safe-area-inset-bottom));
+    display: flex; align-items: center; gap: 6px; height: calc(58px + env(safe-area-inset-bottom));
+    border: 1px solid #dfe4d5; border-radius: 16px; background: #fffefa; box-shadow: 0 8px 30px #263c3010;
+  }
+  .mobile-dock button {flex: 1; min-height: 42px; gap: 6px; padding: 8px 5px; font-size: 12px; border: 0; background: transparent; color: #67745c; box-shadow: none;}
+  .mobile-dock button.is-active {background: #edf3e5; color: #3c5734;}
+  .mobile-dock .icon {width: 16px; height: 16px;}
+  #mobile-annotation-count {font-size: 10px; font-variant-numeric: tabular-nums;}
+  .preview-toolbar {height: 48px; gap: 4px; padding-inline: 8px;}
+  .preview-controls .select-trigger {font-size: 10px;}
+  #sidebar-position-trigger {display: none;}
+  #preview-label {font-size: 11px;}
+  .preview-stage {padding: 10px;}
+  .workflow-card {padding: 7px 10px; min-height: 72px;}
+  .workflow-next {gap: 3px; flex-wrap: wrap; align-items: center;}
+  .workflow-copy {flex-basis: 100%; gap: 7px;}
+  .workflow-copy>strong {font-size: 11px;}
+  .workflow-number {height: 20px; width: 20px; border-radius: 6px; font-size: 9px;}
+  .workflow-card .result-review-actions {margin-left: 27px; justify-content: flex-start; flex-wrap: nowrap; gap: 3px;}
+  .workflow-card .result-review-actions button {font-size: 10px; min-height: 29px; padding: 5px 6px;}
+  .workflow-details {right: 8px; width: calc(100% - 16px); max-height: calc(100dvh - 300px); padding: 17px;}
+  .workflow-details .workflow-steps ol {font-size: 11px;}
+  .preview-feedback {inset-inline: 8px; bottom: 10px;}
+  .notice-surface {padding: 10px 38px 10px 12px; border-radius: 10px;}
+  #status {font-size: 11px;}
+  .workspace.has-document:has(.sidebar:not([hidden]):not([inert])) .preview-feedback {position: fixed; z-index: 75; bottom: calc(78px + env(safe-area-inset-bottom));}
+  .workspace.has-document:has(.sidebar:not([hidden]):not([inert])) .notice-surface:not([data-tone=attention]):not(:has(#status button)) {display: none;}
+  .workspace.has-document:has(.sidebar:not([hidden]):not([inert])) .warnings {display: none;}
+  .workspace[data-keyboard=true] .preview-feedback {bottom: calc(14px + var(--viewport-bottom,0px));}
+  .welcome h2 {font-size: clamp(42px,9vw,60px);}
+  .welcome-copy>p {font-size: 14px;}
+  .art-document-title {font-size: 25px;}
+  .settings-page {padding: 23px;}
+}
+@media (prefers-reduced-motion: reduce) {.editor-section {transition: none;}}

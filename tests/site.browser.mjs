@@ -99,6 +99,7 @@ try {
   for (const width of [320,390,768,1440]) {
     await page.setViewportSize({width,height:1000});
     assert(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth), `Online workspace fits ${width}px`);
+    if(width<=760){await page.locator('#mobile-dock').waitFor({state:'visible'});const preview=await page.locator('.preview-section').boundingBox(),dock=await page.locator('#mobile-dock').boundingBox();assert(preview.y+preview.height<=dock.y,'website navigation does not push reading behind the mobile dock');await page.locator('#mobile-write').click();assert(await page.locator('#comment-input').isVisible());await page.locator('#mobile-reading').click();await page.locator('#review-sidebar').waitFor({state:'hidden'});}
   }
   await page.screenshot({path:path.join(output,'site-online-workspace.png'),fullPage:true});
   await page.locator('[data-mode="browse"]').click();

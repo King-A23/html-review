@@ -165,6 +165,9 @@ try {
   await frame.locator('body').evaluate(() => new Promise(resolve => {if(document.readyState==='complete')resolve();else window.addEventListener('load',resolve,{once:true});}));
   assert.equal(await page.locator('#comment-scope').textContent(),'整份文档');
   assert(await page.locator('#target-preview').isHidden(),'Whole scope uses the compact input badge rather than repeating the filename');
+  assert(await page.locator('#workflow-details').isHidden(),'Routine guidance starts compact');
+  const originalPreview=await page.locator('#preview-frame').boundingBox();
+  await page.locator('#workflow-details-toggle').click();
   await page.locator('#onboarding-card').waitFor({state:'visible'});
   const expandedHeight=(await page.locator('#result-review').boundingBox()).height;
   await page.locator('#workflow-details-toggle').click();
@@ -172,7 +175,8 @@ try {
   assert.equal(await page.locator('#workflow-details-toggle').getAttribute('aria-expanded'),'false');
   assert.equal(await page.locator('#workflow-details').evaluate(node=>node.inert),true);
   const compactHeight=(await page.locator('#result-review').boundingBox()).height;
-  assert(expandedHeight-compactHeight>=65,'Collapsing explanations returns meaningful room to the document');
+  assert.equal(expandedHeight,compactHeight,'Flow details float above the document');
+  assert.deepEqual(await page.locator('#preview-frame').boundingBox(),originalPreview,'Collapsing details preserves document geometry');
   await page.reload(); await page.locator('#preview-frame[aria-busy="false"]').waitFor();
   await page.locator('#comment-scope').filter({hasText:'整份文档'}).waitFor();
   assert(await page.locator('#workflow-details').isHidden(),'The first deliberate collapse persists across reload');
@@ -222,6 +226,7 @@ try {
   for(const width of [1280,900,760,390,320]) {
     await page.setViewportSize({width,height:900});
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Compact workflow fits '+width+'px');
+    if(width<=760)await page.locator('#mobile-write').click();
     const badge=await page.locator('#comment-scope').boundingBox(),sidebar=await page.locator('.sidebar').boundingBox();
     assert(badge.x>=sidebar.x && badge.x+badge.width<=sidebar.x+sidebar.width,'Scope badge stays inside the editor');
   }

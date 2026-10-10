@@ -130,6 +130,7 @@ try {
       assert(await page.locator('#onboarding-card').isHidden(),'Empty workspace presents the open action first');
       await page.locator('#example-button').click();
       await frameFor(page);
+      if(await page.locator('#workflow-details').isHidden())await page.locator('#workflow-details-toggle').click();
       await page.locator('#onboarding-card').waitFor({state: 'visible'});
       for (const step of ['open', 'annotate', 'deliver']) assert(await page.locator(`[data-guide-step="${step}"]`).isVisible());
       await page.locator('#onboarding-dismiss').click();
