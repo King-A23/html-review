@@ -563,6 +563,7 @@
   }
   async function command(name,extra={}) {
     const session=current;if(!session || session.destroyed)return;
+    const searchSerial=session.searchSerial+1;
     try {
       if(name==='set-mode') {session.selectionSerial++;session.mode=extra.mode==='element'?'region':extra.mode;session.container.dataset.pdfMode=session.mode;guideScan(session);}
       else if(name==='clear-focus' || name==='clear-selection') {session.selectionSerial++;session.focus=null;session.selectedText=false;if(name==='clear-selection')global.getSelection()?.removeAllRanges();paintFocus(session);}
@@ -587,7 +588,10 @@
         for(const item of extra.items || []){if(token!==session.checkSerial)return;const result=await timed(session,resolveTarget(session,item.target,token),'批注检查');items.push({id:item.id,revision:item.revision,status:result.status,reason:result.reason});}
         if(token===session.checkSerial)emit(session,'targets-checked',{requestId:extra.requestId,items});
       }
-    }catch(error){warning(session,error);emit(session,'operation-complete');}
+    }catch(error){
+      if(name==='search-document' && session.searchSerial===searchSerial)emit(session,'document-search-error',{query:extra.query});
+      warning(session,error);emit(session,'operation-complete');
+    }
   }
   function cancelOperations(){if(current){current.searchSerial++;current.checkSerial++;emit(current,'operation-complete');}}
   function cancel(){if(importing){const pending=importing;destroy(pending);pending.rejectImport?.(abortError());}cancelOperations();}

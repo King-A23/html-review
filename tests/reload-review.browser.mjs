@@ -1,4 +1,4 @@
-import {ensureBackup} from './backup-ui.mjs';
+import {ensureBackup, openAnnotationData} from './backup-ui.mjs';
 /* Real file-input reloads; genuine bridge messages, OOXML variants, exports and reopen. */
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
@@ -19,7 +19,7 @@ let browser;
 const ready=page=>page.waitForFunction(()=>!document.getElementById('open-button').disabled);
 const frame=page=>page.frameLocator('#preview-frame');
 const card=(page,id)=>page.locator(`.annotation-card[data-annotation-id="${id}"]`);
-async function data(page){await page.locator('#data-button').click();const value=JSON.parse(await page.locator('#data-preview').textContent());await page.locator('#data-dialog [data-close]').click();await page.locator('#data-dialog').waitFor({state:'hidden'});return value;}
+async function data(page){await openAnnotationData(page);const value=JSON.parse(await page.locator('#data-preview').textContent());await page.locator('#data-dialog [data-close]').click();await page.locator('#data-dialog').waitFor({state:'hidden'});return value;}
 async function download(page,format,name){await ensureBackup(page); await page.locator('#export-format').selectOption(format);const event=page.waitForEvent('download');await ensureBackup(page); await page.locator('#download-button').click();const file=path.join(temp,name);await(await event).saveAs(file);return file;}
 async function selectText(page,text,index=0){await page.locator('[data-mode=text]').click();await frame(page).locator('p').filter({hasText:text}).nth(index).evaluate(p=>{const range=document.createRange();range.selectNodeContents(p);getSelection().removeAllRanges();getSelection().addRange(range);p.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));});await page.locator('#target-text').filter({hasText:text}).waitFor();}
 async function save(page,comment){await page.locator('#comment-input').fill(comment);await page.locator('#save-button').click();}

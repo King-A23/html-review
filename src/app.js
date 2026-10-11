@@ -50,6 +50,7 @@
   let pendingPicker = null;
   let documentOutline = [];
   let searchTimer = null;
+  let documentSearch = {query:'', status:'idle', items:[], total:0};
   let exampleWorkspace = false;
   const reviewFiles = new WeakSet();
   let renderGeneration = 0;
@@ -345,6 +346,23 @@
     element.textContent = content;
     return element;
   }
+  function annotationEmpty(message, label, action, symbol = 'mark') {
+    const empty = textNode('div', 'empty-list', '');
+    const emblem = textNode('span', 'empty-list-icon', '');
+    emblem.innerHTML = window.HRUI.icon(symbol); emblem.setAttribute('aria-hidden','true');
+    const [title, description] = message.split('\n');
+    empty.append(emblem, textNode('strong','',title));
+    if (description) empty.append(textNode('p','',description));
+    if (label) {
+      const button = textNode('button','quiet',label); button.type='button';
+      button.addEventListener('click',action); empty.append(button);
+    }
+    return empty;
+  }
+  function startOpinion() {
+    layout.reveal(); setComposerOpen(true); $('comment-input').focus({preventScroll:true});
+    $('comment-input').scrollIntoView({block:'nearest'});
+  }
   function renderAnnotations() {
     const list = $('annotation-list');
     const scrollTop = list.scrollTop;
@@ -369,7 +387,7 @@
     const query = normalizeSearch($('annotation-search').value.trim());
     $('annotation-search-clear').hidden = !query;
     $('annotation-search-status').hidden = !query;
-    if (!annotations.length) { list.append(textNode('p', 'empty-list', '还没有批注\n写下整体意见，或选中正文中的一处开始。')); $('annotation-search-status').textContent=query ? '没有找到匹配的批注' : ''; updateAnnotationNavigation(); return; }
+    if (!annotations.length) { list.append(annotationEmpty('还没有批注\n写下整体意见，或选中正文中的一处开始。','开始写批注',startOpinion)); $('annotation-search-status').textContent=query ? '没有找到匹配的批注' : ''; updateAnnotationNavigation(); return; }
     annotations.forEach((annotation, index) => {
       const resolved = core.annotationStatus(annotation) === 'resolved';
       if (filter === 'attention' ? !needsLocationReview(annotation) : filter === 'new' ? !['new','updated'].includes(core.taskState(annotation)) : filter !== 'all' && (resolved ? 'resolved' : 'open') !== filter) return;
@@ -442,7 +460,10 @@
     });
     const matches = list.childElementCount;
     $('annotation-search-status').textContent=query ? matches ? `找到 ${matches} 条匹配的批注` : '没有找到匹配的批注' : '';
-    if (!matches) list.append(textNode('p', 'empty-list', query ? '没有找到这条批注\n试试其他关键词，或调整筛选条件。' : filter === 'attention' ? '所有位置都已确认。' : filter === 'new' ? '目前没有新增或更新的意见。' : filter === 'open' ? '全部处理完成\n每一条建议，都让文档更进一步。' : '还没有已完成的处理记录。'));
+    if (!matches) list.append(annotationEmpty(query ? '没有找到这条批注\n试试其他关键词，或调整筛选条件。' : filter === 'attention' ? '所有位置都已确认。' : filter === 'new' ? '目前没有新增或更新的意见。' : filter === 'open' ? '全部处理完成\n每一条建议，都让文档更进一步。' : '还没有已完成的处理记录。','查看全部批注',()=>{
+      $('annotation-search').value=''; $('annotation-filter').value='all';
+      window.HRUI.syncSelect('annotation-filter'); renderAnnotations(); $('annotation-search').focus({preventScroll:true});
+    },query ? 'search' : 'check'));
     renderLocationReview();
     renderResultReview();
     updateAnnotationNavigation();
@@ -654,6 +675,7 @@
     $('pdf-search-bar').hidden=true; $('pdf-scan-guide').hidden=true;
     frame.setAttribute('aria-busy',String(!result.pdf));pdfPreview.setAttribute('aria-busy',String(Boolean(result.pdf)));
     documentOutline = []; clearTimeout(searchTimer);
+    documentSearch = {query:'', status:'idle', items:[], total:0};
     $('document-search').value = ''; renderDocumentNavigation();
     pageInventory = []; $('page-select').replaceChildren(new Option('点击预览或选择页面', '')); renderPageControls();
     channel = result.channel;
@@ -690,7 +712,7 @@
     $('annotation-search').value='';
     workflowDetailsOpen = null; workflowDisclosureAlert = '';
     locationReview = null; $('reload-review').hidden = true;
-    if ($('annotation-filter').value === 'attention') { $('annotation-filter').value = 'all'; window.HRUI.syncSelect('annotation-filter'); }
+    $('annotation-filter').value = 'all'; window.HRUI.syncSelect('annotation-filter');
     data.annotations = data.annotations.map(core.normalizeAnnotation);
     undoStack.length = 0; redoStack.length = 0;
     cachedSession = null; $('recovery-banner').hidden = true;
@@ -706,6 +728,7 @@
     renderAnnotations();
     ++renderGeneration;
     installPreview(prepared);
+    layout.reading();
     note(`已打开 ${data.source.name}，载入 ${data.annotations.length} 条批注。`,false,{duration:4500});
   }
   async function readFile(file, path = file.name, resources = []) {
@@ -1300,6 +1323,8 @@
     copy.querySelector('#agent-task-text').textContent = '';
     for (const selector of ['#handoff-source', '#handoff-summary', '#agent-task-help', '#copy-agent-status', '#document-outline', '#document-search-results', '#document-search-status']) copy.querySelector(selector).replaceChildren();
     copy.querySelector('#document-search').value = ''; copy.querySelector('#document-search').removeAttribute('value');
+    copy.querySelector('#document-search-results').removeAttribute('aria-busy');
+    for (const selector of ['#document-search-clear','#document-search-retry','#document-search-hint']) copy.querySelector(selector).hidden=true;
     copy.querySelector('#task-details').removeAttribute('open');
     copy.querySelector('#workflow-check-details').removeAttribute('open');
     for(const selector of ['#return-document-name','#return-document-state','#return-results-name','#return-results-state','#return-help'])copy.querySelector(selector).replaceChildren();
@@ -1577,20 +1602,60 @@
     if (busy || !data?.annotations.length || draftDirty()) return;
     prepareHandoff(); window.HRUI.openDialog($('agent-task-dialog'));
   }
-  function renderDocumentNavigation(results, total = 0) {
+  function renderDocumentNavigation() {
     const query = $('document-search').value.trim();
+    const {status, items:results, total} = documentSearch;
+    const searching = Boolean(query) && status === 'loading';
+    $('document-search-clear').hidden = !$('document-search').value;
+    $('pdf-cancel-search').hidden = !searching || !isPdf(data);
+    $('document-search-retry').hidden = !query || !['cancelled','error'].includes(status);
     $('document-outline').hidden = Boolean(query);
     $('document-search-results').hidden = !query;
+    $('document-search-results').setAttribute('aria-busy',String(searching));
     const list = query ? $('document-search-results') : $('document-outline'); list.replaceChildren();
-    const items = query ? results || [] : documentOutline;
-    $('document-search-status').textContent = query ? (results ? `找到 ${total} 处${total > items.length ? '，显示前 ' + items.length + ' 处' : ''}` : '正在查找…') : '选择标题，直接跳到对应内容。';
-    for (const item of items) {
-      const button = textNode('button', 'document-nav-item', item.text); button.type = 'button';
+    const items = query ? status === 'ready' ? results : [] : documentOutline;
+    $('document-search-status').textContent = !query ? '选择标题，直接跳到对应内容。' : searching ? '正在查找…' : status === 'cancelled' ? '已取消查找，可以重新查找。' : status === 'error' ? '查找未完成，请重试或换一个关键词。' : `找到 ${total} 处${total > items.length ? '，显示前 ' + items.length + ' 处' : ''}`;
+    $('document-search-hint').hidden = !items.length;
+    for (const [index,item] of items.entries()) {
+      const button = textNode('button', 'document-nav-item', ''); button.type = 'button';
+      const number = textNode('span','document-result-number',String(index+1).padStart(2,'0')); number.setAttribute('aria-hidden','true');
+      const content = textNode('span','document-result-text','');
+      // Only add text nodes and marks: imported text is never interpreted as HTML.
+      const pattern = query ? new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'giu') : null;
+      let offset=0;
+      for (const match of pattern ? item.text.matchAll(pattern) : []) {
+        content.append(item.text.slice(offset,match.index),textNode('mark','',match[0])); offset=match.index+match[0].length;
+      }
+      content.append(item.text.slice(offset)); button.append(number,content);
+      button.setAttribute('aria-label',query ? `第 ${index+1} 处：${item.text}` : item.text);
       if (!query) button.style.paddingLeft = (12 + Math.min(item.level - 1, 4) * 12) + 'px';
-      button.addEventListener('click', () => { send('navigate-document', {kind:query ? 'search' : 'outline', index:item.index, query, id:item.id, start:item.start,end:item.end}); window.HRUI.closeDialog($('document-nav-dialog')); });
+      button.addEventListener('click', () => {
+        layout.reading();
+        send('navigate-document', {kind:query ? 'search' : 'outline', index:item.index, query, id:item.id, start:item.start,end:item.end});
+        $('document-nav-dialog').addEventListener('close',()=>{(isPdf(data) ? pdfPreview : frame).focus({preventScroll:true});},{once:true});
+        window.HRUI.closeDialog($('document-nav-dialog'));
+      });
       list.append(button);
     }
-    if (!items.length && (!query || results)) list.append(textNode('p', 'navigation-empty', query ? '没有找到匹配内容，请换一个关键词。' : '这份文档没有标题，可以使用上方查找。'));
+    if (!items.length && (!query || status === 'ready')) list.append(textNode('p', 'navigation-empty', query ? '没有找到匹配内容\n试试更短的关键词，或检查输入。' : '这份文档没有标题，可以使用上方查找。'));
+  }
+  function searchDocument() {
+    clearTimeout(searchTimer);
+    if(isPdf(data)) send('cancel-search');
+    if(documentSearch.status==='loading') { $('pdf-cancel-operation').hidden=true; $('pdf-operation-status').textContent=''; }
+    const query=$('document-search').value.trim();
+    documentSearch={query,status:query ? 'loading' : 'idle',items:[],total:0};
+    renderDocumentNavigation();
+    if(query)searchTimer=setTimeout(()=>send('search-document',{query}),150);
+  }
+  function cancelDocumentSearch() {
+    clearTimeout(searchTimer); send('cancel-search');
+    $('pdf-cancel-operation').hidden=true; $('pdf-operation-status').textContent='';
+    documentSearch={...documentSearch,status:'cancelled',items:[],total:0}; renderDocumentNavigation();
+  }
+  function openDocumentNavigation() {
+    renderDocumentNavigation(); window.HRUI.openDialog($('document-nav-dialog'));
+    $('document-search').focus(); $('document-search').select();
   }
   async function copyAgentTask() {
     if (!data || !data.annotations.length || busy) return;
@@ -1695,8 +1760,10 @@
       if (!Array.isArray(message.items) || message.items.length > 1000 || !message.items.every(item => Number.isInteger(item.index) && item.index >= 0 && typeof item.text === 'string' && item.text.length <= 160 && item.level >= 1 && item.level <= 6)) return;
       documentOutline = message.items; renderDocumentNavigation();
     } else if (message.event === 'document-search' && hasSearch(data)) {
-      if (message.query !== $('document-search').value.trim() || !Array.isArray(message.items) || message.items.length > 50 || !Number.isInteger(message.total) || message.total < 0 || !message.items.every(item => Number.isInteger(item.index) && item.index >= 0 && typeof item.text === 'string' && item.text.length <= 220)) return;
-      renderDocumentNavigation(message.items, message.total);
+      if (documentSearch.status !== 'loading' || message.query !== documentSearch.query || !Array.isArray(message.items) || message.items.length > 50 || !Number.isInteger(message.total) || message.total < 0 || !message.items.every(item => Number.isInteger(item.index) && item.index >= 0 && typeof item.text === 'string' && item.text.length <= 220)) return;
+      documentSearch={query:message.query,status:'ready',items:message.items,total:message.total}; renderDocumentNavigation();
+    } else if (message.event === 'document-search-error' && documentSearch.status==='loading' && message.query===documentSearch.query) {
+      documentSearch={...documentSearch,status:'error',items:[],total:0}; renderDocumentNavigation();
     }
     else if (message.event === 'pages') {
       if (!Array.isArray(message.pages) || message.pages.length > 1000 || !message.pages.every((item, index) => item.index === index + 1 && typeof item.title === 'string' && item.title.length <= 100)) return;
@@ -1731,10 +1798,10 @@
   window.addEventListener('message', event => { const message=event.data; if(!isPdf(data) && event.source===frame.contentWindow && message?.hr===true && message.channel===channel) handlePreviewMessage(message); });
   $('cancel-conversion').addEventListener('click',()=>{ if (!cancelPicker()) adapters.cancel(); });
   $('pdf-thumbnail-toggle').addEventListener('click',()=>{const visible=$('pdf-thumbnail-toggle').getAttribute('aria-expanded')!=='true';$('pdf-thumbnail-toggle').setAttribute('aria-expanded',String(visible));send('set-thumbnails',{visible});});
-  $('pdf-search-edit').addEventListener('click',()=>{renderDocumentNavigation();window.HRUI.openDialog($('document-nav-dialog'));$('document-search').focus();$('document-search').select();});
+  $('pdf-search-edit').addEventListener('click',openDocumentNavigation);
   $('pdf-search-prev').addEventListener('click',()=>send('search-step',{direction:-1}));
   $('pdf-search-next').addEventListener('click',()=>send('search-step',{direction:1}));
-  $('pdf-search-close').addEventListener('click',()=>{$('document-search').value='';clearTimeout(searchTimer);send('cancel-search');$('pdf-search-bar').hidden=true;renderDocumentNavigation();});
+  $('pdf-search-close').addEventListener('click',()=>{$('document-search').value='';searchDocument();$('pdf-search-bar').hidden=true;});
   $('pdf-use-region').addEventListener('click',()=>{layout.selecting();setMode('element');$('pdf-scan-guide').hidden=true;});
   $('confirm-location').addEventListener('click',confirmLocation);$('confirm-preview-location').addEventListener('click',confirmLocation);
   $('result-review-start').addEventListener('click',()=>startResultReview());
@@ -1755,19 +1822,29 @@
   $('pdf-next-page').addEventListener('click',()=>window.HRPdf.goToPage(Math.min(Number($('pdf-page-number').max)||1,Number($('pdf-page-number').value)+1)));
   $('pdf-page-number').addEventListener('change',()=>window.HRPdf.goToPage(Number($('pdf-page-number').value)));
   $('pdf-zoom').addEventListener('change',event=>window.HRPdf.setZoom(event.target.value==='fit' ? 'fit' : Number(event.target.value)));
-  $('pdf-cancel-operation').addEventListener('click',()=>{ send('cancel-operations'); clearTimeout(locationTimer); locationRequest=null; if(locationReview) {locationReview.checking=false;locationReview.queue=[];renderLocationReview();} $('pdf-cancel-operation').hidden=true; $('pdf-operation-status').textContent='已取消查找 / 检查'; });
+  $('pdf-cancel-operation').addEventListener('click',()=>{ if(documentSearch.status==='loading')cancelDocumentSearch(); send('cancel-operations'); clearTimeout(locationTimer); locationRequest=null; if(locationReview) {locationReview.checking=false;locationReview.queue=[];renderLocationReview();} $('pdf-cancel-operation').hidden=true; $('pdf-operation-status').textContent='已取消查找 / 检查'; });
   $('pair-source-button').addEventListener('click',()=>openHTML());
   $('pair-compatible').addEventListener('click',()=>openCompatible());
   $('cancel-pair').addEventListener('click',()=>{pendingLight=null;$('pair-source').hidden=true;note('已取消恢复，当前工作区已保留。');});
   $('open-button').addEventListener('click', () => openHTML());
   $('welcome-open').addEventListener('click', () => openHTML());
   $('handoff-button').addEventListener('click', openHandoff);
-  $('document-nav-button').addEventListener('click', () => { $('pdf-cancel-search').hidden=!isPdf(data); renderDocumentNavigation(); window.HRUI.openDialog($('document-nav-dialog')); $('document-search').focus(); });
-  $('pdf-cancel-search').addEventListener('click',()=>{ clearTimeout(searchTimer); send('cancel-search'); $('document-search-status').textContent='已取消查找'; });
-  $('document-search').addEventListener('input', () => {
-    clearTimeout(searchTimer); if(isPdf(data)) send('cancel-search'); renderDocumentNavigation();
-    const query = $('document-search').value.trim();
-    if (query) searchTimer = setTimeout(() => send('search-document', {query}), 150);
+  $('document-nav-button').addEventListener('click',openDocumentNavigation);
+  $('pdf-cancel-search').addEventListener('click',cancelDocumentSearch);
+  $('document-search-retry').addEventListener('click',()=>{searchDocument();$('document-search').focus();});
+  $('document-search-clear').addEventListener('click',()=>{$('document-search').value='';searchDocument();$('document-search').focus();});
+  $('document-search').addEventListener('input',searchDocument);
+  $('document-nav-dialog').addEventListener('keydown',event=>{
+    if(event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)return;
+    const input=$('document-search'),fromInput=event.target===input;
+    const buttons=Array.from(document.querySelectorAll('#document-outline:not([hidden]) .document-nav-item,#document-search-results:not([hidden]) .document-nav-item'));
+    if(!fromInput && !buttons.includes(event.target))return;
+    if(event.key==='Enter' && fromInput && buttons.length){event.preventDefault();buttons[0].click();}
+    else if(['ArrowDown','ArrowUp'].includes(event.key) && buttons.length){
+      event.preventDefault(); const index=buttons.indexOf(event.target);
+      const next=fromInput ? event.key==='ArrowDown' ? 0 : buttons.length-1 : index+(event.key==='ArrowDown' ? 1 : -1);
+      (buttons[next] || input).focus();
+    }
   });
   $('handoff-import-results').addEventListener('click', () => { window.HRUI.closeDialog($('return-dialog')); $('results-input').click(); });
   $('handoff-reload').addEventListener('click', () => { window.HRUI.closeDialog($('return-dialog')); reloadSource(); });

@@ -46,7 +46,7 @@ try {
  await page.waitForFunction(()=>document.querySelector('.select-popover')?.dataset.motion==='open');
  await page.keyboard.press('End'); await page.keyboard.press('Enter'); assert.equal(await page.locator('#export-format').inputValue(),'annotations');
  await ensureBackup(page); await page.evaluate(()=>document.querySelector('#export-format-trigger').click()); await page.waitForFunction(()=>document.querySelector('.select-popover')?.dataset.motion==='open'); assert.equal(await page.getByRole('option',{selected:true}).getAttribute('data-value'),'annotations');
- await page.keyboard.press('Tab'); assert.equal(await page.locator('#download-button').evaluate(e=>e===document.activeElement),true,'loaded document exposes the next download action in keyboard order'); await page.keyboard.press('Tab'); assert.equal(await page.locator('#settings-button').evaluate(e=>e===document.activeElement),true);
+ await page.keyboard.press('Tab'); assert.equal(await page.locator('#download-button').evaluate(e=>e===document.activeElement),true,'loaded document exposes the next download action in keyboard order'); await page.keyboard.press('Tab'); assert.equal(await page.locator('#data-button').evaluate(e=>e===document.activeElement),true,'secondary data action is reachable after download'); await page.keyboard.press('Tab'); assert.equal(await page.locator('#settings-button').evaluate(e=>e===document.activeElement),true);
  await page.locator('.select-popover').waitFor({state:'detached'});
  console.log('PASS anchored unfolding, staggered options, reverse without a jump, selected state and Tab focus');
  await page.locator('#settings-button').click();

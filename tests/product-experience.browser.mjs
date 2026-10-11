@@ -1,3 +1,4 @@
+import {openAnnotationData} from './backup-ui.mjs';
 /* Product acceptance exercises visible controls and preserved document geometry. */
 import assert from 'node:assert/strict';
 import {mkdir,writeFile,mkdtemp,rm} from 'node:fs/promises';
@@ -12,12 +13,12 @@ const root=path.dirname(path.dirname(fileURLToPath(import.meta.url))),output=pat
 const browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
 const checks=[],errors=[];
 const temp=await mkdtemp(path.join(os.tmpdir(),'review-product-'));
-async function fresh(options={}){const context=await browser.newContext({viewport:{width:1440,height:1000},acceptDownloads:true,...options});const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());await page.goto(pathToFileURL(path.join(root,'index.html')).href);await page.waitForFunction(()=>!document.getElementById('open-button').disabled);return {context,page};}
+async function fresh(options={}){const context=await browser.newContext({viewport:{width:1440,height:1000},acceptDownloads:true,...options});const page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());await page.goto(pathToFileURL(path.join(root,'index.html')).href);await page.waitForFunction(()=>!document.getElementById('open-button').disabled);return {context,page};}
 async function open(page){await page.locator('#file-input').setInputFiles(path.join(root,'examples/pages.html'));await page.locator('#preview-frame[aria-busy=false]').waitFor();await waitPreviewLayout(page);}
-async function settle(page){await page.evaluate(async()=>{await Promise.all(document.getAnimations().filter(a=>a.effect?.getTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{})));});}
+async function settle(page){await page.waitForFunction(()=>document.getAnimations().every(a=>a.effect?.getTiming().iterations===Infinity||['idle','finished'].includes(a.playState)),null,{timeout:5000});}
 async function shot(page,name){await settle(page);await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));await page.screenshot({animations:'disabled',path:path.join(output,name+'.png')});}
 async function save(page,text){await page.locator('#comment-input').fill(text);await page.locator('#save-button').click();}
-async function data(page){await page.locator('#data-button').click();const result=JSON.parse(await page.locator('#data-preview').textContent());await page.keyboard.press('Escape');await page.locator('#data-dialog').waitFor({state:'hidden'});return result;}
+async function data(page){await openAnnotationData(page);const result=JSON.parse(await page.locator('#data-preview').textContent());await page.keyboard.press('Escape');await page.locator('#data-dialog').waitFor({state:'hidden'});return result;}
 try{
  {
   const {context,page}=await fresh();try{
@@ -77,7 +78,7 @@ try{
  {
   const folder=path.join(temp,'folder');await mkdir(folder);await writeFile(path.join(folder,'01-first.html'),'<h1>第一份文档</h1>');await writeFile(path.join(folder,'02-second.html'),'<h1>第二份文档</h1>');
   const {context,page}=await fresh({viewport:{width:390,height:844},isMobile:true,hasTouch:true});try{
-   await page.locator('#folder-input').setInputFiles(folder);await page.locator('#preview-frame[aria-busy=false]').waitFor();await page.locator('#mobile-write').tap();await page.locator('#entry-select-trigger').tap();await page.getByRole('option',{name:'02-second.html',exact:true}).tap();await page.frameLocator('#preview-frame').locator('h1').filter({hasText:'第二份文档'}).waitFor();assert(await page.locator('#entry-label').isVisible());checks.push('mobile folder document selector stays accessible and opens the selected document');
+   await page.locator('#folder-input').setInputFiles(folder);await page.locator('#preview-frame[aria-busy=false]').waitFor();await page.locator('#mobile-write').tap();await page.locator('#entry-select-trigger').tap();await page.getByRole('option',{name:'02-second.html',exact:true}).tap();await page.frameLocator('#preview-frame').locator('h1').filter({hasText:'第二份文档'}).waitFor();assert.equal(await page.locator('.workspace').getAttribute('data-mobile-panel'),'closed');await page.locator('#mobile-write').tap();assert(await page.locator('#entry-label').isVisible());checks.push('mobile folder document selector opens the selected document in reading view and stays accessible');
   }finally{await context.close();}
  }
  {

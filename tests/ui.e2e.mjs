@@ -1,5 +1,5 @@
 import {waitPreviewLayout} from './preview-layout.mjs';
-import {ensureBackup} from './backup-ui.mjs';
+import {ensureBackup, openAnnotationData} from './backup-ui.mjs';
 /* Real-browser acceptance for custom controls, settings and semantic page targets. */
 import assert from 'node:assert/strict';
 import {mkdir, readFile, stat, writeFile} from 'node:fs/promises';
@@ -21,7 +21,7 @@ async function fresh(options = {}) {
 }
 async function choose(page, id, label) {if(id==='export-format') await ensureBackup(page); await page.locator('#'+id+'-trigger').click(); await page.getByRole('option', {name:label}).click();}
 async function save(page, text) {await page.locator('#comment-input').fill(text); await page.locator('#save-button').click();}
-async function data(page) {await page.locator('#data-button').click(); const value = JSON.parse(await page.locator('#data-preview').textContent()); await page.keyboard.press('Escape'); await page.locator('#data-dialog').waitFor({state:'hidden'}); return value;}
+async function data(page) {await openAnnotationData(page); const value = JSON.parse(await page.locator('#data-preview').textContent()); await page.keyboard.press('Escape'); await page.locator('#data-dialog').waitFor({state:'hidden'}); return value;}
 async function download(page, filename) {const pending=page.waitForEvent('download'); await ensureBackup(page); await page.locator('#download-button').click(); const item=await pending; const destination=path.join(output,filename); await item.saveAs(destination); assert.equal(await item.failure(),null); return destination;}
 async function assertSurfaceOnTop(page,selector) {
  const covered=await page.locator(selector).evaluate(surface=>{

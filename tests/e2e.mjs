@@ -108,7 +108,7 @@ try {
     await frame.locator('#demo-button').click();
     assert.equal(await frame.locator('#demo-count').textContent(), '已点击 1 次');
     assert.equal(await frame.locator('body').evaluate(() => {try { return parent.document.body.innerHTML; } catch (_) { return 'isolated'; }}), 'isolated');
-    assert.equal(await page.locator('.source-info').innerText(), '当前文档\ndemo.html');
+    assert.equal(await page.locator('.source-info').innerText(), '当前文档\ndemo.html\nHTML');
     assert.equal(await page.locator('#preview-label').textContent(), 'demo.html');
     assert.equal(await page.locator('#source-meta, #source-version').count(), 0);
   });
@@ -362,8 +362,9 @@ try {
     assert.equal(await reopened.locator('#target-kind').textContent(), '元素');
     assert.equal(await reopened.locator('#target-selector').textContent(), '#card-collaborate');
     await reopened.locator('#save-button').click();
+    const readingWidth=await reopened.locator('#preview-width').inputValue();
     await reopened.locator('.annotation-card').nth(2).locator('[data-action="edit"]').click();
-    assert.equal(await reopened.locator('#preview-width').inputValue(), '390');
+    assert.equal(await reopened.locator('#preview-width').inputValue(), readingWidth, 'editing a whole-document opinion keeps the current reading width');
     assert.equal(await reopened.locator('#draft-status').textContent(), '');
     await reopened.locator('#cancel-edit').click();
   });

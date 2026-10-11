@@ -1,3 +1,4 @@
+import {openAnnotationData} from './backup-ui.mjs';
 /* Regression checks for interrupted clicks, short dialogs and mobile review. */
 import assert from 'node:assert/strict';
 import {mkdir,mkdtemp,readFile,writeFile,rm} from 'node:fs/promises';
@@ -20,7 +21,7 @@ async function fresh(viewport){
 async function settle(page){await page.evaluate(async()=>{await Promise.all(document.getAnimations().filter(a=>a.effect?.getTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{})));});}
 async function open(page,file=path.join(root,'examples/pages.html')){await page.locator('#file-input').setInputFiles(file);await page.locator('#preview-frame[aria-busy=false]').waitFor();await waitPreviewLayout(page);}
 async function viewport(page,values){await page.evaluate(values=>{for(const [name,value] of Object.entries(values)){if(value===null)delete visualViewport[name];else Object.defineProperty(visualViewport,name,{configurable:true,get:()=>value});}visualViewport.dispatchEvent(new Event('resize'));},values);}
-async function json(page){await page.locator('#data-button').click();const result=JSON.parse(await page.locator('#data-preview').textContent());await page.locator('#data-dialog [data-close]').click();await page.locator('#data-dialog').waitFor({state:'hidden'});return result;}
+async function json(page){await openAnnotationData(page);const result=JSON.parse(await page.locator('#data-preview').textContent());await page.locator('#data-dialog [data-close]').click();await page.locator('#data-dialog').waitFor({state:'hidden'});return result;}
 try{
  {
   const {context,page}=await fresh({width:390,height:844});try{

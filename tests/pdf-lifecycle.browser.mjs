@@ -1,3 +1,4 @@
+import {openAnnotationData} from './backup-ui.mjs';
 /* Chrome lifecycle coverage. Native OPFS handles are real; picker UI alone is stubbed.
  * Runs on the host OS. It does not claim Windows filesystem or browser coverage. */
 import assert from 'node:assert/strict';
@@ -32,7 +33,7 @@ async function freshPage(){const context=await browser.newContext({viewport:{wid
 async function open(page,filename){await page.locator('#file-input').setInputFiles(filename);await ready(page);await rendered(page);await page.waitForFunction(()=>!document.getElementById('document-nav-button').disabled);}
 async function goto(page,n){await page.evaluate(n=>window.HRPdf.goToPage(n),n);await rendered(page,n);}
 async function save(page,text){await page.locator('#comment-input').fill(text);await page.locator('#save-button').click();}
-async function report(page){await page.locator('#data-button').click();const data=JSON.parse(await page.locator('#data-preview').textContent());await page.locator('#data-dialog [data-close]').click();await page.locator('#data-dialog').waitFor({state:'hidden'});return data;}
+async function report(page){await openAnnotationData(page);const data=JSON.parse(await page.locator('#data-preview').textContent());await page.locator('#data-dialog [data-close]').click();await page.locator('#data-dialog').waitFor({state:'hidden'});return data;}
 async function nativeWrite(page,name,bytes){await page.evaluate(async({name,base64})=>{const directory=await navigator.storage.getDirectory();const handle=await directory.getFileHandle(name,{create:true});const writer=await handle.createWritable();await writer.write(Uint8Array.from(atob(base64),c=>c.charCodeAt(0)));await writer.close();},{name,base64:Buffer.from(bytes).toString('base64')});}
 async function stableSave(page,url,comment,handleKind='file'){
   // The IndexedDB transaction can become readable before the app resumes its

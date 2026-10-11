@@ -1,4 +1,4 @@
-import {ensureBackup} from './backup-ui.mjs';
+import {ensureBackup, openAnnotationData} from './backup-ui.mjs';
 /* Verify the deployed subpath, actual downloads and trial persistence in a real browser. */
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -39,7 +39,7 @@ const server = createServer(async (request, response) => {
 });
 let browser;
 async function snapshotData(page) {
-  await page.locator('#data-button').click();
+  await openAnnotationData(page);
   const data = JSON.parse(await page.locator('#data-preview').textContent());
   await page.keyboard.press('Escape');
   await page.locator('#data-dialog').waitFor({state:'hidden'});

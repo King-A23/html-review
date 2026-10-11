@@ -974,8 +974,8 @@ button.primary {box-shadow: none;}
 .history-controls {gap: 0; margin-left: -5px;}
 .list-utilities #import-results {margin: 0 0 0 auto; font-size: 11px; color: #71786b; min-height: 30px;}
 .list-utilities #import-results .icon {display: none;}
-#data-button {width: 26px; height: 28px; color: #858b7f; padding: 5px;}
-#data-button .icon {width: 15px; height: 15px;}
+.backup-secondary {margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line);}
+.backup-secondary #data-button {min-height: 32px; font-size: 11px; color: var(--muted);}
 .annotation-list {overflow: auto; flex: 1 1 auto; min-height: 110px; padding: 2px 4px 14px; scrollbar-width: thin; scrollbar-color: #d9ddd2 transparent; overscroll-behavior: contain; scroll-padding-block: 5px;}
 .annotation-card {padding: 12px; border-radius: 9px; border-color: #e6e5de; background: #fffefa; box-shadow: none; margin-bottom: 8px;}
 .annotation-card:hover {border-color: #cbcfc1; box-shadow: none;}
@@ -999,7 +999,12 @@ button.annotation-comment {font-size: 13px; line-height: 1.75; font-weight: 500;
 .annotation-actions .delete-button:hover {color: #a24e34; background: #f8ede5;}
 .annotation-card:not([data-expanded=true]):not(.is-current) .location-status.exact {display: none;}
 .location-status {font-size: 11px;}
-.empty-list {border: 0; padding: 28px 12px; white-space: pre-line; color: #78816e; font-size: 12px; line-height: 2;}
+.empty-list {display: flex; flex-direction: column; align-items: center; border: 0; padding: 28px 12px; white-space: normal; color: #727869; font-size: 12px; line-height: 1.9; text-align: center;}
+.empty-list-icon {display: grid; place-items: center; width: 38px; height: 38px; margin-bottom: 13px; border: 1px solid #e7e1d6; border-radius: 12px; background: #f8f3eb; color: #a77857;}
+.empty-list-icon .icon {width: 19px; height: 19px;}
+.empty-list strong {font-size: 13px; font-weight: 500; color: #535c4d;}
+.empty-list p {margin: 5px 0 0; max-width: 225px;}
+.empty-list button {margin-top: 16px; min-height: 36px; padding: 7px 13px; font-size: 12px; border: 1px solid #dedfd4; background: #fffefa;}
 .sidebar-footer {margin-top: 0; background: #f8f8f2; gap: 4px; color: #707968;}
 .sidebar-footer #save-state, .sidebar-footer .privacy-dot {display: none;}
 .sidebar-footer .recovery-tools {margin-top: 0;}
@@ -1118,6 +1123,79 @@ button.annotation-comment {font-size: 13px; line-height: 1.75; font-weight: 500;
 }
 @media (prefers-reduced-motion: reduce) {
   button, #composer-toggle .icon {transition: none;}
+}
+
+/* Search is a reading tool: keep context, expose the next action, and leave
+   enough room for both long excerpts and a short laptop window. */
+.document-nav-dialog {max-height: calc(100dvh - 28px); overflow: hidden; border-radius: 16px;}
+.document-nav-dialog[open] {display: flex; flex-direction: column;}
+.document-nav-dialog .dialog-heading {flex-shrink: 0; padding: 22px 26px 20px;}
+.document-nav-dialog .dialog-body {min-height: 0; max-height: none; padding: 20px 26px 24px; overflow: auto;}
+.document-search-field {display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 1px solid #deded4; border-radius: 9px; background: #faf9f5;}
+.document-search-field:focus-within {border-color: #b99981; box-shadow: 0 0 0 3px #a653380c;}
+.document-search-field>[data-icon] {display: flex; color: #848875;}
+.document-search-field .icon {width: 17px; height: 17px;}
+#document-search {min-width: 0; flex: 1; width: 100%; padding: 13px 0; border: 0; border-radius: 0; outline: 0; font-size: 14px; background: transparent;}
+#document-search:focus {outline: 0;}
+#document-search::-webkit-search-cancel-button {display: none;}
+#document-search-clear {flex-shrink: 0; width: 32px; height: 36px; padding: 6px; margin-right: -5px;}
+.document-search-feedback {display: flex; align-items: center; gap: 10px; min-height: 47px;}
+#document-search-status {flex: 1; margin: 8px 0; font-size: 12px; color: #6b7262;}
+.document-search-feedback .text-button {flex-shrink: 0; font-size: 12px; min-height: 36px;}
+#document-outline, #document-search-results {max-height: min(380px,40dvh); padding: 2px; scroll-padding-block: 4px;}
+.document-nav-item {display: flex; align-items: flex-start; gap: 13px; padding: 12px 10px; color: var(--ink); border-radius: 7px; min-height: 46px;}
+.document-nav-item:hover:not(:disabled), .document-nav-item:focus-visible {background: #f5f1e8;}
+.document-nav-item:focus-visible {outline: 2px solid #b78d72; outline-offset: -2px;}
+.document-result-number {flex-shrink: 0; min-width: 18px; padding-top: 3px; color: #999583; font: 10px/1.8 ui-monospace, SFMono-Regular, Consolas, monospace;}
+.document-result-text {min-width: 0; overflow-wrap: anywhere;}
+.document-result-text mark {color: #79452d; background: #f4e3c6; border-radius: 2px;}
+#document-search-results .document-nav-item {border-color: #eae7df; border-radius: 7px;}
+.navigation-empty {padding: 24px 14px; margin: 0; text-align: center; white-space: pre-line; color: #6e7668;}
+.document-search-hint {display: flex; flex-shrink: 0; justify-content: flex-end; gap: 18px; padding: 12px 26px; border-top: 1px solid var(--line); font-size: 10px; color: #757b6d; background: #f8f7f2;}
+.document-search-hint>span {display: flex; align-items: center; gap: 5px;}
+.document-search-hint kbd {display: inline-grid; place-items: center; padding: 1px 4px; min-width: 18px; border: 1px solid #e1e1d7; border-radius: 4px; font: inherit; font-size: 10px; line-height: 1.5; background: #fffefa;}
+@media (max-width: 760px) {
+  .document-nav-dialog .dialog-heading {padding: 20px;}
+  .document-nav-dialog .dialog-body {padding: 17px 20px 20px;}
+  #document-search {font-size: 16px;}
+  .document-search-hint {display: none;}
+  .empty-list {padding-block: 22px;}
+  .empty-list button {min-height: 42px;}
+  .backup-secondary #data-button {min-height: 40px;}
+}
+@media (max-height: 500px) {
+  .document-nav-dialog .dialog-heading {padding-block: 12px;}
+  .document-nav-dialog .dialog-heading .eyebrow {display: none;}
+  .document-nav-dialog .dialog-heading h2 {margin-top: 0; font-size: 19px;}
+  .document-search-hint {display: none;}
+}
+.document-nav-item {justify-content: flex-start;}
+#document-nav-button .icon, .pdf-controls .icon {width: 15px; height: 15px;}
+#pdf-prev-page .icon {transform: rotate(-90deg);}
+#pdf-next-page .icon {transform: rotate(-90deg);}
+@media (max-width: 760px) {
+  .pdf-controls {padding: 6px 8px; gap: 4px;}
+  .pdf-controls>label, #pdf-thumbnail-toggle>span:not([data-icon]), #pdf-prev-page>span:not([data-icon]), #pdf-next-page>span:not([data-icon]) {display: none;}
+  #pdf-thumbnail-toggle, #pdf-prev-page, #pdf-next-page {flex: 0 0 40px; width: 40px; height: 40px; padding: 8px;}
+  .pdf-controls .icon {width: 17px; height: 17px;}
+  #pdf-page-number {width: 38px; min-height: 36px; padding-inline: 3px; text-align: center;}
+  #pdf-page-count {font-size: 11px; min-width: 22px;}
+  #pdf-zoom-trigger {min-height: 40px; padding-inline: 7px; font-size: 11px;}
+}
+@media (max-width: 430px) {
+  #document-nav-button {min-width: 36px; min-height: 36px; padding: 8px;}
+  #document-nav-button>span:not([data-icon]) {display: none;}
+  #document-nav-button .icon {width: 17px; height: 17px;}
+}
+#pdf-operation-status:empty {display: none;}
+#pdf-search-prev .icon, #pdf-search-next .icon {transform: rotate(-90deg);}
+@media (max-width: 760px) {
+  .pdf-controls {gap: 3px;}
+  .pdf-search-bar {gap: 3px; padding: 6px 8px;}
+  .pdf-search-bar #pdf-search-position {min-width: 0; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11px;}
+  .pdf-search-bar button {width: 36px; height: 38px; padding: 8px; flex-shrink: 0;}
+  .pdf-search-bar button>span:not([data-icon]) {display: none;}
+  .pdf-search-bar .icon {width: 16px; height: 16px;}
 }
 
 /* PDF.js 6.4.299 text layer styles, Apache-2.0; see bundled licenses. */
@@ -1306,7 +1384,7 @@ button.annotation-comment {font-size: 13px; line-height: 1.75; font-weight: 500;
       <button id="open-button" type="button" aria-label="打开文档" title="打开文档"><span data-icon="file-plus"></span><span>打开文档</span></button>
       <span class="action-divider" aria-hidden="true"></span>
       <button id="handoff-button" class="handoff-button primary" type="button" hidden disabled>交给 agent <span data-icon="arrow-up-right"></span></button>
-      <details id="backup-menu" class="backup-menu"><summary>保存副本 <span data-icon="chevron-down"></span></summary><div class="backup-panel"><strong>保存这次审阅</strong><p>完整副本可以重新打开、继续批注。交给 agent 请使用「交给 agent」。</p><label class="field-label" for="export-format">保存格式</label><select id="export-format" aria-label="保存格式"><option value="html">完整工作区 (.html)</option><option value="gzip">压缩工作区 (.html.gz)</option><option value="annotations">单独批注 (.json)</option></select><button id="download-button" class="quiet download-button" type="button" disabled>保存副本</button></div></details>
+      <details id="backup-menu" class="backup-menu"><summary>保存副本 <span data-icon="chevron-down"></span></summary><div class="backup-panel"><strong>保存这次审阅</strong><p>完整副本可以重新打开、继续批注。交给 agent 请使用「交给 agent」。</p><label class="field-label" for="export-format">保存格式</label><select id="export-format" aria-label="保存格式"><option value="html">完整工作区 (.html)</option><option value="gzip">压缩工作区 (.html.gz)</option><option value="annotations">单独批注 (.json)</option></select><button id="download-button" class="quiet download-button" type="button" disabled>保存副本</button><div class="backup-secondary"><button id="data-button" class="text-button" type="button" disabled>查看批注数据</button></div></div></details>
       <button id="settings-button" class="icon-button" type="button" aria-label="设置" title="设置"><span data-icon="settings"></span></button>
     </div>
     <input id="file-input" type="file" accept=".html,.htm,.xhtml,.docx,.pdf,.json,application/pdf,text/html,application/json,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
@@ -1329,13 +1407,13 @@ button.annotation-comment {font-size: 13px; line-height: 1.75; font-weight: 500;
         <textarea id="comment-input" aria-describedby="comment-scope mode-hint" rows="3" maxlength="20000" placeholder="写下你的建议…&#10;具体一点，下一版会更好。" disabled></textarea>
         <div class="editor-actions"><button id="save-button" class="primary" type="button" disabled>保存批注</button><span id="draft-status" class="muted"></span><span class="save-key-hint" aria-hidden="true">⌘ ↵</span></div></div>
       </section>
-      <section class="annotations-section"><div class="annotation-list-header"><div class="section-heading"><h2>批注 <span id="annotation-count" class="count">0</span></h2><nav class="annotation-navigation" aria-label="逐条浏览批注"><button id="annotation-previous" class="icon-button" type="button" aria-label="上一条批注" title="上一条批注" disabled><span data-icon="chevron-up"></span></button><span id="annotation-position" aria-live="polite">— / 0</span><button id="annotation-next" class="icon-button" type="button" aria-label="下一条批注" title="下一条批注" disabled><span data-icon="chevron-down"></span></button></nav></div><div class="annotation-search"><span data-icon="search" aria-hidden="true"></span><input id="annotation-search" type="search" aria-label="搜索批注" placeholder="搜索意见或原文" autocomplete="off" maxlength="200"><button id="annotation-search-clear" class="icon-button" type="button" aria-label="清除批注搜索" hidden><span data-icon="close"></span></button></div><p id="annotation-search-status" class="search-status" role="status" aria-live="polite" hidden></p><div class="review-progress"><span id="review-progress" aria-live="polite">意见与处理记录</span><select id="annotation-filter" aria-label="筛选批注"><option value="all">全部记录</option><option value="open">待处理</option><option value="resolved">已完成</option><option value="attention">需确认位置</option><option value="new">新增 / 已更新</option></select></div><div class="list-utilities"><div class="history-controls"><button id="undo-button" class="icon-button" type="button" aria-label="撤销" title="撤销（Ctrl/⌘+Z，输入框外）" disabled><span data-icon="undo"></span></button><button id="redo-button" class="icon-button" type="button" aria-label="重做" title="重做（Ctrl/⌘+Shift+Z，输入框外）" disabled><span data-icon="redo"></span></button></div><button id="import-results" class="text-button results-import" type="button" disabled>导入处理记录 <span data-icon="file"></span></button><button id="data-button" class="icon-button" type="button" aria-label="查看数据" title="查看批注数据" disabled><span data-icon="code"></span></button></div></div><div id="annotation-list" class="annotation-list"><p class="empty-list">还没有批注<br>从一条具体的建议开始。</p></div></section>
+      <section class="annotations-section"><div class="annotation-list-header"><div class="section-heading"><h2>批注 <span id="annotation-count" class="count">0</span></h2><nav class="annotation-navigation" aria-label="逐条浏览批注"><button id="annotation-previous" class="icon-button" type="button" aria-label="上一条批注" title="上一条批注" disabled><span data-icon="chevron-up"></span></button><span id="annotation-position" aria-live="polite">— / 0</span><button id="annotation-next" class="icon-button" type="button" aria-label="下一条批注" title="下一条批注" disabled><span data-icon="chevron-down"></span></button></nav></div><div class="annotation-search"><span data-icon="search" aria-hidden="true"></span><input id="annotation-search" type="search" aria-label="搜索批注" placeholder="搜索意见或原文" autocomplete="off" maxlength="200"><button id="annotation-search-clear" class="icon-button" type="button" aria-label="清除批注搜索" hidden><span data-icon="close"></span></button></div><p id="annotation-search-status" class="search-status" role="status" aria-live="polite" hidden></p><div class="review-progress"><span id="review-progress" aria-live="polite">意见与处理记录</span><select id="annotation-filter" aria-label="筛选批注"><option value="all">全部记录</option><option value="open">待处理</option><option value="resolved">已完成</option><option value="attention">需确认位置</option><option value="new">新增 / 已更新</option></select></div><div class="list-utilities"><div class="history-controls"><button id="undo-button" class="icon-button" type="button" aria-label="撤销" title="撤销（Ctrl/⌘+Z，输入框外）" disabled><span data-icon="undo"></span></button><button id="redo-button" class="icon-button" type="button" aria-label="重做" title="重做（Ctrl/⌘+Shift+Z，输入框外）" disabled><span data-icon="redo"></span></button></div><button id="import-results" class="text-button results-import" type="button" disabled>导入处理记录 <span data-icon="file"></span></button></div></div><div id="annotation-list" class="annotation-list"><p class="empty-list">还没有批注<br>从一条具体的建议开始。</p></div></section>
       <footer class="sidebar-footer"><span id="save-state">下载副本，保留审阅结果</span><span id="autosave-state" role="status" aria-live="polite">自动恢复：等待打开文件</span><div class="recovery-tools"><button id="retry-recovery" class="text-button" type="button" hidden>重试本机保存</button><button id="clear-recovery" class="text-button" type="button" disabled>清除恢复记录</button></div><span class="privacy-dot"><span data-icon="shield"></span> 文件和草稿仅在本机处理</span></footer>
     </aside>
     <div class="sidebar-rail" aria-label="批注栏已收起"><button id="sidebar-rail-toggle" class="icon-button" type="button" aria-label="展开批注栏" aria-controls="review-sidebar" aria-expanded="false"><span data-icon="layout"></span></button><span class="rail-label" aria-hidden="true">批注 <span id="sidebar-rail-count">0</span></span></div>
     <div id="sidebar-resizer" class="sidebar-resizer" role="separator" tabindex="0" aria-orientation="vertical" aria-label="调整批注栏宽度" aria-controls="review-sidebar" aria-valuemin="300" aria-valuemax="560" aria-valuenow="352" title="拖动调整宽度 · 双击恢复默认 · 方向键微调"><span aria-hidden="true"></span></div>
     <section class="preview-section" aria-label="HTML 页面预览">
-      <div class="preview-toolbar"><button id="sidebar-toggle" class="icon-button sidebar-toggle" type="button" aria-label="收起批注栏" aria-controls="review-sidebar" aria-expanded="true" title="收起批注栏"><span data-icon="layout"></span></button><div class="preview-breadcrumb"><span data-icon="file" aria-hidden="true"></span><span id="preview-label">页面预览</span><span class="preview-live-dot" aria-hidden="true"></span></div><div class="preview-controls"><button id="document-nav-button" class="quiet" type="button" hidden disabled>目录与查找</button><select id="sidebar-position" aria-label="批注栏位置"><option value="left">左侧批注</option><option value="right">右侧批注</option></select><select id="preview-width" aria-label="预览视口"><option value="fluid">自适应</option><option value="390">手机 · 390px</option><option value="768">平板 · 768px</option><option value="1280">桌面 · 1280px</option></select><button id="reload-preview" class="icon-button" type="button" aria-label="重载页面" title="读取最新原文件与资源，保留批注和草稿" disabled><span data-icon="refresh"></span></button></div></div>
+      <div class="preview-toolbar"><button id="sidebar-toggle" class="icon-button sidebar-toggle" type="button" aria-label="收起批注栏" aria-controls="review-sidebar" aria-expanded="true" title="收起批注栏"><span data-icon="layout"></span></button><div class="preview-breadcrumb"><span data-icon="file" aria-hidden="true"></span><span id="preview-label">页面预览</span><span class="preview-live-dot" aria-hidden="true"></span></div><div class="preview-controls"><button id="document-nav-button" class="quiet" type="button" aria-label="目录与查找" title="目录与查找" hidden disabled><span data-icon="search"></span><span>目录与查找</span></button><select id="sidebar-position" aria-label="批注栏位置"><option value="left">左侧批注</option><option value="right">右侧批注</option></select><select id="preview-width" aria-label="预览视口"><option value="fluid">自适应</option><option value="390">手机 · 390px</option><option value="768">平板 · 768px</option><option value="1280">桌面 · 1280px</option></select><button id="reload-preview" class="icon-button" type="button" aria-label="重载页面" title="读取最新原文件与资源，保留批注和草稿" disabled><span data-icon="refresh"></span></button></div></div>
       <nav id="reading-context" class="reading-context" aria-label="正文中的批注导航" hidden><button id="reading-return" class="quiet reading-return" type="button"><span data-icon="arrow-left"></span><span>返回批注</span></button><div class="reading-context-copy"><button id="reading-expand" class="reading-expand" type="button" aria-expanded="false" aria-controls="reading-comment" aria-label="展开当前意见全文"><span id="reading-position" role="status" aria-live="polite"></span><span id="reading-expand-label" aria-hidden="true">展开</span></button><p id="reading-comment" tabindex="-1"></p></div><div class="reading-context-actions"><button id="reading-previous" class="icon-button" type="button" aria-label="查看上一条批注" title="上一条批注"><span data-icon="chevron-up"></span></button><button id="reading-next" class="icon-button" type="button" aria-label="查看下一条批注" title="下一条批注"><span data-icon="chevron-down"></span></button><button id="reading-close" class="icon-button" type="button" aria-label="结束批注对照" title="结束对照，继续阅读"><span data-icon="close"></span></button></div></nav>
       <div class="preview-feedback" aria-label="操作反馈"><div id="warnings" class="warnings" hidden></div><div class="notice-surface"><div id="status" class="status" role="status" aria-live="polite" hidden></div><button id="status-dismiss" class="icon-button" type="button" aria-label="关闭操作提示" hidden><span data-icon="close"></span></button></div></div>
       <section id="result-review" class="result-review workflow-card" aria-label="审阅进度与下一步" hidden>
@@ -1347,8 +1425,8 @@ button.annotation-comment {font-size: 13px; line-height: 1.75; font-weight: 500;
         </div>
       </section>
       <div id="recovery-banner" class="recovery-banner" hidden><span class="recovery-icon" data-icon="history" aria-hidden="true"></span><span id="recovery-description"></span><button id="recover-session" type="button">继续上次审阅 <span data-icon="arrow-right"></span></button><button id="discard-session" class="text-button" type="button">忽略</button></div>
-      <div id="pdf-controls" class="pdf-controls" hidden><button id="pdf-thumbnail-toggle" class="quiet" type="button" aria-expanded="false" aria-controls="pdf-thumbnails">缩略图</button><button id="pdf-prev-page" class="quiet" type="button" aria-label="上一页">上一页</button><label for="pdf-page-number">页码</label><input id="pdf-page-number" type="number" min="1" value="1" aria-label="PDF 页码"><span id="pdf-page-count">/ —</span><button id="pdf-next-page" class="quiet" type="button" aria-label="下一页">下一页</button><label for="pdf-zoom">缩放</label><select id="pdf-zoom" aria-label="PDF 缩放"><option value="fit">适合宽度</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option></select><button id="pdf-cancel-operation" class="text-button" type="button" hidden>取消查找 / 检查</button><span id="pdf-operation-status" role="status" aria-live="polite"></span></div>
-      <div id="location-preview-bar" class="location-preview-bar" hidden><span id="location-preview-label"></span><button id="confirm-preview-location" class="primary" type="button">确认此位置</button><button id="return-location-comparison" class="quiet" type="button">返回对照</button></div><div id="pdf-search-bar" class="pdf-search-bar" hidden><span id="pdf-search-position" role="status">查找结果</span><button id="pdf-search-edit" class="text-button" type="button">修改关键词</button><button id="pdf-search-prev" class="quiet" type="button">上一处</button><button id="pdf-search-next" class="quiet" type="button">下一处</button><button id="pdf-search-close" class="text-button" type="button">结束查找</button></div><div id="pdf-scan-guide" class="pdf-scan-guide" hidden><span id="pdf-scan-message"></span><button id="pdf-use-region" class="quiet" type="button">框选区域</button></div><div id="preview-stage" class="preview-stage"><div id="welcome" class="welcome">
+      <div id="pdf-controls" class="pdf-controls" hidden><button id="pdf-thumbnail-toggle" class="quiet" type="button" aria-label="缩略图" title="页面缩略图" aria-expanded="false" aria-controls="pdf-thumbnails"><span data-icon="layers"></span><span>缩略图</span></button><button id="pdf-prev-page" class="quiet" type="button" aria-label="上一页" title="上一页"><span data-icon="chevron-up"></span><span>上一页</span></button><label for="pdf-page-number">页码</label><input id="pdf-page-number" type="number" min="1" value="1" aria-label="PDF 页码"><span id="pdf-page-count">/ —</span><button id="pdf-next-page" class="quiet" type="button" aria-label="下一页" title="下一页"><span data-icon="chevron-down"></span><span>下一页</span></button><label for="pdf-zoom">缩放</label><select id="pdf-zoom" aria-label="PDF 缩放"><option value="fit">适合宽度</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option></select><button id="pdf-cancel-operation" class="text-button" type="button" hidden>取消查找 / 检查</button><span id="pdf-operation-status" role="status" aria-live="polite"></span></div>
+      <div id="location-preview-bar" class="location-preview-bar" hidden><span id="location-preview-label"></span><button id="confirm-preview-location" class="primary" type="button">确认此位置</button><button id="return-location-comparison" class="quiet" type="button">返回对照</button></div><div id="pdf-search-bar" class="pdf-search-bar" hidden><span id="pdf-search-position" role="status">查找结果</span><button id="pdf-search-edit" class="text-button" type="button" aria-label="修改关键词" title="修改关键词"><span data-icon="search"></span><span>修改关键词</span></button><button id="pdf-search-prev" class="quiet" type="button" aria-label="上一处" title="上一处"><span data-icon="chevron-up"></span><span>上一处</span></button><button id="pdf-search-next" class="quiet" type="button" aria-label="下一处" title="下一处"><span data-icon="chevron-down"></span><span>下一处</span></button><button id="pdf-search-close" class="text-button" type="button" aria-label="结束查找" title="结束查找"><span data-icon="close"></span><span>结束查找</span></button></div><div id="pdf-scan-guide" class="pdf-scan-guide" hidden><span id="pdf-scan-message"></span><button id="pdf-use-region" class="quiet" type="button">框选区域</button></div><div id="preview-stage" class="preview-stage"><div id="welcome" class="welcome">
         <div class="welcome-copy">
           <span class="welcome-eyebrow"><span></span> 阅读 · 批注 · 改进</span>
           <h2>好的修改，<br>从<span class="welcome-emphasis">清晰的批注</span>开始<span class="welcome-period">。</span></h2>
@@ -1385,7 +1463,16 @@ button.annotation-comment {font-size: 13px; line-height: 1.75; font-weight: 500;
   </div></dialog>
   <dialog id="agent-task-dialog" class="handoff-dialog" aria-labelledby="agent-task-title"><div class="dialog-heading"><div><span class="eyebrow">HANDOFF</span><h2 id="agent-task-title">交给你使用的 agent</h2></div><button type="button" class="icon-button" data-close="agent-task-dialog" aria-label="关闭修改任务"><span data-icon="close"></span></button></div><div class="dialog-body"><p id="handoff-summary" class="handoff-summary"></p><p class="handoff-source-line">当前文档：<strong id="handoff-source" class="handoff-source"></strong></p><p id="agent-task-help"></p><div class="handoff-choices"><section class="handoff-choice"><span class="eyebrow">复制后粘贴</span><h3>复制任务</h3><p>将任务粘贴到 agent 对话，并附上原文档。</p><button id="copy-agent-text" class="primary" type="button">复制修改任务</button></section><section class="handoff-choice"><span class="eyebrow">一次下载</span><h3>下载交接包</h3><p>原文档、批注和任务说明一起打包。HTML 的本地资源也会附上。</p><button id="handoff-export-package" class="primary" type="button">下载交接包 (.zip)</button></section></div><p id="copy-agent-status" role="status" aria-live="polite"></p><details id="task-details" class="help-details"><summary>查看任务全文 / 手动复制</summary><textarea id="agent-task-text" readonly rows="8" aria-label="agent 修改任务"></textarea></details><div class="handoff-return"><p>agent 返回文件后，在工作区点击「agent 已返回文件」，读取文档并导入处理记录。</p><button id="handoff-show-return" class="text-button" type="button">查看返回步骤</button></div><details class="help-details"><summary>只需要批注文件？</summary><p>不包含原文档，需与同一版本的原文档一起交付。</p><button id="handoff-export-json" class="text-button" type="button">下载单独批注 JSON</button></details></div></dialog>
   <dialog id="return-dialog" class="return-dialog" aria-labelledby="return-title"><div class="dialog-heading"><div><span class="eyebrow">继续这次审阅</span><h2 id="return-title">查看 agent 的修改</h2></div><button type="button" class="icon-button" data-close="return-dialog" aria-label="关闭返回步骤"><span data-icon="close"></span></button></div><div class="dialog-body"><p class="return-intro">请 agent 返回下面两份文件。它们分别更新正文和批注状态，先读入哪一份都可以。</p><section class="return-step"><span class="return-number">01</span><div><h3>修改后的文档</h3><p>读取后，预览正文才会更新。批注和草稿会保留。</p><p id="return-document-name" class="return-file"></p><p id="return-document-state" class="return-state" role="status"></p><button id="handoff-reload" class="primary" type="button">读取修改后的文档</button></div></section><section class="return-step"><span class="return-number">02</span><div><h3>处理记录 JSON</h3><p>记录哪些意见已完成、哪些仍待处理。它不会修改正文。</p><p id="return-results-name" class="return-file"></p><p id="return-results-state" class="return-state" role="status"></p><button id="handoff-import-results" class="quiet" type="button">导入处理记录 JSON</button></div></section><p id="return-help" class="return-help"></p></div><div class="editor-actions location-review-actions"><button id="return-review" class="primary" type="button" disabled>开始复核</button><button type="button" class="quiet" data-close="return-dialog">返回工作区</button></div></dialog>
-  <dialog id="document-nav-dialog" class="document-nav-dialog" aria-labelledby="document-nav-title"><div class="dialog-heading"><div><span class="eyebrow">READING</span><h2 id="document-nav-title">目录与查找</h2></div><button type="button" class="icon-button" data-close="document-nav-dialog" aria-label="关闭目录与查找"><span data-icon="close"></span></button></div><div class="dialog-body"><label class="field-label" for="document-search">查找文档内容</label><input id="document-search" type="search" maxlength="200" placeholder="输入关键词，例如：预算、上线门槛"><button id="pdf-cancel-search" class="text-button" type="button" hidden>取消查找</button><p id="document-search-status" role="status" aria-live="polite"></p><nav id="document-outline" aria-label="文档目录"></nav><div id="document-search-results" hidden></div></div></dialog>
+  <dialog id="document-nav-dialog" class="document-nav-dialog" aria-labelledby="document-nav-title">
+    <div class="dialog-heading"><div><span class="eyebrow">阅读工具</span><h2 id="document-nav-title">目录与查找</h2></div><button type="button" class="icon-button" data-close="document-nav-dialog" aria-label="关闭目录与查找"><span data-icon="close"></span></button></div>
+    <div class="dialog-body">
+      <label class="field-label" for="document-search">查找文档内容</label>
+      <div class="document-search-field"><span data-icon="search" aria-hidden="true"></span><input id="document-search" type="search" maxlength="200" autocomplete="off" aria-describedby="document-search-status" placeholder="输入关键词，跳到原文"><button id="document-search-clear" class="icon-button" type="button" aria-label="清除文档查找" hidden><span data-icon="close"></span></button></div>
+      <div class="document-search-feedback"><p id="document-search-status" role="status" aria-live="polite"></p><button id="pdf-cancel-search" class="text-button" type="button" hidden>取消查找</button><button id="document-search-retry" class="text-button" type="button" hidden>重新查找</button></div>
+      <nav id="document-outline" aria-label="文档目录"></nav><div id="document-search-results" aria-label="查找结果" hidden></div>
+    </div>
+    <footer id="document-search-hint" class="document-search-hint" hidden><span><kbd>↑</kbd><kbd>↓</kbd> 选择</span><span><kbd>↵</kbd> 查看原文</span><span><kbd>Esc</kbd> 关闭</span></footer>
+  </dialog>
   <dialog id="location-dialog" class="location-dialog" aria-labelledby="location-dialog-title"><div class="dialog-heading"><div><span class="eyebrow">REVIEW LOCATION</span><h2 id="location-dialog-title">确认批注位置</h2></div><button class="icon-button" type="button" data-close="location-dialog" aria-label="关闭位置确认"><span data-icon="close"></span></button></div><div class="dialog-body"><p id="location-opinion" class="location-opinion"></p><p id="location-feedback" class="location-feedback" hidden></p><p id="result-review-position" class="result-review-position" hidden></p><p id="location-review-status" role="status" aria-live="polite"></p><div class="location-comparison"><section><span class="eyebrow">保存批注时</span><h3>原位置记录</h3><p id="location-original"></p><p id="location-original-context" class="location-context"></p></section><section><span class="eyebrow">当前文档</span><h3 id="location-current-title">选择并核对当前位置</h3><div id="location-candidates"></div></section></div><p id="location-confirm-help">确认位置会保留原定位记录；修改意见仍是待处理。</p></div><div class="editor-actions location-review-actions"><button id="confirm-location" class="primary" type="button" disabled>确认此位置</button><button id="reselect-location" class="quiet" type="button">在文档中重新选择</button><button id="review-current-document" class="quiet" type="button" hidden>查看当前文档</button><button id="review-previous" class="quiet" type="button" hidden>上一条</button><button id="review-next" class="primary" type="button" hidden>下一条</button></div></dialog>
   <dialog id="data-dialog" aria-labelledby="data-title"><div class="dialog-heading"><div><span class="eyebrow">ANNOTATIONS</span><h2 id="data-title">结构化批注数据</h2></div><button type="button" class="icon-button" data-close="data-dialog" aria-label="关闭批注数据"><span data-icon="close"></span></button></div><div class="dialog-body"><p>便于核对的摘要，已省略文件与资源快照。</p><pre id="data-preview"></pre></div></dialog>
   <dialog id="pdf-password-dialog" aria-labelledby="pdf-password-title"><div class="dialog-heading"><h2 id="pdf-password-title">打开加密 PDF</h2></div><div class="dialog-body"><label class="field-label" for="pdf-password-input">PDF 密码</label><input id="pdf-password-input" type="password" autocomplete="off"><p id="pdf-password-error" role="alert"></p><p>密码仅用于本次打开，不会保存或导出。</p><div class="editor-actions"><button id="pdf-password-submit" class="primary" type="button">打开 PDF</button><button id="pdf-password-cancel" class="quiet" type="button">取消</button></div></div></dialog>
@@ -4695,6 +4782,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   }
   async function command(name,extra={}) {
     const session=current;if(!session || session.destroyed)return;
+    const searchSerial=session.searchSerial+1;
     try {
       if(name==='set-mode') {session.selectionSerial++;session.mode=extra.mode==='element'?'region':extra.mode;session.container.dataset.pdfMode=session.mode;guideScan(session);}
       else if(name==='clear-focus' || name==='clear-selection') {session.selectionSerial++;session.focus=null;session.selectedText=false;if(name==='clear-selection')global.getSelection()?.removeAllRanges();paintFocus(session);}
@@ -4719,7 +4807,10 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
         for(const item of extra.items || []){if(token!==session.checkSerial)return;const result=await timed(session,resolveTarget(session,item.target,token),'批注检查');items.push({id:item.id,revision:item.revision,status:result.status,reason:result.reason});}
         if(token===session.checkSerial)emit(session,'targets-checked',{requestId:extra.requestId,items});
       }
-    }catch(error){warning(session,error);emit(session,'operation-complete');}
+    }catch(error){
+      if(name==='search-document' && session.searchSerial===searchSerial)emit(session,'document-search-error',{query:extra.query});
+      warning(session,error);emit(session,'operation-complete');
+    }
   }
   function cancelOperations(){if(current){current.searchSerial++;current.checkSerial++;emit(current,'operation-complete');}}
   function cancel(){if(importing){const pending=importing;destroy(pending);pending.rejectImport?.(abortError());}cancelOperations();}
@@ -6417,6 +6508,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   let pendingPicker = null;
   let documentOutline = [];
   let searchTimer = null;
+  let documentSearch = {query:'', status:'idle', items:[], total:0};
   let exampleWorkspace = false;
   const reviewFiles = new WeakSet();
   let renderGeneration = 0;
@@ -6712,6 +6804,23 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     element.textContent = content;
     return element;
   }
+  function annotationEmpty(message, label, action, symbol = 'mark') {
+    const empty = textNode('div', 'empty-list', '');
+    const emblem = textNode('span', 'empty-list-icon', '');
+    emblem.innerHTML = window.HRUI.icon(symbol); emblem.setAttribute('aria-hidden','true');
+    const [title, description] = message.split('\n');
+    empty.append(emblem, textNode('strong','',title));
+    if (description) empty.append(textNode('p','',description));
+    if (label) {
+      const button = textNode('button','quiet',label); button.type='button';
+      button.addEventListener('click',action); empty.append(button);
+    }
+    return empty;
+  }
+  function startOpinion() {
+    layout.reveal(); setComposerOpen(true); $('comment-input').focus({preventScroll:true});
+    $('comment-input').scrollIntoView({block:'nearest'});
+  }
   function renderAnnotations() {
     const list = $('annotation-list');
     const scrollTop = list.scrollTop;
@@ -6736,7 +6845,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     const query = normalizeSearch($('annotation-search').value.trim());
     $('annotation-search-clear').hidden = !query;
     $('annotation-search-status').hidden = !query;
-    if (!annotations.length) { list.append(textNode('p', 'empty-list', '还没有批注\n写下整体意见，或选中正文中的一处开始。')); $('annotation-search-status').textContent=query ? '没有找到匹配的批注' : ''; updateAnnotationNavigation(); return; }
+    if (!annotations.length) { list.append(annotationEmpty('还没有批注\n写下整体意见，或选中正文中的一处开始。','开始写批注',startOpinion)); $('annotation-search-status').textContent=query ? '没有找到匹配的批注' : ''; updateAnnotationNavigation(); return; }
     annotations.forEach((annotation, index) => {
       const resolved = core.annotationStatus(annotation) === 'resolved';
       if (filter === 'attention' ? !needsLocationReview(annotation) : filter === 'new' ? !['new','updated'].includes(core.taskState(annotation)) : filter !== 'all' && (resolved ? 'resolved' : 'open') !== filter) return;
@@ -6809,7 +6918,10 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     });
     const matches = list.childElementCount;
     $('annotation-search-status').textContent=query ? matches ? `找到 ${matches} 条匹配的批注` : '没有找到匹配的批注' : '';
-    if (!matches) list.append(textNode('p', 'empty-list', query ? '没有找到这条批注\n试试其他关键词，或调整筛选条件。' : filter === 'attention' ? '所有位置都已确认。' : filter === 'new' ? '目前没有新增或更新的意见。' : filter === 'open' ? '全部处理完成\n每一条建议，都让文档更进一步。' : '还没有已完成的处理记录。'));
+    if (!matches) list.append(annotationEmpty(query ? '没有找到这条批注\n试试其他关键词，或调整筛选条件。' : filter === 'attention' ? '所有位置都已确认。' : filter === 'new' ? '目前没有新增或更新的意见。' : filter === 'open' ? '全部处理完成\n每一条建议，都让文档更进一步。' : '还没有已完成的处理记录。','查看全部批注',()=>{
+      $('annotation-search').value=''; $('annotation-filter').value='all';
+      window.HRUI.syncSelect('annotation-filter'); renderAnnotations(); $('annotation-search').focus({preventScroll:true});
+    },query ? 'search' : 'check'));
     renderLocationReview();
     renderResultReview();
     updateAnnotationNavigation();
@@ -7021,6 +7133,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     $('pdf-search-bar').hidden=true; $('pdf-scan-guide').hidden=true;
     frame.setAttribute('aria-busy',String(!result.pdf));pdfPreview.setAttribute('aria-busy',String(Boolean(result.pdf)));
     documentOutline = []; clearTimeout(searchTimer);
+    documentSearch = {query:'', status:'idle', items:[], total:0};
     $('document-search').value = ''; renderDocumentNavigation();
     pageInventory = []; $('page-select').replaceChildren(new Option('点击预览或选择页面', '')); renderPageControls();
     channel = result.channel;
@@ -7057,7 +7170,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     $('annotation-search').value='';
     workflowDetailsOpen = null; workflowDisclosureAlert = '';
     locationReview = null; $('reload-review').hidden = true;
-    if ($('annotation-filter').value === 'attention') { $('annotation-filter').value = 'all'; window.HRUI.syncSelect('annotation-filter'); }
+    $('annotation-filter').value = 'all'; window.HRUI.syncSelect('annotation-filter');
     data.annotations = data.annotations.map(core.normalizeAnnotation);
     undoStack.length = 0; redoStack.length = 0;
     cachedSession = null; $('recovery-banner').hidden = true;
@@ -7073,6 +7186,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     renderAnnotations();
     ++renderGeneration;
     installPreview(prepared);
+    layout.reading();
     note(`已打开 ${data.source.name}，载入 ${data.annotations.length} 条批注。`,false,{duration:4500});
   }
   async function readFile(file, path = file.name, resources = []) {
@@ -7667,6 +7781,8 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     copy.querySelector('#agent-task-text').textContent = '';
     for (const selector of ['#handoff-source', '#handoff-summary', '#agent-task-help', '#copy-agent-status', '#document-outline', '#document-search-results', '#document-search-status']) copy.querySelector(selector).replaceChildren();
     copy.querySelector('#document-search').value = ''; copy.querySelector('#document-search').removeAttribute('value');
+    copy.querySelector('#document-search-results').removeAttribute('aria-busy');
+    for (const selector of ['#document-search-clear','#document-search-retry','#document-search-hint']) copy.querySelector(selector).hidden=true;
     copy.querySelector('#task-details').removeAttribute('open');
     copy.querySelector('#workflow-check-details').removeAttribute('open');
     for(const selector of ['#return-document-name','#return-document-state','#return-results-name','#return-results-state','#return-help'])copy.querySelector(selector).replaceChildren();
@@ -7944,20 +8060,60 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     if (busy || !data?.annotations.length || draftDirty()) return;
     prepareHandoff(); window.HRUI.openDialog($('agent-task-dialog'));
   }
-  function renderDocumentNavigation(results, total = 0) {
+  function renderDocumentNavigation() {
     const query = $('document-search').value.trim();
+    const {status, items:results, total} = documentSearch;
+    const searching = Boolean(query) && status === 'loading';
+    $('document-search-clear').hidden = !$('document-search').value;
+    $('pdf-cancel-search').hidden = !searching || !isPdf(data);
+    $('document-search-retry').hidden = !query || !['cancelled','error'].includes(status);
     $('document-outline').hidden = Boolean(query);
     $('document-search-results').hidden = !query;
+    $('document-search-results').setAttribute('aria-busy',String(searching));
     const list = query ? $('document-search-results') : $('document-outline'); list.replaceChildren();
-    const items = query ? results || [] : documentOutline;
-    $('document-search-status').textContent = query ? (results ? `找到 ${total} 处${total > items.length ? '，显示前 ' + items.length + ' 处' : ''}` : '正在查找…') : '选择标题，直接跳到对应内容。';
-    for (const item of items) {
-      const button = textNode('button', 'document-nav-item', item.text); button.type = 'button';
+    const items = query ? status === 'ready' ? results : [] : documentOutline;
+    $('document-search-status').textContent = !query ? '选择标题，直接跳到对应内容。' : searching ? '正在查找…' : status === 'cancelled' ? '已取消查找，可以重新查找。' : status === 'error' ? '查找未完成，请重试或换一个关键词。' : `找到 ${total} 处${total > items.length ? '，显示前 ' + items.length + ' 处' : ''}`;
+    $('document-search-hint').hidden = !items.length;
+    for (const [index,item] of items.entries()) {
+      const button = textNode('button', 'document-nav-item', ''); button.type = 'button';
+      const number = textNode('span','document-result-number',String(index+1).padStart(2,'0')); number.setAttribute('aria-hidden','true');
+      const content = textNode('span','document-result-text','');
+      // Only add text nodes and marks: imported text is never interpreted as HTML.
+      const pattern = query ? new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'giu') : null;
+      let offset=0;
+      for (const match of pattern ? item.text.matchAll(pattern) : []) {
+        content.append(item.text.slice(offset,match.index),textNode('mark','',match[0])); offset=match.index+match[0].length;
+      }
+      content.append(item.text.slice(offset)); button.append(number,content);
+      button.setAttribute('aria-label',query ? `第 ${index+1} 处：${item.text}` : item.text);
       if (!query) button.style.paddingLeft = (12 + Math.min(item.level - 1, 4) * 12) + 'px';
-      button.addEventListener('click', () => { send('navigate-document', {kind:query ? 'search' : 'outline', index:item.index, query, id:item.id, start:item.start,end:item.end}); window.HRUI.closeDialog($('document-nav-dialog')); });
+      button.addEventListener('click', () => {
+        layout.reading();
+        send('navigate-document', {kind:query ? 'search' : 'outline', index:item.index, query, id:item.id, start:item.start,end:item.end});
+        $('document-nav-dialog').addEventListener('close',()=>{(isPdf(data) ? pdfPreview : frame).focus({preventScroll:true});},{once:true});
+        window.HRUI.closeDialog($('document-nav-dialog'));
+      });
       list.append(button);
     }
-    if (!items.length && (!query || results)) list.append(textNode('p', 'navigation-empty', query ? '没有找到匹配内容，请换一个关键词。' : '这份文档没有标题，可以使用上方查找。'));
+    if (!items.length && (!query || status === 'ready')) list.append(textNode('p', 'navigation-empty', query ? '没有找到匹配内容\n试试更短的关键词，或检查输入。' : '这份文档没有标题，可以使用上方查找。'));
+  }
+  function searchDocument() {
+    clearTimeout(searchTimer);
+    if(isPdf(data)) send('cancel-search');
+    if(documentSearch.status==='loading') { $('pdf-cancel-operation').hidden=true; $('pdf-operation-status').textContent=''; }
+    const query=$('document-search').value.trim();
+    documentSearch={query,status:query ? 'loading' : 'idle',items:[],total:0};
+    renderDocumentNavigation();
+    if(query)searchTimer=setTimeout(()=>send('search-document',{query}),150);
+  }
+  function cancelDocumentSearch() {
+    clearTimeout(searchTimer); send('cancel-search');
+    $('pdf-cancel-operation').hidden=true; $('pdf-operation-status').textContent='';
+    documentSearch={...documentSearch,status:'cancelled',items:[],total:0}; renderDocumentNavigation();
+  }
+  function openDocumentNavigation() {
+    renderDocumentNavigation(); window.HRUI.openDialog($('document-nav-dialog'));
+    $('document-search').focus(); $('document-search').select();
   }
   async function copyAgentTask() {
     if (!data || !data.annotations.length || busy) return;
@@ -8062,8 +8218,10 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
       if (!Array.isArray(message.items) || message.items.length > 1000 || !message.items.every(item => Number.isInteger(item.index) && item.index >= 0 && typeof item.text === 'string' && item.text.length <= 160 && item.level >= 1 && item.level <= 6)) return;
       documentOutline = message.items; renderDocumentNavigation();
     } else if (message.event === 'document-search' && hasSearch(data)) {
-      if (message.query !== $('document-search').value.trim() || !Array.isArray(message.items) || message.items.length > 50 || !Number.isInteger(message.total) || message.total < 0 || !message.items.every(item => Number.isInteger(item.index) && item.index >= 0 && typeof item.text === 'string' && item.text.length <= 220)) return;
-      renderDocumentNavigation(message.items, message.total);
+      if (documentSearch.status !== 'loading' || message.query !== documentSearch.query || !Array.isArray(message.items) || message.items.length > 50 || !Number.isInteger(message.total) || message.total < 0 || !message.items.every(item => Number.isInteger(item.index) && item.index >= 0 && typeof item.text === 'string' && item.text.length <= 220)) return;
+      documentSearch={query:message.query,status:'ready',items:message.items,total:message.total}; renderDocumentNavigation();
+    } else if (message.event === 'document-search-error' && documentSearch.status==='loading' && message.query===documentSearch.query) {
+      documentSearch={...documentSearch,status:'error',items:[],total:0}; renderDocumentNavigation();
     }
     else if (message.event === 'pages') {
       if (!Array.isArray(message.pages) || message.pages.length > 1000 || !message.pages.every((item, index) => item.index === index + 1 && typeof item.title === 'string' && item.title.length <= 100)) return;
@@ -8098,10 +8256,10 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   window.addEventListener('message', event => { const message=event.data; if(!isPdf(data) && event.source===frame.contentWindow && message?.hr===true && message.channel===channel) handlePreviewMessage(message); });
   $('cancel-conversion').addEventListener('click',()=>{ if (!cancelPicker()) adapters.cancel(); });
   $('pdf-thumbnail-toggle').addEventListener('click',()=>{const visible=$('pdf-thumbnail-toggle').getAttribute('aria-expanded')!=='true';$('pdf-thumbnail-toggle').setAttribute('aria-expanded',String(visible));send('set-thumbnails',{visible});});
-  $('pdf-search-edit').addEventListener('click',()=>{renderDocumentNavigation();window.HRUI.openDialog($('document-nav-dialog'));$('document-search').focus();$('document-search').select();});
+  $('pdf-search-edit').addEventListener('click',openDocumentNavigation);
   $('pdf-search-prev').addEventListener('click',()=>send('search-step',{direction:-1}));
   $('pdf-search-next').addEventListener('click',()=>send('search-step',{direction:1}));
-  $('pdf-search-close').addEventListener('click',()=>{$('document-search').value='';clearTimeout(searchTimer);send('cancel-search');$('pdf-search-bar').hidden=true;renderDocumentNavigation();});
+  $('pdf-search-close').addEventListener('click',()=>{$('document-search').value='';searchDocument();$('pdf-search-bar').hidden=true;});
   $('pdf-use-region').addEventListener('click',()=>{layout.selecting();setMode('element');$('pdf-scan-guide').hidden=true;});
   $('confirm-location').addEventListener('click',confirmLocation);$('confirm-preview-location').addEventListener('click',confirmLocation);
   $('result-review-start').addEventListener('click',()=>startResultReview());
@@ -8122,19 +8280,29 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   $('pdf-next-page').addEventListener('click',()=>window.HRPdf.goToPage(Math.min(Number($('pdf-page-number').max)||1,Number($('pdf-page-number').value)+1)));
   $('pdf-page-number').addEventListener('change',()=>window.HRPdf.goToPage(Number($('pdf-page-number').value)));
   $('pdf-zoom').addEventListener('change',event=>window.HRPdf.setZoom(event.target.value==='fit' ? 'fit' : Number(event.target.value)));
-  $('pdf-cancel-operation').addEventListener('click',()=>{ send('cancel-operations'); clearTimeout(locationTimer); locationRequest=null; if(locationReview) {locationReview.checking=false;locationReview.queue=[];renderLocationReview();} $('pdf-cancel-operation').hidden=true; $('pdf-operation-status').textContent='已取消查找 / 检查'; });
+  $('pdf-cancel-operation').addEventListener('click',()=>{ if(documentSearch.status==='loading')cancelDocumentSearch(); send('cancel-operations'); clearTimeout(locationTimer); locationRequest=null; if(locationReview) {locationReview.checking=false;locationReview.queue=[];renderLocationReview();} $('pdf-cancel-operation').hidden=true; $('pdf-operation-status').textContent='已取消查找 / 检查'; });
   $('pair-source-button').addEventListener('click',()=>openHTML());
   $('pair-compatible').addEventListener('click',()=>openCompatible());
   $('cancel-pair').addEventListener('click',()=>{pendingLight=null;$('pair-source').hidden=true;note('已取消恢复，当前工作区已保留。');});
   $('open-button').addEventListener('click', () => openHTML());
   $('welcome-open').addEventListener('click', () => openHTML());
   $('handoff-button').addEventListener('click', openHandoff);
-  $('document-nav-button').addEventListener('click', () => { $('pdf-cancel-search').hidden=!isPdf(data); renderDocumentNavigation(); window.HRUI.openDialog($('document-nav-dialog')); $('document-search').focus(); });
-  $('pdf-cancel-search').addEventListener('click',()=>{ clearTimeout(searchTimer); send('cancel-search'); $('document-search-status').textContent='已取消查找'; });
-  $('document-search').addEventListener('input', () => {
-    clearTimeout(searchTimer); if(isPdf(data)) send('cancel-search'); renderDocumentNavigation();
-    const query = $('document-search').value.trim();
-    if (query) searchTimer = setTimeout(() => send('search-document', {query}), 150);
+  $('document-nav-button').addEventListener('click',openDocumentNavigation);
+  $('pdf-cancel-search').addEventListener('click',cancelDocumentSearch);
+  $('document-search-retry').addEventListener('click',()=>{searchDocument();$('document-search').focus();});
+  $('document-search-clear').addEventListener('click',()=>{$('document-search').value='';searchDocument();$('document-search').focus();});
+  $('document-search').addEventListener('input',searchDocument);
+  $('document-nav-dialog').addEventListener('keydown',event=>{
+    if(event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)return;
+    const input=$('document-search'),fromInput=event.target===input;
+    const buttons=Array.from(document.querySelectorAll('#document-outline:not([hidden]) .document-nav-item,#document-search-results:not([hidden]) .document-nav-item'));
+    if(!fromInput && !buttons.includes(event.target))return;
+    if(event.key==='Enter' && fromInput && buttons.length){event.preventDefault();buttons[0].click();}
+    else if(['ArrowDown','ArrowUp'].includes(event.key) && buttons.length){
+      event.preventDefault(); const index=buttons.indexOf(event.target);
+      const next=fromInput ? event.key==='ArrowDown' ? 0 : buttons.length-1 : index+(event.key==='ArrowDown' ? 1 : -1);
+      (buttons[next] || input).focus();
+    }
   });
   $('handoff-import-results').addEventListener('click', () => { window.HRUI.closeDialog($('return-dialog')); $('results-input').click(); });
   $('handoff-reload').addEventListener('click', () => { window.HRUI.closeDialog($('return-dialog')); reloadSource(); });

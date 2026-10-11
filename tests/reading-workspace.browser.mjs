@@ -5,7 +5,7 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {chromium} from 'playwright';
-import {ensureBackup} from './backup-ui.mjs';
+import {ensureBackup, openAnnotationData} from './backup-ui.mjs';
 const root=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const output=path.join(root,'output/playwright/reading');await mkdir(output,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
@@ -18,7 +18,7 @@ async function fresh(options={}) {
  return {context,page};
 }
 async function save(page,text){await page.locator('#comment-input').fill(text);await page.locator('#save-button').click();}
-async function data(page){await page.locator('#data-button').click();const value=JSON.parse(await page.locator('#data-preview').textContent());await page.keyboard.press('Escape');await page.locator('#data-dialog').waitFor({state:'hidden'});return value;}
+async function data(page){await openAnnotationData(page);const value=JSON.parse(await page.locator('#data-preview').textContent());await page.keyboard.press('Escape');await page.locator('#data-dialog').waitFor({state:'hidden'});return value;}
 async function width(page){return Number(await page.locator('#sidebar-resizer').getAttribute('aria-valuenow'));}
 async function drag(page,delta,cancel=false) {
  const box=await page.locator('#sidebar-resizer').boundingBox();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+delta,box.y+box.height/2,{steps:8});
