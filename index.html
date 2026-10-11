@@ -27,6 +27,7 @@ SOFTWARE.
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23a65338'/%3E%3Cpath d='M9 9h14M9 15h10M9 21h6' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
   <title>HTML 批注 · 本地页面审阅</title>
   <style>
 :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;color:#292f2b;background:#f4f3ef;font-synthesis:none;font-size:14px;--accent:#a94f35;--accent-dark:#8d3e29;--ink:#292f2b;--muted:#69716a;--line:#e6e7e0;--surface:#fffefa;--soft:#f4f4ef;--ease:cubic-bezier(.22,1,.36,1);--header-height:76px;--forest:#344b3e;--forest-dark:#273b30;--text-secondary:#626c62;--text-tertiary:#687160;--shadow-surface:0 12px 36px #25332a0a,0 2px 6px #25332a04}
@@ -34,7 +35,7 @@ SOFTWARE.
 button,select,textarea{font:inherit}
 button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px 15px;background:#fff;color:var(--ink);font-size:13px;font-weight:500;cursor:pointer;transition:background .2s,border-color .2s,box-shadow .2s,transform .38s cubic-bezier(.22,1.3,.36,1),opacity .2s ease}
 button:hover:not(:disabled){background:#f8f9f5;border-color:#cfd5c8;box-shadow:0 2px 5px #30352f05}
-button:active:not(:disabled){transform:scale(.965);transition-duration:.08s}
+button:active:not(:disabled){transform:none;transition-duration:.08s}
 button:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
 button:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid #c77a5b55;outline-offset:3px}
 button.primary{background:var(--accent);border-color:var(--accent);color:white;box-shadow:0 3px 8px #b34e3020}
@@ -308,7 +309,7 @@ kbd{color:#4d6040;font-size:12px}
 .save-confirmation{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--accent);color:#fff;border-radius:inherit;pointer-events:none}
 .save-confirmation .icon{width:14px;height:14px}
 #save-button:has(.save-confirmation){opacity:1}
-@keyframes popover-in{from{opacity:0;transform:translateY(-5px) scale(.97)}to{opacity:1;transform:none}}@keyframes dialog-in{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}@keyframes dialog-out{to{opacity:0;transform:translateY(8px) scale(.98)}}@keyframes backdrop-in{from{opacity:0}to{opacity:1}}@keyframes backdrop-out{to{opacity:0}}@keyframes card-in{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}@keyframes page-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}@keyframes welcome-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}@keyframes comment-float{0%,100%{transform:translateY(0) rotate(5deg)}50%{transform:translateY(-5px) rotate(4deg)}}
+@keyframes popover-in{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}@keyframes dialog-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}@keyframes dialog-out{to{opacity:0;transform:translateY(8px)}}@keyframes backdrop-in{from{opacity:0}to{opacity:1}}@keyframes backdrop-out{to{opacity:0}}@keyframes card-in{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}@keyframes page-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}@keyframes welcome-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}@keyframes comment-float{0%,100%{transform:translateY(0) rotate(5deg)}50%{transform:translateY(-5px) rotate(4deg)}}
 @media(min-width:1600px){.workspace{--sidebar-width:380px}
 .app-header{padding:0 32px}
 .source-info,.editor-section,.annotations-section{padding-left:27px;padding-right:27px}
@@ -327,7 +328,7 @@ kbd{color:#4d6040;font-size:12px}
 .preview-toolbar{padding:0 14px}
 .preview-stage{padding:14px}
 .welcome h2{font-size:44px}
-.welcome-art{transform:scale(.9);margin-bottom:8px}
+.welcome-art{transform:none;margin-bottom:8px}
 .label-hint{font-size:9px}
 .settings-dialog{grid-template-columns:175px minmax(0,1fr)}
 .settings-page{padding:24px 27px}
@@ -357,7 +358,7 @@ kbd{color:#4d6040;font-size:12px}
 .preview-live-dot{display:none}
 .preview-stage{padding:10px}
 .welcome{padding:10px 10px 20px}
-.welcome-art{height:135px;transform:scale(.75);transform-origin:bottom center;margin-top:-22px;margin-bottom:17px}
+.welcome-art{height:135px;transform:none;transform-origin:bottom center;margin-top:-22px;margin-bottom:17px}
 .welcome h2{font-size:38px;margin-top:10px;margin-bottom:15px}
 .welcome>p{font-size:11px}
 .welcome>.primary{margin:17px 0 10px;padding:11px 18px;font-size:11px}
@@ -486,7 +487,7 @@ kbd{color:#4d6040;font-size:12px}
 .backup-menu[open]>summary{background:#f1f4ea;border-color:#cdd7be}
 .backup-panel{position:absolute;right:0;top:calc(100% + 10px);z-index:80;width:300px;padding:20px;background:#fffefa;border:1px solid #e0e5d8;border-radius:14px;box-shadow:0 15px 50px #26302125;animation:backup-open .22s ease-out}
 .backup-panel>strong{font-size:15px}.backup-panel>p{font-size:12px;line-height:1.8;color:#78826e;margin:10px 0 16px}.backup-panel .select-field{width:100%;margin:0 0 12px}.header-actions .backup-panel .download-button{width:100%;padding:11px;font-size:12px;background:#f0f3e9;color:#465c38;border-color:#d7e0cb}
-@keyframes backup-open{from{opacity:0;transform:translateY(-6px) scale(.98);transform-origin:top right}to{opacity:1;transform:none}}
+@keyframes backup-open{from{opacity:0;transform:translateY(-6px);transform-origin:top right}to{opacity:1;transform:none}}
 .handoff-dialog{width:min(700px,calc(100vw - 28px))}.handoff-source-line{font-size:12px;color:#7d866f}.handoff-source-line .handoff-source{display:inline;background:transparent;border:0;padding:0;color:#364531}
 .handoff-choices{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0 12px}.handoff-choice{display:flex;flex-direction:column;align-items:flex-start;padding:20px;border:1px solid #e2e6d9;border-radius:13px;background:#fafbf5}.handoff-choice h3{font-size:19px;margin:10px 0}.handoff-choice p{font-size:12px;line-height:1.8;color:#748066;flex:1}.handoff-choice button{margin-top:14px;width:100%;font-size:12px}
 #agent-task-help{font-size:12px;color:#77826c;line-height:1.8}
@@ -530,7 +531,7 @@ body{background:#f4f3ef}
 .header-actions{gap:8px}.local-badge{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text-secondary);margin-right:15px}.local-badge>span{width:5px;height:5px;background:#68806b;border-radius:50%;box-shadow:0 0 0 4px #68806b0d}
 #open-button{background:#fffefa;border-color:#dedfd7;box-shadow:0 1px 2px #25332a05;font-size:12px}.folder-button{font-size:12px}
 button{transition:background .18s,border-color .18s,box-shadow .24s,transform .3s var(--ease),opacity .18s}
-button:active:not(:disabled){transform:scale(.98)}
+button:active:not(:disabled){transform:none}
 button.primary{background:linear-gradient(135deg,#b45e42,#9c472f);border-color:#a55036;box-shadow:inset 0 1px 0 #ffffff21,0 2px 4px #6e332217}
 button.primary:hover:not(:disabled){background:linear-gradient(135deg,#a95036,#8e3c27);border-color:#92412b;box-shadow:inset 0 1px 0 #ffffff21,0 4px 10px #6e332222}
 .header-actions .handoff-button.primary,.welcome-actions .primary{background:linear-gradient(135deg,#435c49,#2e4437);border-color:#344b3e;color:#fffefa;box-shadow:inset 0 1px 0 #ffffff18,0 3px 8px #263e311a}
@@ -685,14 +686,22 @@ button.annotation-comment:focus-visible{outline-offset:4px}
 /* Reading-first product surfaces. Brand expression stays outside the document. */
 :root {
   --paper: #fffefa;
-  --paper-line: #e2e3da;
-  --reading-ground: #eeefea;
-  --ink-strong: #2c3c32;
-  --ink-soft: #626f61;
-  --copper: #a75b3c;
-  --lift: 0 18px 56px #263c3020, 0 3px 9px #263c3009;
+  --paper-line: #e5e3dd;
+  --reading-ground: #efeeea;
+  --ink-strong: #292e2d;
+  --ink-soft: #69706c;
+  --copper: #a65338;
+  --ink: var(--ink-strong);
+  --accent: var(--copper);
+  --accent-dark: #87412c;
+  --line: var(--paper-line);
+  --muted: var(--ink-soft);
+  --text-secondary: #636963;
+  --text-tertiary: #74796f;
+  --header-height: 68px;
+  --lift: 0 18px 56px #24292218, 0 3px 9px #24292208;
 }
-body {background: #f5f4ef;}
+body {background: #f5f4f0;}
 .app-header {padding-inline: 28px;}
 /* Lift the header's whole stacking context while its menu is open. A child
    z-index cannot escape behind workflow overlays or the mobile review sheet. */
@@ -701,12 +710,12 @@ body {background: #f5f4ef;}
 .settings-dialog {min-height: 0; max-height: calc(100dvh - 24px);}
 .brand-subtitle {font-size: 11px; letter-spacing: .025em;}
 .brand-period {color: var(--copper);}
-.workspace {border-radius: 18px; box-shadow: 0 12px 38px #263c3005;}
+.workspace {border-radius: 12px; box-shadow: none;}
 .online-bar~.workspace.has-document {height: calc(100dvh - var(--header-height) - 56px);}
-.source-info {padding: 15px 22px;}
+.source-info {padding: 12px 20px; gap: 10px;}
 .source-icon {width: 30px; height: 34px;}
 .source-copy .eyebrow {font-size: 10px; letter-spacing: .04em;}
-.editor-section, .annotations-section {padding: 19px 22px;}
+.editor-section, .annotations-section {padding: 16px 20px;}
 .editor-section {transition: background .18s;}
 .editor-section[data-state=editing] {background: linear-gradient(125deg,#fcf6ed,#fffdfa);}
 .editor-section[data-state=editing] #editor-title {color: #915232;}
@@ -717,8 +726,8 @@ body {background: #f5f4ef;}
 #editor-title {font-size: 14px;}
 .mode-tabs button {min-height: 36px; font-size: 12px;}
 .mode-hint {font-size: 12px; line-height: 1.75;}
-textarea {font-size: 14px; line-height: 1.85; min-height: 136px;}
-textarea:focus {border-color: #97aa8a; box-shadow: 0 0 0 3px #627b4c10;}
+textarea {font-size: 14px; line-height: 1.8; min-height: 100px; color: var(--ink);}
+textarea:focus {border-color: #b99482; box-shadow: 0 0 0 3px #a653380c;}
 .comment-scope {font-size: 11px; padding: 4px 8px;}
 #save-button {min-height: 38px;}
 .annotation-comment {font-size: 14px;}
@@ -731,27 +740,27 @@ button.annotation-comment {font-size: 14px; line-height: 1.75;}
 .annotation-card.is-current {border-color: #a8b69a; box-shadow: inset 3px 0 #788e66;}
 .annotation-card.active {border-color: #d1b18a; box-shadow: inset 3px 0 #bc8d5c;}
 .annotation-actions {gap: 4px 13px;}
-.sidebar-footer {font-size: 11px; padding: 15px 22px;}
+.sidebar-footer {font-size: 11px; padding: 12px 20px;}
 .sidebar-footer .text-button {font-size: 11px;}
 .preview-section {position: relative;}
-.preview-toolbar {height: 52px; padding-inline: 18px; background: #fbfcf7;}
+.preview-toolbar {height: 50px; padding-inline: 16px; background: var(--paper);}
 .preview-controls .select-trigger {font-size: 12px;}
 #preview-label {font-size: 13px;}
-.preview-stage {padding: 22px; background: var(--reading-ground);}
+.preview-stage {padding: 20px; background: var(--reading-ground);}
 .preview-stage iframe {border-radius: 5px; box-shadow: 0 8px 28px #263c3006;}
 
 /* One line of guidance, with optional details floating above the document. */
 .workflow-card {
   position: relative; z-index: 20; padding: 7px 18px; min-height: 48px;
-  border-bottom: 1px solid var(--paper-line); background: #f8f9f3;
+  border-bottom: 1px solid var(--paper-line); background: #f8f7f3;
 }
 .workflow-next {flex-wrap: nowrap; gap: 12px; min-height: 33px;}
 .workflow-copy {display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; flex-basis: auto;}
-.workflow-copy>strong {font-size: 12px; color: #4e6048; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.workflow-copy>strong {font-size: 12px; color: #636960; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 .workflow-number {
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-  width: 26px; height: 26px; border: 1px solid #dce4d2; border-radius: 8px;
-  font: 11px/1 ui-monospace, SFMono-Regular, Consolas, monospace; color: #647a55; background: #f1f5e9;
+  width: 24px; height: 24px; border: 1px solid #e4e0d7; border-radius: 6px;
+  font: 11px/1 ui-monospace, SFMono-Regular, Consolas, monospace; color: #797668; background: #f2f0e9;
 }
 .workflow-card .result-review-actions {flex-shrink: 0; gap: 5px; justify-content: flex-end;}
 .workflow-card .result-review-actions button {font-size: 11px; min-height: 32px; padding: 6px 8px;}
@@ -762,7 +771,7 @@ button.annotation-comment {font-size: 14px; line-height: 1.75;}
   position: absolute; inset: calc(100% + 9px) 12px auto auto;
   width: min(440px,calc(100% - 24px)); max-height: min(480px,calc(100dvh - 220px));
   overflow: auto; padding: 20px; border: 1px solid #dfe5d5; border-radius: 14px;
-  background: linear-gradient(135deg,#fffefa,#f8faf2); box-shadow: var(--lift);
+  background: var(--paper); box-shadow: var(--lift);
   scrollbar-width: thin; overscroll-behavior: contain; transform-origin: top right;
 }
 .workflow-details>.eyebrow {padding-top: 2px; font-size: 11px; letter-spacing: .08em;}
@@ -797,12 +806,12 @@ button.annotation-comment {font-size: 14px; line-height: 1.75;}
 .preview-feedback .warnings button {font-size: 12px;}
 
 /* Editorial character, using local typography and light rather than heavy decoration. */
-.welcome h2 {font-family: 'Songti SC','STSong','Noto Serif CJK SC',serif; font-weight: 600; letter-spacing: -2px; line-height: 1.22;}
+.welcome h2 {font-family: 'Songti SC','STSong','Noto Serif CJK SC',serif; font-size: clamp(42px,4.4vw,64px); font-weight: 600; letter-spacing: -2.4px; line-height: 1.3; color: var(--ink-strong);}
 .welcome-copy>p {font-size: 15px; line-height: 2; max-width: 440px;}
 .welcome-eyebrow {font-size: 11px; letter-spacing: .12em;}
-.welcome-emphasis {background-image: linear-gradient(115deg,#304935 15%,#798563 95%);}
+.welcome-emphasis {background: none; color: var(--copper);}
 .welcome-art {filter: drop-shadow(0 12px 35px #485a3605);}
-.art-window {box-shadow: 0 26px 70px #33442c13,0 3px 9px #33442c06;}
+.art-window {box-shadow: 0 20px 60px #3333290e,0 2px 6px #33332906; transform: none; animation: none; border-color: var(--line);}
 .art-document-title {font-family: 'Songti SC','STSong',serif; font-size: 28px; font-weight: 600;}
 .art-review-note {border-color: #dfddce; box-shadow: 0 14px 40px #34452f15;}
 .settings-dialog {border-radius: 22px;}
@@ -898,6 +907,218 @@ button.annotation-comment {font-size: 14px; line-height: 1.75;}
   .settings-page {padding: 23px;}
 }
 @media (prefers-reduced-motion: reduce) {.editor-section {transition: none;}}
+
+/* A quiet paper desk: one accent, readable secondary text, no elastic scaling. */
+button {border-radius: 8px; transition: background .16s, border-color .16s, color .16s, box-shadow .16s, opacity .16s;}
+button:active:not(:disabled) {transform: none;}
+button:focus-visible, input:focus-visible, summary:focus-visible {outline: 2px solid var(--copper); outline-offset: 3px;}
+button.quiet, button.icon-button {color: #666d65;}
+button.text-button {color: var(--copper);}
+button.primary {box-shadow: none;}
+.app-header {gap: 16px;}
+.brand {gap: 10px;}
+.brand strong {font-size: 18px; color: var(--ink);}
+.brand-icon {width: 36px; height: 36px; border-radius: 10px; background: #f4e9e1; border-color: #eadacf;}
+.brand-icon .icon {width: 22px; height: 22px;}
+.brand-subtitle {font-size: 10px; color: #6c7068;}
+.header-actions .handoff-button {background: #303b33; border-color: #303b33; color: #fffefa;}
+.header-actions .handoff-button:hover:not(:disabled) {background: #202b23; border-color: #202b23;}
+.header-actions .download-button {color: #fffefa;}
+.source-copy .eyebrow {font-weight: 400; color: #72766d;}
+.source-copy h1 {font-size: 13px; margin-top: 2px;}
+.source-icon {background: #f2f1ec; color: #747b6c;}
+.document-type {font: 9px/1.3 ui-monospace, SFMono-Regular, monospace; letter-spacing: .04em; color: #73796e; padding: 4px 5px; background: #f3f2ed; border: 1px solid #e7e5dd; border-radius: 4px;}
+.editor-section {background: #fffefa;}
+.editor-section>.section-heading {min-height: 28px; margin-bottom: 10px;}
+.editor-section[data-collapsed=true]>.section-heading {margin-bottom: 0;}
+.editor-section[data-collapsed=true][data-has-draft=true] #editor-title::after {content: ' · 有草稿'; font-size: 11px; font-weight: 400; color: var(--copper);}
+.composer-heading-actions {display: flex; align-items: center; gap: 10px;}
+#composer-toggle {width: 28px; height: 28px; padding: 5px;}
+#composer-toggle .icon {width: 15px; height: 15px; transition: transform .22s var(--ease);}
+#composer-toggle[aria-expanded=false] .icon {transform: rotate(180deg);}
+.composer-content {display: flow-root; overflow: hidden;}
+.mode-tabs {padding: 3px; gap: 2px; border: 1px solid #eae7df; border-radius: 8px; background: #f2f1ec;}
+.mode-tabs button {min-height: 32px; border-radius: 5px; color: #70776b;}
+.mode-tabs button[aria-pressed=true] {color: #393e36;}
+.mode-indicator {inset: 3px auto 3px 3px; width: calc((100% - 12px)/4); border-radius: 5px; box-shadow: 0 1px 4px #2a332914;}
+.mode-tabs.is-docx .mode-indicator {width: calc((100% - 10px)/3);}
+.mode-hint {color: #697066; margin-block: 10px; font-size: 12px;}
+.comment-label {margin: 12px 0 7px; min-height: 20px; font-size: 12px;}
+.comment-scope {padding: 3px 6px; color: #606b57; background: #f0f2e9; font-size: 10px;}
+#comment-input {min-height: 100px; padding: 11px 12px; border-color: #dedfd5; background: #fffefa; border-radius: 8px;}
+#comment-input::placeholder {color: #81877a; font-size: 13px;}
+.editor-actions {margin-top: 9px;}
+#save-button {padding: 8px 14px; font-size: 12px;}
+.save-key-hint {font-size: 10px; color: #7d8375;}
+.muted {color: #71796a; font-size: 11px;}
+.target-preview {border-color: #e7dacf; background: #fbf6f0; margin: 12px 0;}
+.sidebar>.annotations-section {display: flex; flex: 1 1 auto; flex-direction: column; min-height: 260px; padding: 14px 16px 0; overflow: hidden;}
+.annotation-list-header {flex-shrink: 0; padding-inline: 4px;}
+.annotation-list-header>.section-heading {margin-bottom: 9px;}
+.annotation-list-header h2 {font-size: 14px;}
+.count {background: #eeeee8; color: #686f60; font-size: 11px; border-radius: 5px;}
+.annotation-search {display: flex; align-items: center; min-width: 0; gap: 8px; padding: 0 10px; height: 36px; border: 1px solid #e5e4dd; background: #f9f8f4; border-radius: 7px;}
+.annotation-search:focus-within {border-color: #bca38f; box-shadow: 0 0 0 2px #a6533809;}
+.annotation-search>.icon, .annotation-search [data-icon] .icon {width: 15px; height: 15px; color: #7a8072;}
+.annotation-search input {font: inherit; font-size: 12px; flex: 1; min-width: 0; width: 100%; height: 32px; padding: 0; border: 0; background: transparent; color: var(--ink); outline: 0;}
+.annotation-search input::-webkit-search-cancel-button {display: none;}
+.annotation-search input::placeholder {color: #777e70;}
+#annotation-search-clear {width: 24px; height: 26px; padding: 4px; margin-right: -5px;}
+.search-status {font-size: 11px; color: #697261; margin: 8px 0 0;}
+.annotation-navigation {font-size: 11px; color: #777d70;}
+.annotation-navigation .icon-button {width: 28px; height: 28px;}
+.review-progress {margin: 9px 0 0; gap: 5px;}
+#review-progress {font-size: 11px; color: #6d7367;}
+.review-progress .select-trigger {min-height: 30px; padding: 4px 7px; border-color: transparent; background: transparent; color: #575f50; font-size: 11px;}
+.list-utilities {display: flex; align-items: center; gap: 8px; margin: 0 0 8px;}
+.history-controls {gap: 0; margin-left: -5px;}
+.list-utilities #import-results {margin: 0 0 0 auto; font-size: 11px; color: #71786b; min-height: 30px;}
+.list-utilities #import-results .icon {display: none;}
+#data-button {width: 26px; height: 28px; color: #858b7f; padding: 5px;}
+#data-button .icon {width: 15px; height: 15px;}
+.annotation-list {overflow: auto; flex: 1 1 auto; min-height: 110px; padding: 2px 4px 14px; scrollbar-width: thin; scrollbar-color: #d9ddd2 transparent; overscroll-behavior: contain; scroll-padding-block: 5px;}
+.annotation-card {padding: 12px; border-radius: 9px; border-color: #e6e5de; background: #fffefa; box-shadow: none; margin-bottom: 8px;}
+.annotation-card:hover {border-color: #cbcfc1; box-shadow: none;}
+.annotation-card.is-current {border-color: #bd9d87; background: #fffcf7; box-shadow: inset 2px 0 var(--copper);}
+.annotation-card.active {border-color: #bd9d87; background: #fffaf3; box-shadow: inset 2px 0 var(--copper);}
+.annotation-top {min-height: 25px; gap: 6px;}
+.annotation-top>.tag {font-size: 10px; color: #6b7361;}
+.annotation-number {font-size: 10px; color: #787e70;}
+.annotation-state {background: none; padding: 0; border-radius: 0; font-size: 10px; font-weight: 400; color: #856e50;}
+.annotation-state.completed {color: #647558;}
+.annotation-details-toggle {font-size: 10px !important; min-height: 26px; color: #6e7567 !important;}
+button.annotation-comment {font-size: 13px; line-height: 1.75; font-weight: 500; margin: 5px 0 8px;}
+.annotation-quote {font-size: 11px; color: #7c8472; border-left: 2px solid #dfded2; padding-left: 8px;}
+.annotation-actions {gap: 10px; margin-top: 7px;}
+.annotation-actions .text-button {font-size: 11px; min-height: 28px; color: #68765b;}
+.annotation-actions [data-action=locate] {color: var(--copper);}
+.annotation-actions [data-action=status] {margin-left: auto;}
+.annotation-actions .icon-button {width: 28px; height: 28px; min-height: 28px; padding: 5px; color: #78856a;}
+.annotation-actions .icon-button .icon {width: 15px; height: 15px;}
+.annotation-actions .delete-button {margin-left: 0; color: #8b9083;}
+.annotation-actions .delete-button:hover {color: #a24e34; background: #f8ede5;}
+.annotation-card:not([data-expanded=true]):not(.is-current) .location-status.exact {display: none;}
+.location-status {font-size: 11px;}
+.empty-list {border: 0; padding: 28px 12px; white-space: pre-line; color: #78816e; font-size: 12px; line-height: 2;}
+.sidebar-footer {margin-top: 0; background: #f8f8f2; gap: 4px; color: #707968;}
+.sidebar-footer #save-state, .sidebar-footer .privacy-dot {display: none;}
+.sidebar-footer .recovery-tools {margin-top: 0;}
+.sidebar-footer .text-button {font-size: 10px; color: #7a8371;}
+.workspace.has-document>.sidebar-resizer {background: #f0f0e9; border-inline-color: #e5e6dc;}
+.preview-controls .select-trigger {color: #6c7463;}
+
+/* Reading retains a small, stable way back to the current opinion. */
+.reading-context {position: absolute; z-index: 30; inset: auto 20px 18px; margin-inline: auto; width: min(600px,calc(100% - 40px)); display: flex; align-items: center; gap: 13px; padding: 11px 12px; border: 1px solid #deded3; border-radius: 12px; background: #fffefa; box-shadow: 0 8px 32px #262f2219,0 1px 3px #262f2208;}
+.reading-return {flex-shrink: 0; font-size: 11px; padding: 8px !important; min-height: 34px;}
+.reading-return .icon {width: 14px; height: 14px;}
+.reading-context-copy {min-width: 0; flex: 1; padding-left: 12px; border-left: 1px solid var(--line);}
+.reading-expand {display: flex; align-items: center; gap: 10px; width: 100%; min-height: 20px; padding: 0; border: 0; border-radius: 2px; text-align: left; background: transparent; box-shadow: none;}
+.reading-expand:hover:not(:disabled) {background: transparent; box-shadow: none;}
+#reading-expand-label {font-size: 10px; font-weight: 400; color: #777f6c; margin-left: auto;}
+#reading-position {font-size: 10px; color: var(--copper);}
+#reading-comment {font-size: 12px; line-height: 1.7; color: var(--ink); margin: 4px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.reading-context[data-expanded=true] #reading-comment {white-space: pre-wrap; overflow: auto; max-height: min(140px,25dvh); overflow-wrap: anywhere; scrollbar-width: thin;}
+.reading-context-actions {display: flex; align-items: center; flex-shrink: 0; gap: 1px;}
+.reading-context-actions .icon-button {width: 30px; height: 34px; padding: 6px;}
+.reading-context-actions .icon {width: 16px; height: 16px;}
+.preview-section:has(#reading-context:not([hidden])) .preview-feedback {bottom: 98px;}
+
+/* An illustration of the actual work, kept flat and typographic. */
+.workspace:not(.has-document) .preview-stage {background: #f5f4f0;}
+.welcome {grid-template-columns: 1.15fr 1fr; column-gap: 58px; max-width: 1150px;}
+.welcome h2 {white-space: nowrap;}
+.welcome-eyebrow {color: #827561; letter-spacing: .16em;}
+.welcome-eyebrow>span {background: var(--copper);}
+.welcome-copy>p {color: #737569; font-size: 14px; max-width: 460px;}
+.welcome-actions .primary {background: #303b33; border-color: #303b33; box-shadow: none;}
+.welcome-actions .primary:hover:not(:disabled) {background: #202b23; border-color: #202b23; box-shadow: 0 3px 9px #303b3312;}
+.welcome-steps {border-top-color: #deded3; color: #747b68;}
+.welcome-art {height: 450px; filter: none;}
+.art-halo {display: none;}
+.art-window {top: 8px; left: 0; right: 28px; max-width: 385px; border-radius: 9px;}
+.art-window-bar {background: #f4f4ec; border-color: #e7e7dc;}
+.art-document-title {color: #3b4338; font-size: 27px; line-height: 1.55;}
+.art-document-meta {color: #888c7e;}
+.art-document-body {font-size: 11px; color: #7f8673;}
+.art-selected {background: #f1dfc2; border-bottom-color: #bf9063;}
+.art-selected:after {border-color: #bb865b;}
+.art-manuscript-lines {display: grid; gap: 9px; margin-top: 23px;}
+.art-manuscript-lines i {display: block; height: 4px; width: 100%; background: #e8eade; border-radius: 2px;}
+.art-manuscript-lines i:nth-child(2) {width: 90%;}
+.art-manuscript-lines i:nth-child(3) {width: 65%;}
+.art-review-note {right: -5px; bottom: 0; transform: none; animation: none; border-color: #dfdccf; border-radius: 10px; box-shadow: 0 12px 35px #34372e10; padding: 19px;}
+.art-note-icon {background: #f4e8da; color: var(--copper);}
+.settings-page>h2, .dialog-heading h2 {color: var(--ink);}
+.settings-dialog {border-radius: 16px;}
+.setting-card, .settings-entry, .handoff-choice, .return-step {background: #fbfaf5; border-color: #e5e5d9; box-shadow: none;}
+.settings-note {background: #f4f4eb;}
+
+@media (max-width: 1100px) and (min-width: 761px) {
+  .welcome {column-gap: 25px;}
+  .welcome h2 {font-size: 45px;}
+  .welcome-art {height: 440px;}
+  .art-window {right: 12px;}
+  .source-info, .editor-section {padding-inline: 16px;}
+  .sidebar>.annotations-section {padding-inline: 12px;}
+  .preview-controls .select-trigger {font-size: 11px; padding-inline: 6px;}
+}
+@media (max-width: 760px) {
+  .app-header {min-height: 104px; padding: 12px 16px;}
+  .app-header:has(~.workspace:not(.has-document)) {height: 68px; min-height: 68px; flex-wrap: nowrap;}
+  .app-header:has(~.workspace:not(.has-document)) .header-actions {width: auto;}
+  .app-header:has(~.workspace:not(.has-document)) #open-button {display: none;}
+  .app-header:has(~.workspace:not(.has-document)) #settings-button {position: static;}
+  .brand strong {font-size: 18px;}
+  .workspace.has-document {height: calc(100dvh - 104px - 80px);}
+  .online-bar~.workspace.has-document {height: calc(100dvh - 104px - 118px);}
+  .workspace.has-document>.sidebar {border-color: #dbded0; border-radius: 16px;}
+  .sheet-heading {padding: 13px 18px 9px; flex-shrink: 0;}
+  .sheet-heading strong {font-size: 14px; color: #4e5d44;}
+  .editor-section {padding: 14px 18px 8px;}
+  .editor-section>.section-heading {margin-bottom: 11px;}
+  #composer-toggle {display: none;}
+  .composer-content {overflow: visible;}
+  .workspace[data-mobile-view=list]>.sidebar {overflow: hidden;}
+  .sidebar>.annotations-section {padding: 12px 14px 0; min-height: 0;}
+  .workspace[data-mobile-view=editor] .annotations-section {display: none;}
+  .workspace[data-mobile-view=list] .editor-section {display: none;}
+  .annotation-list {min-height: 50px;}
+  .annotation-search {height: 40px;}
+  .annotation-search input {font-size: 16px; height: 36px;}
+  .annotation-search input::placeholder {font-size: 12px;}
+  .document-type {display: none;}
+  #comment-input {font-size: 16px; min-height: 100px;}
+  .mode-tabs button {min-height: 38px;}
+  .annotation-actions .text-button, .annotation-actions .icon-button {min-height: 40px;}
+  .annotation-actions .icon-button {width: 40px;}
+  .annotation-navigation .icon-button {width: 34px; height: 34px;}
+  .annotation-details-toggle {min-height: 36px;}
+  .mobile-dock button {font-size: 12px; color: #737c67;}
+  .mobile-dock button.is-active {background: #f1e9dd; color: #844d32;}
+  .reading-context {inset-inline: 10px; bottom: 10px; width: calc(100% - 20px); padding: 8px 10px; gap: 5px; flex-wrap: wrap;}
+  .reading-context-copy {order: -1; flex: 1 0 100%; border: 0; padding: 0 3px 5px;}
+  #reading-comment {font-size: 12px; margin-top: 2px;}
+  .reading-context-actions {margin-left: auto;}
+  .reading-context-actions .icon-button {width: 42px; height: 42px;}
+  .reading-return {min-height: 42px;}
+  .workspace[data-mobile-panel]:not([data-mobile-panel=closed]) .reading-context {display: none;}
+  .preview-section:has(#reading-context:not([hidden])) .preview-feedback {bottom: 127px;}
+  .workspace.has-document:has(.sidebar:not([hidden]):not([inert])) .preview-feedback {bottom: calc(78px + env(safe-area-inset-bottom));}
+  .welcome {grid-template-columns: 1fr; row-gap: 32px;}
+  .welcome h2 {font-size: clamp(29px,8vw,52px); letter-spacing: -1.5px; margin-top: 23px;}
+  .welcome-copy {min-width: 0;}
+  .welcome-copy>p {font-size: 13px; line-height: 1.9;}
+  .welcome-art {height: 405px; max-width: 420px; margin-inline: auto;}
+  .art-document {padding: 21px 25px;}
+  .art-document-title {font-size: 23px;}
+  .art-review-note {bottom: 0; right: 0; padding: 15px;}
+  .welcome p.welcome-note {font-size: 10px; line-height: 1.8; margin: 0;}
+  .welcome-shortcut {font-size: 10px;}
+  .settings-page {padding: 22px;}
+}
+@media (prefers-reduced-motion: reduce) {
+  button, #composer-toggle .icon {transition: none;}
+}
 
 /* PDF.js 6.4.299 text layer styles, Apache-2.0; see bundled licenses. */
 #pdf-preview .textLayer {
@@ -1080,7 +1301,7 @@ button.annotation-comment {font-size: 14px; line-height: 1.75;}
   <header class="app-header">
     <div class="brand"><span class="brand-icon" aria-hidden="true" data-icon="mark"></span><div><strong>HTML 批注<span class="brand-period">.</span></strong><span class="brand-subtitle">让每条建议，都有落点</span></div></div>
     <div class="header-actions">
-      <span class="local-badge"><span></span>本地工作区</span>
+      <span class="local-badge"><span></span>仅在本机</span>
       <button id="folder-button" class="quiet folder-button" type="button" aria-label="导入文件夹" title="导入文件夹"><span data-icon="folder"></span><span>导入文件夹</span></button>
       <button id="open-button" type="button" aria-label="打开文档" title="打开文档"><span data-icon="file-plus"></span><span>打开文档</span></button>
       <span class="action-divider" aria-hidden="true"></span>
@@ -1096,24 +1317,26 @@ button.annotation-comment {font-size: 14px; line-height: 1.75;}
   <div id="pair-source" class="recovery-banner" hidden><span>轻量批注已读取，请选择配套原始 DOCX 或 PDF。</span><button id="pair-source-button" type="button">选择配套原文件</button><button id="pair-compatible" class="text-button" type="button" title="系统文件选择器无法打开时使用">兼容选择</button><button id="cancel-pair" class="text-button" type="button">取消恢复</button></div>
   <main class="workspace" data-sidebar-position="left">
     <aside id="review-sidebar" class="sidebar" aria-label="批注工作区"><div class="sheet-heading"><span class="sheet-handle" aria-hidden="true"></span><strong id="sheet-title">写下你的意见</strong><button id="mobile-panel-close" class="icon-button" type="button" aria-label="收起批注面板"><span data-icon="chevron-down"></span></button></div>
-      <section class="source-info"><div class="source-icon" data-icon="file" aria-hidden="true"></div><div class="source-copy"><span class="eyebrow">当前文档</span><h1 id="source-name">尚未打开页面</h1></div><label id="entry-label" class="field-label" hidden>文件夹中的文档<select id="entry-select"></select></label></section>
+      <section class="source-info"><div class="source-icon" data-icon="file" aria-hidden="true"></div><div class="source-copy"><span class="eyebrow">当前文档</span><h1 id="source-name">尚未打开页面</h1></div><span id="document-type" class="document-type" aria-label="文件格式">HTML</span><label id="entry-label" class="field-label" hidden>文件夹中的文档<select id="entry-select"></select></label></section>
       <section class="editor-section">
-        <div class="section-heading"><h2 id="editor-title">添加批注</h2><button id="cancel-edit" class="text-button" type="button" hidden>取消编辑</button></div>
+        <div class="section-heading"><h2 id="editor-title">添加批注</h2><div class="composer-heading-actions"><button id="cancel-edit" class="text-button" type="button" hidden>取消编辑</button><button id="composer-toggle" class="icon-button" type="button" aria-expanded="true" aria-controls="composer-content" aria-label="收起编辑区" title="收起编辑区，专注查看批注"><span data-icon="chevron-up"></span></button></div></div>
+        <div id="composer-content" class="composer-content">
         <div class="mode-tabs" role="group" aria-label="批注模式"><span class="mode-indicator" aria-hidden="true"></span><button type="button" data-mode="browse" aria-pressed="true">浏览</button><button type="button" data-mode="text" aria-pressed="false">文字</button><button type="button" data-mode="element" aria-pressed="false">元素</button><button type="button" data-mode="page" aria-pressed="false">单页</button></div>
         <p id="mode-hint" class="mode-hint">先打开 HTML、DOCX 或 PDF，或体验示例。</p>
         <div id="page-controls" class="page-controls" hidden><label for="page-select">选择页面</label><select id="page-select" aria-label="选择分页区块"><option value="">等待页面载入</option></select><p id="page-description"></p></div>
         <div id="target-preview" class="target-preview" hidden><div class="target-caption"><span data-icon="crosshair" aria-hidden="true"></span><span class="target-caption-label">选中范围</span><span id="target-kind" class="tag"></span></div><p id="target-text"></p><code id="target-selector"></code><div class="target-actions"><button id="target-summary-toggle" class="text-button" type="button" aria-expanded="false" aria-controls="target-text" hidden>展开摘要</button><button id="parent-target" class="text-button" type="button" hidden>选父级容器</button><button id="clear-target" class="text-button" type="button" hidden>取消选择</button></div></div>
         <label class="field-label comment-label" for="comment-input">修改意见<span id="comment-scope" class="comment-scope" role="status" aria-live="polite" aria-atomic="true">等待打开文档</span></label>
-        <textarea id="comment-input" aria-describedby="comment-scope mode-hint" rows="4" maxlength="20000" placeholder="你希望这里如何改进？&#10;例如：缩短这段介绍，并保留核心结论。" disabled></textarea>
-        <div class="editor-actions"><button id="save-button" class="primary" type="button" disabled>保存批注</button><span id="draft-status" class="muted"></span><span class="save-key-hint" aria-hidden="true">⌘ ↵</span></div>
+        <textarea id="comment-input" aria-describedby="comment-scope mode-hint" rows="3" maxlength="20000" placeholder="写下你的建议…&#10;具体一点，下一版会更好。" disabled></textarea>
+        <div class="editor-actions"><button id="save-button" class="primary" type="button" disabled>保存批注</button><span id="draft-status" class="muted"></span><span class="save-key-hint" aria-hidden="true">⌘ ↵</span></div></div>
       </section>
-      <section class="annotations-section"><div class="section-heading"><h2>批注 <span id="annotation-count" class="count">0</span></h2><button id="data-button" class="text-button" type="button" disabled>查看数据</button></div><div class="list-tools"><div class="history-controls"><button id="undo-button" class="icon-button" type="button" aria-label="撤销" title="撤销（Ctrl/⌘+Z，输入框外）" disabled><span data-icon="undo"></span></button><button id="redo-button" class="icon-button" type="button" aria-label="重做" title="重做（Ctrl/⌘+Shift+Z，输入框外）" disabled><span data-icon="redo"></span></button></div><nav class="annotation-navigation" aria-label="逐条浏览批注"><button id="annotation-previous" class="icon-button" type="button" aria-label="上一条批注" title="上一条批注" disabled><span data-icon="chevron-up"></span></button><span id="annotation-position" aria-live="polite">— / 0</span><button id="annotation-next" class="icon-button" type="button" aria-label="下一条批注" title="下一条批注" disabled><span data-icon="chevron-down"></span></button></nav></div><div class="review-progress"><span id="review-progress" aria-live="polite">意见与处理记录</span><select id="annotation-filter" aria-label="筛选批注"><option value="all">全部记录</option><option value="open">待处理</option><option value="resolved">已完成</option><option value="attention">需确认位置</option><option value="new">新增 / 已更新</option></select></div><button id="import-results" class="text-button results-import" type="button" disabled>导入处理记录 JSON <span data-icon="file"></span></button><div id="annotation-list" class="annotation-list"><p class="empty-list">每一次改进，<br>从一条清晰的建议开始。</p></div></section>
+      <section class="annotations-section"><div class="annotation-list-header"><div class="section-heading"><h2>批注 <span id="annotation-count" class="count">0</span></h2><nav class="annotation-navigation" aria-label="逐条浏览批注"><button id="annotation-previous" class="icon-button" type="button" aria-label="上一条批注" title="上一条批注" disabled><span data-icon="chevron-up"></span></button><span id="annotation-position" aria-live="polite">— / 0</span><button id="annotation-next" class="icon-button" type="button" aria-label="下一条批注" title="下一条批注" disabled><span data-icon="chevron-down"></span></button></nav></div><div class="annotation-search"><span data-icon="search" aria-hidden="true"></span><input id="annotation-search" type="search" aria-label="搜索批注" placeholder="搜索意见或原文" autocomplete="off" maxlength="200"><button id="annotation-search-clear" class="icon-button" type="button" aria-label="清除批注搜索" hidden><span data-icon="close"></span></button></div><p id="annotation-search-status" class="search-status" role="status" aria-live="polite" hidden></p><div class="review-progress"><span id="review-progress" aria-live="polite">意见与处理记录</span><select id="annotation-filter" aria-label="筛选批注"><option value="all">全部记录</option><option value="open">待处理</option><option value="resolved">已完成</option><option value="attention">需确认位置</option><option value="new">新增 / 已更新</option></select></div><div class="list-utilities"><div class="history-controls"><button id="undo-button" class="icon-button" type="button" aria-label="撤销" title="撤销（Ctrl/⌘+Z，输入框外）" disabled><span data-icon="undo"></span></button><button id="redo-button" class="icon-button" type="button" aria-label="重做" title="重做（Ctrl/⌘+Shift+Z，输入框外）" disabled><span data-icon="redo"></span></button></div><button id="import-results" class="text-button results-import" type="button" disabled>导入处理记录 <span data-icon="file"></span></button><button id="data-button" class="icon-button" type="button" aria-label="查看数据" title="查看批注数据" disabled><span data-icon="code"></span></button></div></div><div id="annotation-list" class="annotation-list"><p class="empty-list">还没有批注<br>从一条具体的建议开始。</p></div></section>
       <footer class="sidebar-footer"><span id="save-state">下载副本，保留审阅结果</span><span id="autosave-state" role="status" aria-live="polite">自动恢复：等待打开文件</span><div class="recovery-tools"><button id="retry-recovery" class="text-button" type="button" hidden>重试本机保存</button><button id="clear-recovery" class="text-button" type="button" disabled>清除恢复记录</button></div><span class="privacy-dot"><span data-icon="shield"></span> 文件和草稿仅在本机处理</span></footer>
     </aside>
     <div class="sidebar-rail" aria-label="批注栏已收起"><button id="sidebar-rail-toggle" class="icon-button" type="button" aria-label="展开批注栏" aria-controls="review-sidebar" aria-expanded="false"><span data-icon="layout"></span></button><span class="rail-label" aria-hidden="true">批注 <span id="sidebar-rail-count">0</span></span></div>
     <div id="sidebar-resizer" class="sidebar-resizer" role="separator" tabindex="0" aria-orientation="vertical" aria-label="调整批注栏宽度" aria-controls="review-sidebar" aria-valuemin="300" aria-valuemax="560" aria-valuenow="352" title="拖动调整宽度 · 双击恢复默认 · 方向键微调"><span aria-hidden="true"></span></div>
     <section class="preview-section" aria-label="HTML 页面预览">
       <div class="preview-toolbar"><button id="sidebar-toggle" class="icon-button sidebar-toggle" type="button" aria-label="收起批注栏" aria-controls="review-sidebar" aria-expanded="true" title="收起批注栏"><span data-icon="layout"></span></button><div class="preview-breadcrumb"><span data-icon="file" aria-hidden="true"></span><span id="preview-label">页面预览</span><span class="preview-live-dot" aria-hidden="true"></span></div><div class="preview-controls"><button id="document-nav-button" class="quiet" type="button" hidden disabled>目录与查找</button><select id="sidebar-position" aria-label="批注栏位置"><option value="left">左侧批注</option><option value="right">右侧批注</option></select><select id="preview-width" aria-label="预览视口"><option value="fluid">自适应</option><option value="390">手机 · 390px</option><option value="768">平板 · 768px</option><option value="1280">桌面 · 1280px</option></select><button id="reload-preview" class="icon-button" type="button" aria-label="重载页面" title="读取最新原文件与资源，保留批注和草稿" disabled><span data-icon="refresh"></span></button></div></div>
+      <nav id="reading-context" class="reading-context" aria-label="正文中的批注导航" hidden><button id="reading-return" class="quiet reading-return" type="button"><span data-icon="arrow-left"></span><span>返回批注</span></button><div class="reading-context-copy"><button id="reading-expand" class="reading-expand" type="button" aria-expanded="false" aria-controls="reading-comment" aria-label="展开当前意见全文"><span id="reading-position" role="status" aria-live="polite"></span><span id="reading-expand-label" aria-hidden="true">展开</span></button><p id="reading-comment" tabindex="-1"></p></div><div class="reading-context-actions"><button id="reading-previous" class="icon-button" type="button" aria-label="查看上一条批注" title="上一条批注"><span data-icon="chevron-up"></span></button><button id="reading-next" class="icon-button" type="button" aria-label="查看下一条批注" title="下一条批注"><span data-icon="chevron-down"></span></button><button id="reading-close" class="icon-button" type="button" aria-label="结束批注对照" title="结束对照，继续阅读"><span data-icon="close"></span></button></div></nav>
       <div class="preview-feedback" aria-label="操作反馈"><div id="warnings" class="warnings" hidden></div><div class="notice-surface"><div id="status" class="status" role="status" aria-live="polite" hidden></div><button id="status-dismiss" class="icon-button" type="button" aria-label="关闭操作提示" hidden><span data-icon="close"></span></button></div></div>
       <section id="result-review" class="result-review workflow-card" aria-label="审阅进度与下一步" hidden>
         <div class="workflow-next"><div class="workflow-copy"><span id="workflow-number" class="workflow-number" aria-hidden="true">01</span><strong id="result-review-title">先读文档，再写下你的意见。</strong></div><div class="result-review-actions"><button id="workflow-primary" class="primary" type="button">写第一条意见</button><button id="result-review-reload" class="primary" type="button" hidden>读取修改后的文档</button><button id="result-review-start" class="primary" type="button" hidden>逐条复核</button><button id="workflow-return" class="quiet" type="button" hidden>agent 已返回文件</button><button id="review-attention" class="text-button" type="button" hidden>查看需确认的批注</button><button id="review-retry" class="text-button" type="button" hidden>重新检查位置</button><button id="workflow-details-toggle" class="quiet workflow-details-toggle" type="button" aria-expanded="false" aria-controls="workflow-details"><span>流程详情</span><span data-icon="chevron-down"></span></button></div></div>
@@ -1127,9 +1350,9 @@ button.annotation-comment {font-size: 14px; line-height: 1.75;}
       <div id="pdf-controls" class="pdf-controls" hidden><button id="pdf-thumbnail-toggle" class="quiet" type="button" aria-expanded="false" aria-controls="pdf-thumbnails">缩略图</button><button id="pdf-prev-page" class="quiet" type="button" aria-label="上一页">上一页</button><label for="pdf-page-number">页码</label><input id="pdf-page-number" type="number" min="1" value="1" aria-label="PDF 页码"><span id="pdf-page-count">/ —</span><button id="pdf-next-page" class="quiet" type="button" aria-label="下一页">下一页</button><label for="pdf-zoom">缩放</label><select id="pdf-zoom" aria-label="PDF 缩放"><option value="fit">适合宽度</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option></select><button id="pdf-cancel-operation" class="text-button" type="button" hidden>取消查找 / 检查</button><span id="pdf-operation-status" role="status" aria-live="polite"></span></div>
       <div id="location-preview-bar" class="location-preview-bar" hidden><span id="location-preview-label"></span><button id="confirm-preview-location" class="primary" type="button">确认此位置</button><button id="return-location-comparison" class="quiet" type="button">返回对照</button></div><div id="pdf-search-bar" class="pdf-search-bar" hidden><span id="pdf-search-position" role="status">查找结果</span><button id="pdf-search-edit" class="text-button" type="button">修改关键词</button><button id="pdf-search-prev" class="quiet" type="button">上一处</button><button id="pdf-search-next" class="quiet" type="button">下一处</button><button id="pdf-search-close" class="text-button" type="button">结束查找</button></div><div id="pdf-scan-guide" class="pdf-scan-guide" hidden><span id="pdf-scan-message"></span><button id="pdf-use-region" class="quiet" type="button">框选区域</button></div><div id="preview-stage" class="preview-stage"><div id="welcome" class="welcome">
         <div class="welcome-copy">
-          <span class="welcome-eyebrow"><span></span> 让每条建议，都有落点</span>
-          <h2>看见问题，<br>留下<span class="welcome-emphasis">好建议</span><span class="welcome-period">。</span></h2>
-          <p>从一段文字，到整份文档。<br>直接标出想改的地方，把清晰的任务交给 agent。</p>
+          <span class="welcome-eyebrow"><span></span> 阅读 · 批注 · 改进</span>
+          <h2>好的修改，<br>从<span class="welcome-emphasis">清晰的批注</span>开始<span class="welcome-period">。</span></h2>
+          <p>打开文档，标出想改的地方。<br>把清晰的意见，留在原文旁。</p>
           <div class="welcome-actions"><button id="welcome-open" class="primary" type="button">打开文档 <span data-icon="arrow-up-right"></span></button><button id="example-button" class="quiet" type="button">体验示例 <span data-icon="arrow-right"></span></button></div>
           <div class="welcome-shortcut"><span>拖入 HTML / Word / PDF，或</span><kbd>⌘</kbd><kbd>O</kbd><span>打开</span></div>
           <div class="welcome-steps"><span><b>01</b> 阅读文档</span><span class="steps-line"></span><span><b>02</b> 留下批注</span><span class="steps-line"></span><span><b>03</b> 交给 agent</span></div>
@@ -1138,7 +1361,7 @@ button.annotation-comment {font-size: 14px; line-height: 1.75;}
           <div class="art-halo"></div>
           <div class="art-window">
             <div class="art-window-bar"><span class="art-window-dots"><i></i><i></i><i></i></span><span>季度品牌报告</span><span data-icon="layout"></span></div>
-            <div class="art-document"><div class="art-document-meta"><span>FIELDNOTES / 2026</span><span>01 — 04</span></div><div class="art-document-title">每个好作品，<br>都值得再进一步。</div><div class="art-document-subtitle">从清晰的反馈开始，让下一版更好。</div><div class="art-document-divider"></div><div class="art-document-section">01 &nbsp; 设计与表达</div><div class="art-document-body">好的设计，让信息自然流动。<br><span class="art-selected">让重点更突出，让阅读更轻松。</span><br>为每一个细节，找到恰好的表达。</div><div class="art-chart"><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="art-chart-caption">持续迭代，每一版都更进一步。</div></div>
+            <div class="art-document"><div class="art-document-meta"><span>REVIEW / 01</span><span>01 — 04</span></div><div class="art-document-title">每个好作品，<br>都值得再进一步。</div><div class="art-document-subtitle">从清晰的反馈开始，让下一版更好。</div><div class="art-document-divider"></div><div class="art-document-section">01 &nbsp; 设计与表达</div><div class="art-document-body">好的设计，让信息自然流动。<br><span class="art-selected">让重点更突出，让阅读更轻松。</span><br>为每一个细节，找到恰好的表达。</div><div class="art-manuscript-lines"><i></i><i></i><i></i></div><div class="art-chart-caption">一条批注，连接一个更好的版本。</div></div>
           </div>
           <div class="art-review-note"><span class="art-note-icon" data-icon="mark"></span><div><span class="art-note-label">文字批注 <span>01</span></span><strong>这句很好，可以再突出一点。</strong><p>保留核心结论，精简前面的铺垫。</p><span class="art-note-status"><span data-icon="check"></span> 建议已记录</span></div></div>
         </div>
@@ -1153,7 +1376,7 @@ button.annotation-comment {font-size: 14px; line-height: 1.75;}
     <section id="help-dialog" class="settings-page" data-settings-panel="help" hidden><span class="eyebrow">GETTING STARTED</span><h2>把意见，说到点上。</h2><p class="settings-intro">工作区会按进度提示下一步，随时可以回来继续。</p>
       <ol class="help-steps"><li><span>01</span><div><h3>阅读，留下意见</h3><p>打开或拖入 HTML、DOCX 或 PDF。选择文字、图片等目标，填写并保存批注；也可以直接写整体意见。HTML 带本地图片、样式或脚本时，请导入文件夹。</p></div></li><li><span>02</span><div><h3>交给你使用的 agent</h3><p>点击「交给 agent」，复制任务并附上原文档，或下载交接包，把 ZIP 附给 agent。材料准备好后仍需你发送。「保存副本」用于备份和继续审阅。</p></div></li><li><span>03</span><div><h3>读取返回文件，检查修改</h3><p>点击「agent 已返回文件」。读取修改后的文档更新预览，导入处理记录 JSON 更新批注状态；两份文件先读入哪一份都可以。只有 JSON 时正文仍是旧的。读取文档后再「逐条复核」，原意见和完成记录会保留。</p></div></li></ol>
       <div class="help-callout"><span data-icon="history"></span><p>刷新恢复的是本机工作区。原文件被修改后，需要重新读取；顶部重载按钮也可读取最新原文件与资源，保留批注和草稿。首次可能需要选择原文件或文件夹。长期保留或跨设备使用，请保存完整副本。</p></div><button id="restart-guide" class="secondary-button" type="button">重新显示入门引导 <span data-icon="arrow-right"></span></button>
-      <details class="help-details"><summary>让阅读与批注更顺手</summary><p>拖动预览与批注栏之间的分隔线调整宽度，双击恢复默认；聚焦分隔线后可用左右方向键微调，按 Shift 加快、Enter 复位、Esc 取消正在进行的拖动。预览左上角可以收起或展开批注栏，本机会记住布局。</p><p>批注卡片默认显示摘要，点击「展开」查看完整意见与记录。点击意见可查看对应内容；列表上方的箭头按当前筛选逐条浏览，位置有疑问时先查看对照，已完成意见进入只读复核。</p></details>
+      <details class="help-details"><summary>让阅读与批注更顺手</summary><p>拖动预览与批注栏之间的分隔线调整宽度，双击恢复默认；聚焦分隔线后可用左右方向键微调，按 Shift 加快、Enter 复位、Esc 取消正在进行的拖动。预览左上角可以收起或展开批注栏，本机会记住布局。</p><p>批注卡片默认显示摘要，点击「展开」查看完整意见与记录。点击意见可查看对应内容；搜索可同时匹配意见和原文。列表上方和正文下方的箭头按当前筛选逐条浏览；点击「返回批注」回到刚才的位置，位置有疑问时先查看对照，已完成意见进入只读复核。</p></details>
       <details class="help-details"><summary>怎样选择批注范围？</summary><p>浏览模式可直接填写整份文档的意见。文字模式拖选原文；元素模式点击目标，也可向外选择父级。HTML 单页对应已有的幻灯片、打印页等分页区块，可点击或从列表挑选；识别 data-page、data-slide、print-page、slide 以及多个 page 区块，没有分页结构时用整体或元素。PDF 区域模式拖出矩形，单页对应实际页码；扫描页改用区域框选。DOCX 支持文字、元素和整体。取消选择时已填写的意见会保留。</p></details>
       <details class="help-details"><summary>恢复批注与复核位置</summary><p>完整 HTML 工作区副本可离线继续编辑，压缩副本需先解压。轻量批注不含原文档；打开 DOCX / PDF 轻量 JSON 后选择哈希匹配的原文件可恢复。HTML 轻量 JSON 需配合原 HTML 和资源交付。</p><p>已关联文件夹时，重载会同时读取原文件旁同名处理记录，也可单独导入。没有处理记录也可以检查新文档，完成状态保持不变。编辑已完成意见会重新进入待处理。</p><p>位置检查详情可以展开。遇到无法确认或多个候选时，核对对照再明确确认，或重新选择位置；原定位保留作记录。定位检查与逐条复核都不会自动标记完成。批注支持撤销重做。</p></details>
       <details class="help-details"><summary>支持范围与文件限制</summary><p>DOCX 连续内容预览不还原 Word 页码与原生排版，页眉页脚和复杂图形不保证呈现，Word 原生批注不转为任务。PDF 按原页预览，首版不做 OCR。工具不编辑原文档，查找、位置检查和文件读取可取消。</p><p>仅打开可信 HTML，页面脚本可运行；服务器接口、嵌套 iframe、ES 模块等可能无法完整重现。原始 HTML / DOCX / PDF 上限 20 MiB，副本上限 100 MiB；目录上限 50 MiB、500 个文件。DOCX 解压内容限 100 MiB、3000 项，转换超过 30 秒中止。存储不可用时请保存副本。</p><p>系统文件选择器无法打开时，可使用兼容方式。兼容方式重载时需要重新选择原文件。</p><div class="editor-actions"><button id="compatible-open" class="secondary-button" type="button">兼容打开文档</button><button id="compatible-folder" class="secondary-button" type="button">兼容导入文件夹</button><button id="compatible-reload" class="secondary-button" type="button" disabled>兼容重载当前文档</button></div></details>
@@ -5562,6 +5785,9 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     file: '<path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6"/>',
     'file-plus': '<path d="M6 3h8l4 4v7M14 3v5h4M6 3v18h7M18 16v6M15 19h6"/>',
     'arrow-right': '<path d="M4 12h16m-6-6 6 6-6 6"/>',
+    'arrow-left': '<path d="M20 12H4m6-6-6 6 6 6"/>',
+    search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
+    trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6m4-6v6"/>',
     'arrow-up-right': '<path d="M6 18 18 6M6 6h12v12"/>',
     'chevron-up': '<path d="m6 15 6-6 6 6"/>', 'chevron-down': '<path d="m6 9 6 6 6-6"/>', check: '<path d="m5 12 4 4L19 6"/>', close: '<path d="m6 6 12 12M6 18 18 6"/>',
     crosshair: '<circle cx="12" cy="12" r="6"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>',
@@ -5747,16 +5973,15 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     const bounds = popup.getBoundingClientRect(); popup.style.left = Math.max(12, Math.min(rect.left, innerWidth - bounds.width - 12)) + 'px';
     const above = rect.bottom + bounds.height + 8 > innerHeight;
     popup.style.top = Math.max(12, above ? rect.top - bounds.height - 8 : rect.bottom + 8) + 'px';
-    popup.style.transformOrigin = Math.max(12, Math.min(bounds.width - 12, rect.left + rect.width / 2 - parseFloat(popup.style.left))) + 'px ' + (above ? 'bottom' : 'top');
-    const shift = above ? 8 : -8;
+    const shift = above ? 6 : -6;
     const rowAnimations = reducedMotion.matches ? [] : buttons.map((button, index) => button.animate([
       {opacity: 0, transform: 'translateY(' + shift / 2 + 'px)', offset: 0},
       {opacity: 0, transform: 'translateY(' + shift / 2 + 'px)', offset: .12 + Math.min(index, 5) * .06, easing: ease},
       {opacity: 1, transform: 'translateY(0)', offset: .87}, {opacity: 1, transform: 'translateY(0)', offset: 1}
     ], {duration: 220, easing: 'linear', fill: 'both'}));
     const motion = surface(popup, [
-      {opacity: 0, transform: 'translateY(' + shift + 'px) scale(.985)', clipPath: 'inset(' + (above ? '18% 0 0' : '0 0 18%') + ' 0 round 14px)', boxShadow: '0 3px 12px #24382b00'},
-      {opacity: 1, transform: 'translateY(0) scale(1)', clipPath: 'inset(0 round 14px)', boxShadow: '0 16px 48px #24382b1c, 0 3px 8px #24382b09'}
+      {opacity: 0, transform: 'translateY(' + shift + 'px)', clipPath: 'inset(' + (above ? '18% 0 0' : '0 0 18%') + ' 0 round 14px)'},
+      {opacity: 1, transform: 'translateY(0)', clipPath: 'inset(0 round 14px)'}
     ], 220, rowAnimations);
     trigger.setAttribute('aria-expanded', 'true'); trigger.setAttribute('aria-controls', popup.id); menu = {...field, popup, buttons, motion, anchor: {top: rect.top, left: rect.left}};
     const current = menu; drive(motion, true, () => { motion.state = 'open'; popup.dataset.motion = 'open'; });
@@ -5800,11 +6025,10 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     if (backupMotion?.state === 'closing' || !backup.open) {
       backup.open = true; positionBackup();
       if (!backupMotion) {
-        backupPanel.style.transformOrigin = 'top right';
         backupMotion = surface(backupPanel, [
-          {opacity: 0, transform: 'translateY(-6px) scale(.985)', clipPath: 'inset(0 0 10% 0 round 16px)'},
-          {opacity: 1, transform: 'translateY(0) scale(1)', clipPath: 'inset(0 round 16px)'}
-        ], 300);
+          {opacity: 0, transform: 'translateY(-6px)', clipPath: 'inset(0 0 10% 0 round 16px)'},
+          {opacity: 1, transform: 'translateY(0)', clipPath: 'inset(0 round 16px)'}
+        ], 230);
       }
       backupPanel.inert = false; backupPanel.removeAttribute('aria-hidden');
       const record = backupMotion;
@@ -5910,8 +6134,8 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
         {opacity: 1, transform: 'translateY(0)', offset: .88}, {opacity: 1, transform: 'translateY(0)', offset: 1}
       ], {duration: 280, easing: 'linear', fill: 'both'}));
       record = surface(dialog, [
-        {opacity: 0, transform: 'translateY(16px) scale(.985)'},
-        {opacity: 1, transform: 'translateY(0) scale(1)'}
+        {opacity: 0, transform: 'translateY(12px)'},
+        {opacity: 1, transform: 'translateY(0)'}
       ], 280, backdrop);
       record.scrim = scrim; dialogs.set(dialog, record);
 
@@ -6161,12 +6385,13 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   let renderedIds = new Set();
   const expandedAnnotations = new Set();
   let activeAnnotationId = null;
+  let readingContextOpen = false;
   let layout = null;
   const hints = {
     browse: '自由阅读。直接填写意见，默认针对整份文档；局部意见请先选择批注范围。',
-    text: '在预览中拖选文字，再填写修改意见。可跨越相邻的行内标签。',
-    element: '点击预览中的元素；使用「选父级容器」可指定卡片、区块等布局区域。',
-    page: '选择 HTML 中已有的幻灯片或打印页：点击页面，或从下方列表选择。'
+    text: '在正文中选中一段文字，再写下你的建议。',
+    element: '点击正文中的图片、段落或区块，再写下你的建议。',
+    page: '点击需要批注的页面，或从下方列表选择。'
   };
   let data = null;
   let pendingLight = null;
@@ -6331,6 +6556,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     if (next === 'page' && isDocx(data)) return;
     autosavePaused = false;
     mode = next;
+    if (data && next !== 'browse') setComposerOpen(true);
     if(next!=='text')$('pdf-scan-guide').hidden=true;
     for (const button of document.querySelectorAll('[data-mode]')) button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
     send('set-mode', {mode});
@@ -6360,6 +6586,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     if(isDocx(data) || isPdf(data)) {try {(isPdf(data) ? core.validatePdfTarget : core.validateDocxTarget)(target);} catch(error) {pendingTarget=null;$('target-preview').hidden=true;send('clear-focus');updateEditor();note(error.message,true);return;} }
     autosavePaused = false;
     pendingTarget = target;
+    if (!wholeTarget(target)) setComposerOpen(true);
     draftTargetChanged = true;
     $('target-preview').hidden = wholeTarget(target);
     $('target-preview').dataset.expanded = 'false';
@@ -6374,6 +6601,14 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     $('parent-target').hidden = target.kind !== 'element';
     if (target.kind === 'page' && ['page','single-page'].includes(target.scope)) { $('page-select').value = String(target.pageIndex); window.HRUI.syncSelect('page-select'); }
     updateEditor();
+  }
+  function setComposerOpen(open) {
+    const button = $('composer-toggle');
+    button.setAttribute('aria-expanded', String(open));
+    button.setAttribute('aria-label', open ? '收起编辑区' : '展开编辑区');
+    button.title = open ? '收起编辑区，专注查看批注' : '展开编辑区，写下你的建议';
+    document.querySelector('.editor-section').dataset.collapsed = String(!open);
+    window.HRUI.disclose($('composer-content'), open);
   }
   function updateEditor(persistDraft = true) {
     $('handoff-button').hidden = !data?.annotations.length;
@@ -6400,6 +6635,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     const editingNumber=editingId ? data.annotations.findIndex(item=>item.id===editingId)+1 : 0;
     $('editor-title').textContent = editingId ? `编辑批注 · ${String(editingNumber).padStart(2,'0')}` : '添加批注';
     document.querySelector('.editor-section').dataset.state=editingId ? 'editing' : 'new';
+    document.querySelector('.editor-section').dataset.hasDraft=String(Boolean($('comment-input').value));
     $('cancel-edit').textContent=editingId ? '取消编辑' : '清空草稿';
     $('cancel-edit').hidden = !editingId && (!pendingTarget || pendingTarget.kind === 'page') && !$('comment-input').value;
     renderPageControls();
@@ -6460,6 +6696,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     document.querySelector('.mode-tabs').classList.toggle('is-docx',docx);
     document.querySelectorAll('[data-docx-hide]').forEach(node=>node.hidden=docx);
     $('source-name').textContent = data.source.name;
+    $('document-type').textContent = pdf ? 'PDF' : docx ? 'WORD' : 'HTML';
     $('preview-label').textContent = data.source.name;
     document.title = `${data.source.name} · HTML 批注`;
     $('welcome').hidden = true;
@@ -6477,6 +6714,10 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   }
   function renderAnnotations() {
     const list = $('annotation-list');
+    const scrollTop = list.scrollTop;
+    const openHistories = new Set(Array.from(list.querySelectorAll('.annotation-history[open]'), node => node.closest('.annotation-card').dataset.annotationId + ':' + node.className));
+    const focusedSummary = document.activeElement?.closest('#annotation-list .annotation-history > summary');
+    const summaryFocus = focusedSummary ? {id:focusedSummary.closest('.annotation-card').dataset.annotationId,kind:focusedSummary.parentElement.className} : null;
     const previousIds = renderedIds; renderedIds = new Set(data?.annotations.map(item => item.id));
     const focusedButton = document.activeElement?.closest('#annotation-list button[data-action]');
     const focused = focusedButton ? {id:focusedButton.dataset.id,action:focusedButton.dataset.action} : null;
@@ -6491,10 +6732,15 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     $('review-progress').textContent = `待处理 ${pendingCount} · 已完成 ${annotations.length - pendingCount}`;
     renderLocationReview();
     const filter = $('annotation-filter').value;
-    if (!annotations.length) { list.append(textNode('p', 'empty-list', '还没有批注。直接填写整体意见，或选择具体内容后批注。')); updateAnnotationNavigation(); return; }
+    const normalizeSearch = value => String(value).normalize('NFKC').toLocaleLowerCase();
+    const query = normalizeSearch($('annotation-search').value.trim());
+    $('annotation-search-clear').hidden = !query;
+    $('annotation-search-status').hidden = !query;
+    if (!annotations.length) { list.append(textNode('p', 'empty-list', '还没有批注\n写下整体意见，或选中正文中的一处开始。')); $('annotation-search-status').textContent=query ? '没有找到匹配的批注' : ''; updateAnnotationNavigation(); return; }
     annotations.forEach((annotation, index) => {
       const resolved = core.annotationStatus(annotation) === 'resolved';
       if (filter === 'attention' ? !needsLocationReview(annotation) : filter === 'new' ? !['new','updated'].includes(core.taskState(annotation)) : filter !== 'all' && (resolved ? 'resolved' : 'open') !== filter) return;
+      if (query && !normalizeSearch([annotation.comment,targetText(annotation.target),...(annotation.history || []).map(item=>item.summary || '')].join(' ')).includes(query)) return;
       const state = core.taskState(annotation);
       const stateLabels = {new: '新增意见', updated: '已更新', pending: '待处理', completed: '已完成'};
       const card = document.createElement('article');
@@ -6527,9 +6773,12 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
         body.append(feedback);
       }
       const actions = document.createElement('div'); actions.className = 'annotation-actions';
-      for (const [action, label] of [['locate', '定位'], ['edit', '编辑'], ['status', resolved ? '重新待处理' : '标记完成'], ['delete', '删除']]) {
-        const button = textNode('button', 'text-button' + (action === 'delete' ? ' delete-button' : ''), label);
+      for (const [action, label] of [['locate', '查看原文'], ['edit', '编辑'], ['status', resolved ? '重新待处理' : '标记完成'], ['delete', '删除']]) {
+        const compact = action === 'status' || action === 'delete';
+        const button = textNode('button', (compact ? 'icon-button' : 'text-button') + (action === 'delete' ? ' delete-button' : ''), compact ? '' : label);
         button.type = 'button'; button.dataset.action = action; button.dataset.id = annotation.id;
+        button.title = label; button.setAttribute('aria-label', label);
+        if (compact) button.innerHTML = window.HRUI.icon(action === 'delete' ? 'trash' : resolved ? 'undo' : 'check');
         if (action === 'locate' && resolved) { button.disabled = true; button.title = '已完成批注保留为记录，无需再次定位'; }
         actions.append(button);
       }
@@ -6558,11 +6807,19 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
       }
       list.append(card);
     });
-    if (!list.childElementCount) list.append(textNode('p', 'empty-list', filter === 'attention' ? '目前没有需要确认位置的批注。' : filter === 'new' ? '目前没有新增或更新的意见。' : filter === 'open' ? '目前没有待处理意见。' : '还没有已完成的处理记录。'));
+    const matches = list.childElementCount;
+    $('annotation-search-status').textContent=query ? matches ? `找到 ${matches} 条匹配的批注` : '没有找到匹配的批注' : '';
+    if (!matches) list.append(textNode('p', 'empty-list', query ? '没有找到这条批注\n试试其他关键词，或调整筛选条件。' : filter === 'attention' ? '所有位置都已确认。' : filter === 'new' ? '目前没有新增或更新的意见。' : filter === 'open' ? '全部处理完成\n每一条建议，都让文档更进一步。' : '还没有已完成的处理记录。'));
     renderLocationReview();
     renderResultReview();
     updateAnnotationNavigation();
     if (focused && document.activeElement===document.body) Array.from(list.querySelectorAll('button[data-action]')).find(button=>button.dataset.id===focused.id && button.dataset.action===focused.action)?.focus({preventScroll:true});
+    for (const history of list.querySelectorAll('.annotation-history')) {
+      const id=history.closest('.annotation-card').dataset.annotationId;
+      history.open=openHistories.has(id+':'+history.className);
+      if(summaryFocus?.id===id && summaryFocus.kind===history.className)history.querySelector('summary').focus({preventScroll:true});
+    }
+    list.scrollTop=scrollTop;
     window.HRUI.enterCards(list);
   }
   function updateAnnotationNavigation() {
@@ -6576,6 +6833,26 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     if($('annotation-position').textContent!==position)$('annotation-position').textContent=position;
     $('annotation-previous').disabled=!cards.length || index<=0;
     $('annotation-next').disabled=!cards.length || index===cards.length-1;
+    const annotation=data?.annotations.find(item=>item.id===activeAnnotationId);
+    const context=$('reading-context'),show=readingContextOpen && index>=0 && Boolean(annotation);
+    const entering=context.hidden && show;
+    context.hidden=!show;
+    if(show){
+      if(context.dataset.annotationId!==annotation.id){setReadingExpanded(false);context.dataset.annotationId=annotation.id;}
+      $('reading-position').textContent=`批注 ${index+1} / ${cards.length} · ${targetLabel(annotation.target)}`;
+      $('reading-comment').textContent=annotation.comment;
+      $('reading-comment').title=annotation.comment;
+      $('reading-previous').disabled=index<=0;
+      $('reading-next').disabled=index>=cards.length-1;
+      if(entering)window.HRUI.scopeChanged(context);
+    }
+  }
+  function setReadingExpanded(expanded) {
+    $('reading-context').dataset.expanded=String(expanded);
+    $('reading-expand').setAttribute('aria-expanded',String(expanded));
+    $('reading-expand').setAttribute('aria-label',expanded ? '收起当前意见全文' : '展开当前意见全文');
+    $('reading-expand-label').textContent=expanded ? '收起' : '展开';
+    $('reading-comment').tabIndex=expanded ? 0 : -1;
   }
   function toggleAnnotationDetails(annotation, card) {
     const expanded = card.dataset.expanded!=='true';
@@ -6588,11 +6865,18 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     });
   }
   function selectAnnotation(annotation) {
+    readingContextOpen=true;
     activeAnnotationId=annotation.id;updateAnnotationNavigation();
     layout.reading();
     if(core.annotationStatus(annotation)==='resolved') startResultReview(annotation.id);
     else if(needsLocationReview(annotation)) {resultReviewQueue=null;inspectLocation(annotation);}
     else locate(annotation);
+  }
+  function returnToAnnotations() {
+    readingContextOpen=false;updateAnnotationNavigation();layout.reviewing();
+    const card=Array.from($('annotation-list').children).find(node=>node.dataset.annotationId===activeAnnotationId);
+    card?.scrollIntoView({block:'nearest',behavior:'instant'});
+    card?.querySelector('[data-action=select]')?.focus({preventScroll:true});
   }
   function moveAnnotation(direction) {
     const cards=Array.from($('annotation-list').querySelectorAll('.annotation-card'));
@@ -6769,7 +7053,8 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     const prepared = await preparePreview(nextData);
     autosavePaused = false;
     data = nextData;
-    activeAnnotationId=null;expandedAnnotations.clear();
+    activeAnnotationId=null;readingContextOpen=false;expandedAnnotations.clear();
+    $('annotation-search').value='';
     workflowDetailsOpen = null; workflowDisclosureAlert = '';
     locationReview = null; $('reload-review').hidden = true;
     if ($('annotation-filter').value === 'attention') { $('annotation-filter').value = 'all'; window.HRUI.syncSelect('annotation-filter'); }
@@ -7166,10 +7451,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     if (core.annotationStatus(annotation) === 'resolved') { note('这条批注已完成，原文与位置保留作处理记录。需要继续修改时可编辑意见或重新待处理。'); return; }
     if (annotation.kind === 'page' && wholeTarget(annotation.target)) {
       send('clear-focus');
-      const width = annotation.view?.width || annotation.target.viewport?.width;
-      const available = ['390', '768', '1280'];
-      note(`整体批注：${data.source.name}。意见适用于整个文件；记录视口 ${width || '未知'} × ${annotation.view?.height || annotation.target.viewport?.height || '未知'}px。`);
-      if (available.includes(String(width))) { $('preview-width').value = String(width); applyWidth(); }
+      note('这是一条整体意见，适用于整份文档。');
       locations.set(annotation.id, {status: 'exact', message: '整体反馈 · 适用于整个文件'});
       renderAnnotations(); return;
     }
@@ -7288,6 +7570,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   }
   function edit(annotation) {
     if (draftDirty() && !confirm('编辑框中有未保存的修改。确定切换到这条批注吗？')) return;
+    readingContextOpen=false;setComposerOpen(true);
     layout.reveal();activeAnnotationId=annotation.id;expandedAnnotations.add(annotation.id);
     editingId = annotation.id;
     $('comment-input').value = annotation.comment;
@@ -7349,6 +7632,24 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     copy.querySelector('#page-select').replaceChildren();
     // Rebuilt on startup. Do not serialize transient editor/list state or duplicate page bytes.
     copy.querySelector('#annotation-list').replaceChildren();
+    copy.querySelector('#annotation-search').value='';copy.querySelector('#annotation-search').removeAttribute('value');
+    copy.querySelector('#annotation-search-clear').hidden=true;
+    copy.querySelector('#annotation-search-status').hidden=true;copy.querySelector('#annotation-search-status').textContent='';
+    copy.querySelector('#reading-context').hidden=true;
+    delete copy.querySelector('#reading-context').dataset.annotationId;
+    copy.querySelector('#reading-context').dataset.expanded='false';
+    copy.querySelector('#reading-expand').setAttribute('aria-expanded','false');
+    copy.querySelector('#reading-expand').setAttribute('aria-label','展开当前意见全文');
+    copy.querySelector('#reading-expand-label').textContent='展开';
+    copy.querySelector('#reading-comment').tabIndex=-1;
+    copy.querySelector('#reading-comment').textContent='';copy.querySelector('#reading-comment').removeAttribute('title');
+    copy.querySelector('#reading-position').textContent='';
+    copy.querySelector('#composer-content').hidden=false;copy.querySelector('#composer-content').removeAttribute('aria-hidden');
+    copy.querySelector('#composer-toggle').setAttribute('aria-expanded','true');
+    copy.querySelector('#composer-toggle').setAttribute('aria-label','收起编辑区');
+    copy.querySelector('#composer-toggle').title='收起编辑区，专注查看批注';
+    copy.querySelector('.editor-section').dataset.collapsed='false';
+    copy.querySelector('.editor-section').dataset.hasDraft='false';
     copy.querySelector('#review-progress').textContent = '意见与处理记录';
     copy.querySelector('#annotation-position').textContent='— / 0';
     copy.querySelector('#annotation-previous').disabled=true;copy.querySelector('#annotation-next').disabled=true;
@@ -7805,7 +8106,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   $('confirm-location').addEventListener('click',confirmLocation);$('confirm-preview-location').addEventListener('click',confirmLocation);
   $('result-review-start').addEventListener('click',()=>startResultReview());
   $('result-review-reload').addEventListener('click',reloadSource);
-  $('workflow-primary').addEventListener('click',()=>{if(busy || !data)return;const action=$('workflow-primary').dataset.action;if(action==='handoff')openHandoff();else if(action==='save')saveAnnotation();else {layout?.reveal(); $('comment-input').focus({preventScroll:true}); $('editor-title').scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches ? 'instant' : 'smooth'});}});
+  $('workflow-primary').addEventListener('click',()=>{if(busy || !data)return;const action=$('workflow-primary').dataset.action;if(action==='handoff')openHandoff();else if(action==='save')saveAnnotation();else {layout?.reveal(); setComposerOpen(true); $('comment-input').focus({preventScroll:true}); $('editor-title').scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches ? 'instant' : 'smooth'});}});
   $('workflow-return').addEventListener('click',openReturnSteps);
   $('handoff-show-return').addEventListener('click',openReturnSteps);
   $('return-review').addEventListener('click',()=>{if($('return-review').disabled)return;window.HRUI.closeDialog($('return-dialog'));startResultReview();});
@@ -7904,7 +8205,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
     else if (button.dataset.action === 'select') selectAnnotation(annotation);
     else if (button.dataset.action === 'review-result') startResultReview(annotation.id);
     else if (button.dataset.action === 'review-location') {resultReviewQueue=null;inspectLocation(annotation);}
-    else if (button.dataset.action === 'locate') locate(annotation);
+    else if (button.dataset.action === 'locate') selectAnnotation(annotation);
     else if (button.dataset.action === 'edit') edit(annotation);
     else if (button.dataset.action === 'reselect') reselect(annotation);
     else if (button.dataset.action === 'status') { try { toggleStatus(annotation); } catch (error) { note(error.message, true); } }
@@ -7928,6 +8229,19 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   $('annotation-previous').addEventListener('click',()=>moveAnnotation(-1));
   $('annotation-next').addEventListener('click',()=>moveAnnotation(1));
   $('annotation-filter').addEventListener('change', renderAnnotations);
+  $('annotation-search').addEventListener('input', renderAnnotations);
+  $('annotation-search').addEventListener('keydown', event => {
+    if(event.key==='Escape' && $('annotation-search').value){event.preventDefault();event.stopPropagation();$('annotation-search').value='';renderAnnotations();}
+  });
+  $('annotation-search-clear').addEventListener('click',()=>{$('annotation-search').value='';renderAnnotations();$('annotation-search').focus({preventScroll:true});});
+  $('composer-toggle').addEventListener('click',()=>setComposerOpen($('composer-toggle').getAttribute('aria-expanded')!=='true'));
+  $('mobile-write').addEventListener('click',()=>setComposerOpen(true));
+  matchMedia('(max-width:760px)').addEventListener('change',event=>{if(event.matches)setComposerOpen(true);});
+  $('reading-return').addEventListener('click',returnToAnnotations);
+  $('reading-expand').addEventListener('click',()=>window.HRUI.reflow($('reading-context'),()=>setReadingExpanded($('reading-expand').getAttribute('aria-expanded')!=='true')));
+  $('reading-previous').addEventListener('click',()=>moveAnnotation(-1));
+  $('reading-next').addEventListener('click',()=>moveAnnotation(1));
+  $('reading-close').addEventListener('click',()=>{readingContextOpen=false;activeAnnotationId=null;send('clear-focus');updateAnnotationNavigation();(isPdf(data)?pdfPreview:$('sidebar-toggle')).focus({preventScroll:true});});
   $('import-results').addEventListener('click', () => $('results-input').click());
   $('results-input').addEventListener('change', async event => {
     const file = event.target.files[0]; event.target.value = '';
@@ -7956,6 +8270,7 @@ window.HRBridge = function HRBridge(channel, shortcutFor, docxMeta) {
   $('clear-recovery').addEventListener('click', () => run(clearRecovery));
   $('retry-recovery').addEventListener('click', () => run(retryRecovery));
   window.addEventListener('keydown', event => {
+    if(event.key==='Escape' && event.target===$('annotation-search') && $('annotation-search').value){event.preventDefault();event.stopPropagation();$('annotation-search').value='';renderAnnotations();return;}
     if(event.key==='Escape' && event.target===$('sidebar-resizer') && workspace.classList.contains('is-resizing')) return;
     const editable = event.composedPath().some(node => node instanceof Element && (node.matches('input,textarea,select') || node.isContentEditable));
     if (event.key !== 'Escape' && event.composedPath().some(node => node instanceof Element && node.matches('[role=combobox],[role=option]'))) return;

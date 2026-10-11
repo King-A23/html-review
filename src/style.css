@@ -3,7 +3,7 @@
 button,select,textarea{font:inherit}
 button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px 15px;background:#fff;color:var(--ink);font-size:13px;font-weight:500;cursor:pointer;transition:background .2s,border-color .2s,box-shadow .2s,transform .38s cubic-bezier(.22,1.3,.36,1),opacity .2s ease}
 button:hover:not(:disabled){background:#f8f9f5;border-color:#cfd5c8;box-shadow:0 2px 5px #30352f05}
-button:active:not(:disabled){transform:scale(.965);transition-duration:.08s}
+button:active:not(:disabled){transform:none;transition-duration:.08s}
 button:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
 button:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid #c77a5b55;outline-offset:3px}
 button.primary{background:var(--accent);border-color:var(--accent);color:white;box-shadow:0 3px 8px #b34e3020}
@@ -277,7 +277,7 @@ kbd{color:#4d6040;font-size:12px}
 .save-confirmation{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--accent);color:#fff;border-radius:inherit;pointer-events:none}
 .save-confirmation .icon{width:14px;height:14px}
 #save-button:has(.save-confirmation){opacity:1}
-@keyframes popover-in{from{opacity:0;transform:translateY(-5px) scale(.97)}to{opacity:1;transform:none}}@keyframes dialog-in{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}@keyframes dialog-out{to{opacity:0;transform:translateY(8px) scale(.98)}}@keyframes backdrop-in{from{opacity:0}to{opacity:1}}@keyframes backdrop-out{to{opacity:0}}@keyframes card-in{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}@keyframes page-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}@keyframes welcome-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}@keyframes comment-float{0%,100%{transform:translateY(0) rotate(5deg)}50%{transform:translateY(-5px) rotate(4deg)}}
+@keyframes popover-in{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}@keyframes dialog-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}@keyframes dialog-out{to{opacity:0;transform:translateY(8px)}}@keyframes backdrop-in{from{opacity:0}to{opacity:1}}@keyframes backdrop-out{to{opacity:0}}@keyframes card-in{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}@keyframes page-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}@keyframes welcome-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}@keyframes comment-float{0%,100%{transform:translateY(0) rotate(5deg)}50%{transform:translateY(-5px) rotate(4deg)}}
 @media(min-width:1600px){.workspace{--sidebar-width:380px}
 .app-header{padding:0 32px}
 .source-info,.editor-section,.annotations-section{padding-left:27px;padding-right:27px}
@@ -296,7 +296,7 @@ kbd{color:#4d6040;font-size:12px}
 .preview-toolbar{padding:0 14px}
 .preview-stage{padding:14px}
 .welcome h2{font-size:44px}
-.welcome-art{transform:scale(.9);margin-bottom:8px}
+.welcome-art{transform:none;margin-bottom:8px}
 .label-hint{font-size:9px}
 .settings-dialog{grid-template-columns:175px minmax(0,1fr)}
 .settings-page{padding:24px 27px}
@@ -326,7 +326,7 @@ kbd{color:#4d6040;font-size:12px}
 .preview-live-dot{display:none}
 .preview-stage{padding:10px}
 .welcome{padding:10px 10px 20px}
-.welcome-art{height:135px;transform:scale(.75);transform-origin:bottom center;margin-top:-22px;margin-bottom:17px}
+.welcome-art{height:135px;transform:none;transform-origin:bottom center;margin-top:-22px;margin-bottom:17px}
 .welcome h2{font-size:38px;margin-top:10px;margin-bottom:15px}
 .welcome>p{font-size:11px}
 .welcome>.primary{margin:17px 0 10px;padding:11px 18px;font-size:11px}
@@ -455,7 +455,7 @@ kbd{color:#4d6040;font-size:12px}
 .backup-menu[open]>summary{background:#f1f4ea;border-color:#cdd7be}
 .backup-panel{position:absolute;right:0;top:calc(100% + 10px);z-index:80;width:300px;padding:20px;background:#fffefa;border:1px solid #e0e5d8;border-radius:14px;box-shadow:0 15px 50px #26302125;animation:backup-open .22s ease-out}
 .backup-panel>strong{font-size:15px}.backup-panel>p{font-size:12px;line-height:1.8;color:#78826e;margin:10px 0 16px}.backup-panel .select-field{width:100%;margin:0 0 12px}.header-actions .backup-panel .download-button{width:100%;padding:11px;font-size:12px;background:#f0f3e9;color:#465c38;border-color:#d7e0cb}
-@keyframes backup-open{from{opacity:0;transform:translateY(-6px) scale(.98);transform-origin:top right}to{opacity:1;transform:none}}
+@keyframes backup-open{from{opacity:0;transform:translateY(-6px);transform-origin:top right}to{opacity:1;transform:none}}
 .handoff-dialog{width:min(700px,calc(100vw - 28px))}.handoff-source-line{font-size:12px;color:#7d866f}.handoff-source-line .handoff-source{display:inline;background:transparent;border:0;padding:0;color:#364531}
 .handoff-choices{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0 12px}.handoff-choice{display:flex;flex-direction:column;align-items:flex-start;padding:20px;border:1px solid #e2e6d9;border-radius:13px;background:#fafbf5}.handoff-choice h3{font-size:19px;margin:10px 0}.handoff-choice p{font-size:12px;line-height:1.8;color:#748066;flex:1}.handoff-choice button{margin-top:14px;width:100%;font-size:12px}
 #agent-task-help{font-size:12px;color:#77826c;line-height:1.8}
@@ -499,7 +499,7 @@ body{background:#f4f3ef}
 .header-actions{gap:8px}.local-badge{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text-secondary);margin-right:15px}.local-badge>span{width:5px;height:5px;background:#68806b;border-radius:50%;box-shadow:0 0 0 4px #68806b0d}
 #open-button{background:#fffefa;border-color:#dedfd7;box-shadow:0 1px 2px #25332a05;font-size:12px}.folder-button{font-size:12px}
 button{transition:background .18s,border-color .18s,box-shadow .24s,transform .3s var(--ease),opacity .18s}
-button:active:not(:disabled){transform:scale(.98)}
+button:active:not(:disabled){transform:none}
 button.primary{background:linear-gradient(135deg,#b45e42,#9c472f);border-color:#a55036;box-shadow:inset 0 1px 0 #ffffff21,0 2px 4px #6e332217}
 button.primary:hover:not(:disabled){background:linear-gradient(135deg,#a95036,#8e3c27);border-color:#92412b;box-shadow:inset 0 1px 0 #ffffff21,0 4px 10px #6e332222}
 .header-actions .handoff-button.primary,.welcome-actions .primary{background:linear-gradient(135deg,#435c49,#2e4437);border-color:#344b3e;color:#fffefa;box-shadow:inset 0 1px 0 #ffffff18,0 3px 8px #263e311a}

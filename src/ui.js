@@ -9,6 +9,9 @@
     file: '<path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6"/>',
     'file-plus': '<path d="M6 3h8l4 4v7M14 3v5h4M6 3v18h7M18 16v6M15 19h6"/>',
     'arrow-right': '<path d="M4 12h16m-6-6 6 6-6 6"/>',
+    'arrow-left': '<path d="M20 12H4m6-6-6 6 6 6"/>',
+    search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
+    trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6m4-6v6"/>',
     'arrow-up-right': '<path d="M6 18 18 6M6 6h12v12"/>',
     'chevron-up': '<path d="m6 15 6-6 6 6"/>', 'chevron-down': '<path d="m6 9 6 6 6-6"/>', check: '<path d="m5 12 4 4L19 6"/>', close: '<path d="m6 6 12 12M6 18 18 6"/>',
     crosshair: '<circle cx="12" cy="12" r="6"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>',
@@ -194,16 +197,15 @@
     const bounds = popup.getBoundingClientRect(); popup.style.left = Math.max(12, Math.min(rect.left, innerWidth - bounds.width - 12)) + 'px';
     const above = rect.bottom + bounds.height + 8 > innerHeight;
     popup.style.top = Math.max(12, above ? rect.top - bounds.height - 8 : rect.bottom + 8) + 'px';
-    popup.style.transformOrigin = Math.max(12, Math.min(bounds.width - 12, rect.left + rect.width / 2 - parseFloat(popup.style.left))) + 'px ' + (above ? 'bottom' : 'top');
-    const shift = above ? 8 : -8;
+    const shift = above ? 6 : -6;
     const rowAnimations = reducedMotion.matches ? [] : buttons.map((button, index) => button.animate([
       {opacity: 0, transform: 'translateY(' + shift / 2 + 'px)', offset: 0},
       {opacity: 0, transform: 'translateY(' + shift / 2 + 'px)', offset: .12 + Math.min(index, 5) * .06, easing: ease},
       {opacity: 1, transform: 'translateY(0)', offset: .87}, {opacity: 1, transform: 'translateY(0)', offset: 1}
     ], {duration: 220, easing: 'linear', fill: 'both'}));
     const motion = surface(popup, [
-      {opacity: 0, transform: 'translateY(' + shift + 'px) scale(.985)', clipPath: 'inset(' + (above ? '18% 0 0' : '0 0 18%') + ' 0 round 14px)', boxShadow: '0 3px 12px #24382b00'},
-      {opacity: 1, transform: 'translateY(0) scale(1)', clipPath: 'inset(0 round 14px)', boxShadow: '0 16px 48px #24382b1c, 0 3px 8px #24382b09'}
+      {opacity: 0, transform: 'translateY(' + shift + 'px)', clipPath: 'inset(' + (above ? '18% 0 0' : '0 0 18%') + ' 0 round 14px)'},
+      {opacity: 1, transform: 'translateY(0)', clipPath: 'inset(0 round 14px)'}
     ], 220, rowAnimations);
     trigger.setAttribute('aria-expanded', 'true'); trigger.setAttribute('aria-controls', popup.id); menu = {...field, popup, buttons, motion, anchor: {top: rect.top, left: rect.left}};
     const current = menu; drive(motion, true, () => { motion.state = 'open'; popup.dataset.motion = 'open'; });
@@ -247,11 +249,10 @@
     if (backupMotion?.state === 'closing' || !backup.open) {
       backup.open = true; positionBackup();
       if (!backupMotion) {
-        backupPanel.style.transformOrigin = 'top right';
         backupMotion = surface(backupPanel, [
-          {opacity: 0, transform: 'translateY(-6px) scale(.985)', clipPath: 'inset(0 0 10% 0 round 16px)'},
-          {opacity: 1, transform: 'translateY(0) scale(1)', clipPath: 'inset(0 round 16px)'}
-        ], 300);
+          {opacity: 0, transform: 'translateY(-6px)', clipPath: 'inset(0 0 10% 0 round 16px)'},
+          {opacity: 1, transform: 'translateY(0)', clipPath: 'inset(0 round 16px)'}
+        ], 230);
       }
       backupPanel.inert = false; backupPanel.removeAttribute('aria-hidden');
       const record = backupMotion;
@@ -357,8 +358,8 @@
         {opacity: 1, transform: 'translateY(0)', offset: .88}, {opacity: 1, transform: 'translateY(0)', offset: 1}
       ], {duration: 280, easing: 'linear', fill: 'both'}));
       record = surface(dialog, [
-        {opacity: 0, transform: 'translateY(16px) scale(.985)'},
-        {opacity: 1, transform: 'translateY(0) scale(1)'}
+        {opacity: 0, transform: 'translateY(12px)'},
+        {opacity: 1, transform: 'translateY(0)'}
       ], 280, backdrop);
       record.scrim = scrim; dialogs.set(dialog, record);
 
