@@ -337,11 +337,12 @@
     dialogs.delete(dialog); delete dialog.dataset.motion;
     for (const panel of panels) { cancelPanel(panel); panel.hidden = panel !== currentSettingsPage; panel.inert = false; panel.removeAttribute('aria-hidden'); }
   }
-  function closeDialog(dialog) {
+  function closeDialog(dialog, immediate = false) {
     const record = dialogs.get(dialog);
     if (!dialog?.open) return;
     closeMenu(false, true);
     if (!record) { dialog.close(); return; }
+    if (immediate) { destroyDialog(dialog, record); return; }
     if (record.state === 'closing') return;
     drive(record, false, () => destroyDialog(dialog, record));
   }

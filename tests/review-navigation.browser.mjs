@@ -18,7 +18,11 @@ const errors=[],checks=[];
 let browser,context,page;
 const cards=()=>page.locator('#annotation-list .annotation-card');
 const card=id=>page.locator(`.annotation-card[data-annotation-id="${id}"]`);
-async function settle(){await page.evaluate(async()=>{await Promise.all(document.getAnimations().filter(a=>a.effect?.getTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{})));});}
+async function settle(){
+ // Observe the current animation set. A captured finished Promise can remain
+ // pending after an animation is replaced or paused during a list refresh.
+ await page.waitForFunction(()=>document.getAnimations().every(a=>a.effect?.getTiming().iterations===Infinity||['idle','finished','paused'].includes(a.playState)),null,{timeout:5000});
+}
 async function ready(){await page.waitForFunction(()=>!document.getElementById('open-button').disabled);await page.locator('#preview-frame[aria-busy=false]').waitFor();await waitPreviewLayout(page);}
 async function data(){await openAnnotationData(page);const value=JSON.parse(await page.locator('#data-preview').textContent());await page.locator('#data-dialog [data-close]').click();await page.locator('#data-dialog').waitFor({state:'hidden'});return value;}
 async function filter(value){await page.locator('#annotation-filter-trigger').click();const label={all:'全部记录',open:'待处理',resolved:'已完成'}[value];await page.getByRole('option',{name:label,exact:true}).click();}

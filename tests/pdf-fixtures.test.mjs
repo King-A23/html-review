@@ -9,7 +9,10 @@ import path from 'node:path';
 import {fixturePython,writePdfFixture,inspectPdfFixture,popplerCommand,PDF_PASSWORD,PDF_VARIANTS} from './pdf-fixtures.mjs';
 const execute=promisify(execFile);
 test('PDF stress corpus is deterministic and independently validates text, geometry, media and revisions',async t=>{
-  if (!await fixturePython()) return t.skip('Optional fixture tooling requires reportlab, pypdf, Pillow and a Chinese TrueType font.');
+  if (!await fixturePython()) {
+    assert.notEqual(process.env.PDF_FIXTURE_REQUIRED, '1', 'Required PDF fixture tooling is missing.');
+    return t.skip('Optional fixture tooling requires reportlab, pypdf, Pillow and a Chinese TrueType font.');
+  }
   const directory=await mkdtemp(path.join(tmpdir(),'html-review-pdf-validation-'));
   try {
     const files={}, inspections={};
@@ -68,7 +71,10 @@ test('PDF stress corpus is deterministic and independently validates text, geome
     assert.equal(stdout.trim(),'0','Wrong password must fail.');
     if (process.env.PDF_FIXTURE_RENDER!=='1') {t.diagnostic('Set PDF_FIXTURE_RENDER=1 for independent Poppler raster verification.');return;}
     const rasterizer=await popplerCommand('pdftoppm');
-    if (!rasterizer) {t.diagnostic('Poppler missing: raster validation skipped; structural validation passed.');return;}
+    if (!rasterizer) {
+      assert.notEqual(process.env.PDF_FIXTURE_REQUIRED, '1', 'Required Poppler raster verification is unavailable.');
+      t.diagnostic('Poppler missing: raster validation skipped; structural validation passed.');return;
+    }
     const rendered=new Map();
     const render=async(variant,page)=>{
       const key=`${variant}:${page}`;

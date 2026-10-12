@@ -5,3 +5,5 @@
 *.woff2 binary
 *.zip binary
 *.gz binary
+*.docx binary
+*.pdf binary

@@ -5,6 +5,7 @@ import {createServer} from 'node:http';
 import {createReadStream} from 'node:fs';
 import {mkdir, readFile, stat, writeFile} from 'node:fs/promises';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const site = path.join(root, '_site');
@@ -88,6 +89,19 @@ try {
   const zip = await download(page, page.getByRole('link',{name:'下载离线套件 ZIP ↓'}), `html-review-v${version}.zip`);
   assert.deepEqual(await readFile(zip),await readFile(path.join(root,`dist/html-review-v${version}.zip`)));
   report.push('One-click HTML and ZIP downloads match the exact release artifacts');
+  const versionInfo = await (await page.request.get(base+'version.json')).json();
+  assert.equal(versionInfo.version, version);
+  assert.equal(versionInfo.standaloneSha256, createHash('sha256').update(await readFile(standalone)).digest('hex'));
+  await page.waitForFunction(() => document.querySelector('#documents-demo').readyState >= 1);
+  const documentsMedia = await page.locator('#documents-demo').evaluate(v => ({width:v.videoWidth,height:v.videoHeight,duration:v.duration}));
+  assert.deepEqual(documentsMedia, {width:1600,height:1000,duration:20});
+  for (const type of ['docx','pdf']) {
+    for (const name of [`review.${type}`,`${type}.review.json`]) {
+      const result = await page.request.get(base+'examples/documents/'+name);
+      assert(result.ok()); assert.deepEqual(await result.body(),await readFile(path.join(root,'examples/documents',name)));
+    }
+  }
+  report.push('New Word/PDF sample downloads and 20-second recording match the release; version endpoint exposes the standalone SHA-256');
   await page.locator('#launch-film').evaluate(v => v.load());
   await page.waitForFunction(() => document.querySelector('#launch-film').readyState >= 1);
   assert(Math.abs(await page.locator('#launch-film').evaluate(v=>v.duration)-62.833) < .2);
@@ -133,6 +147,19 @@ try {
   assert.equal(await offline.locator('[data-site-only]').count(),0);
   await offline.screenshot({path:path.join(output,'site-offline-copy.png'),fullPage:true});
   report.push('Online review downloads reopen offline with annotations and without website navigation');
+  for (const type of ['docx','pdf']) {
+    const docs = await context.newPage(); await docs.goto(base+'app.html');
+    await docs.waitForFunction(()=>!document.querySelector('#open-button').disabled);
+    await docs.locator('#file-input').setInputFiles(path.join(root,'examples/documents',`${type}.review.json`));
+    await docs.locator('#pair-source').waitFor({state:'visible'});
+    await docs.locator('#file-input').setInputFiles(path.join(root,'examples/documents',`review.${type}`));
+    await docs.waitForFunction(()=>!document.querySelector('#open-button').disabled && document.querySelector('#annotation-count').textContent==='2');
+    await docs.locator(type==='pdf'?'.pdf-page[data-page-number="1"][data-rendered=true]':'#preview-frame[aria-busy=false]').waitFor();
+    const sample = JSON.parse(await readFile(path.join(root,'examples/documents',`${type}.review.json`),'utf8'));
+    assert.equal((await snapshotData(docs)).source.sha256,sample.source.sha256);
+    assert.equal((await snapshotData(docs)).annotations.length,2); await docs.close();
+  }
+  report.push('Online app restores the actual DOCX/PDF sample JSON with its matching original');
   const reduced = await browser.newContext({reducedMotion:'reduce',viewport:{width:390,height:900}});
   const quiet = await reduced.newPage(); await quiet.goto(base);
   assert(await quiet.locator('#quick-demo').evaluate(v=>v.paused));

@@ -16,7 +16,7 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const temp=await mkdtemp(path.join(os.tmpdir(),'html-review-pdf-lifecycle-'));
 const output=path.join(root,'output/pdf-review/lifecycle-verification.json');
 await mkdir(path.dirname(output),{recursive:true});
-const executablePath=process.env.BROWSER_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const executablePath=process.env.BROWSER_PATH||(process.platform==='darwin'?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':undefined);
 const contexts=[],errors=[],network=[],checks=[];let browser,server,cleaningUp=false;
 const evidence={nativeProfileMode:'temporary persistent regular Chrome profile (not incognito)',browserEvents:[],hostOS:os.platform(),browserExecutable:executablePath,nativeHandleMethod:'Chrome native OPFS handles; picker UI stubbed. This is not a Windows filesystem test.',checks,errors,network};
 const ready=page=>page.waitForFunction(()=>!document.getElementById('open-button').disabled);

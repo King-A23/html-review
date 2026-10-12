@@ -1,14 +1,16 @@
 # Windows 使用
 
+本说明对应 v0.2.0 发布候选；资产在正式发布后可从 [Releases](https://github.com/King-A23/html-review/releases) 下载。本次未进行 Windows 实体机测试，Windows CI 配置也不是本次实际通过证据。
+
 ## 直接打开，无需安装
 
 下载 `html-review.html`，或解压完整 ZIP 后打开 `index.html`。右键选择“打开方式”，使用当前版本的 Microsoft Edge 或 Google Chrome。如果 HTML 默认关联到编辑器，请明确选择浏览器。
 
-日常批注不需要 Node.js、Python、管理员权限或本地服务器。请使用普通浏览器窗口，隐私窗口不属于持久文件关联和本机恢复的支持范围。打开 HTML、导入文件夹、选择目标、保存与下载副本的操作与其他平台一致。页面带相对图片、样式或脚本时，选择包含入口与资源的文件夹；不要只选择一个 HTML。
+日常批注不需要 Node.js、Python、管理员权限或本地服务器。请使用普通浏览器窗口，隐私窗口不属于持久文件关联和本机恢复的支持范围。通过**打开文档**选择 HTML、DOCX 或 PDF，导入文件夹、选择目标、保存与下载副本的操作与其他平台一致。页面带相对图片、样式或脚本时，选择包含入口与资源的文件夹；不要只选择一个 HTML。
 
 Windows 使用 `Ctrl+O` 打开、`Ctrl+S` 下载副本、`Ctrl+Enter` 保存批注、`Ctrl+Z` 撤销，`Ctrl+Shift+Z` 重做。输入框使用浏览器原生文字撤销。完整快捷键可在右上角设置中查看。
 
-agent 修改原文件后，点击“重载页面”。已通过 Edge/Chrome 的文件选择器关联源文件或目录时可直接读取最新内容；浏览器可能要求再次授权。下载的副本只带快照，首次重载需选择对应源文件或文件夹。
+agent 修改原文件后，在**读取返回文件**中读取修改后的文档，或点击“重载页面”。已通过 Edge/Chrome 的文件选择器关联源文件或目录时可直接读取最新内容；浏览器可能要求再次授权。下载的副本只带快照，首次重载需选择对应源文件或文件夹。
 
 ## PowerShell：交给 agent 与接收结果
 
@@ -19,7 +21,7 @@ py -3 scripts/inspect_review.py "C:\Reports\经营 分析.review.json" "C:\Repor
 py -3 scripts/update_review.py "C:\Reports\经营 分析.review.json" --id "批注-ID" --status resolved --summary "已修改指定文案并核对布局。" --output "C:\Reports\经营 分析.review-results.json"
 ```
 
-将 `--id` 替换成实际批注 ID。关联整个 `C:\Reports` 文件夹后，重载会读取源 HTML 旁边对应的 `.review-results.json`。只关联单个 HTML 时，请在列表点击“导入 agent 处理结果”。记录、版本保护和重复回报去重见 [结果接口](AGENT_RESULTS.md)。
+将 `--id` 替换成实际批注 ID。关联整个 `C:\Reports` 文件夹后，重载会读取原文档（HTML / DOCX / PDF）旁边对应的 `.review-results.json`。只关联单个文档时，请在返回步骤点击**导入处理记录 JSON**。记录、版本保护和重复回报去重见 [结果接口](AGENT_RESULTS.md)。
 
 脚本输出采用 UTF-8，支持中文与 emoji。批注的相对资源路径在导出中统一使用 `/`，不携带磁盘盘符或绝对路径。
 
@@ -35,8 +37,12 @@ npm test
 npm run test:e2e
 npm run test:reload
 npm run test:results
+py -3 -m pip install -r tests/pdf-requirements.txt
+npm run test:documents
 npm run release:prepare
 ```
+
+文档集中检查为 17 套必跑套件。PDF 视觉测试还需要 Poppler（`pdftoppm` 在 PATH 中）和中文字体；缺少依赖时应补齐后验收，不能把跳过检查算作通过。浏览器可用 `BROWSER_PATH` 指定可执行文件；reading-tools 套件也支持 `BROWSER_CHANNEL`。
 
 测试与打包会自动查找 Python。安装多个 Python 时，可指定解释器的实际可执行路径，值中无需再嵌入引号或启动参数：
 
@@ -61,7 +67,7 @@ html-review "C:\Reports\经营 分析.html" --no-open
 
 ```powershell
 Get-FileHash .\html-review.html -Algorithm SHA256
-Get-FileHash .\html-review-v0.1.0.zip -Algorithm SHA256
+Get-FileHash .\html-review-v0.2.0.zip -Algorithm SHA256
 ```
 
 与 `SHA256SUMS.txt` 逐项比对。SHA-256 用于确认文件一致性，不是数字签名。

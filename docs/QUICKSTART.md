@@ -2,11 +2,11 @@
 
 [完整说明](REFERENCE.md) · [English](../README.en.md) · [Windows / PowerShell](WINDOWS.md) · [agent 结果接口](AGENT_RESULTS.md)
 
-以下界面说明对应当前本地开发版；在线工具与发布下载仍为已公开版本。DOCX / PDF 的本地支持范围见完整说明。
+以下说明对应 v0.2.0 发布候选版。新版本尚待发布，线上工具的部署状态不能由本文推断；v0.1.0 Release 当前仍是草稿。
 
 ## 1. 打开工具
 
-先[在线体验示例](https://king-a23.github.io/html-review/app.html?demo=1)，或[直接下载单文件 HTML](https://github.com/King-A23/html-review/releases/download/v0.1.0/html-review.html)。也可在 [v0.1.0 页面](https://github.com/King-A23/html-review/releases/tag/v0.1.0) 下载 `html-review.html`，用现代桌面浏览器直接打开。无需安装或配置 AI 服务，推荐 Chrome 或 Edge。也可以下载或克隆源码，直接打开根目录 `index.html`。
+发布后可在 [v0.2.0 页面](https://github.com/King-A23/html-review/releases/tag/v0.2.0) 下载 `html-review.html`；发布前使用候选源码中的 `index.html`。用现代桌面浏览器直接打开。无需安装或配置 AI 服务，推荐 Chrome 或 Edge。也可以下载或克隆源码，直接打开根目录 `index.html`。
 
 只想体验时，点击**体验示例**。点击**打开文档**，选择 HTML、Word（DOCX）或 PDF，也可直接拖入文件。带本地 CSS、图片或脚本时，点击顶部的**导入文件夹**，选择包含入口 HTML 和资源的目录，再选择入口。
 
@@ -23,7 +23,7 @@
 
 填好意见后点击**保存批注**，或按 `Ctrl/⌘+Enter`。取消选择会保留已填写的意见。已有批注可**查看原文、编辑、删除**；编辑后点击**更新批注**。撤销和重做保留最近 50 次操作，刷新后不保留历史。
 
-单页模式需要 HTML 本来就有分页或幻灯片结构；连续页面可选元素，或回到浏览模式直接写整份文档的意见。布局意见可先用预览工具栏选择手机、平板或桌面视口，再保存批注。
+PDF 单页对应实际物理页，扫描页可用**区域**框选；DOCX 为连续预览，没有单页模式。HTML 单页模式需要本来就有分页或幻灯片结构；连续页面可选元素，或回到浏览模式直接写整份文档的意见。布局意见可先用预览工具栏选择手机、平板或桌面视口，再保存批注。
 
 Word / PDF 可从预览工具栏打开**目录与查找**，窄屏中是放大镜按钮。输入关键词后点击结果，或用方向键选择、回车查看原文；关闭再打开会保留这次查找。清空关键词即可返回目录。
 
@@ -46,7 +46,7 @@ Word / PDF 可从预览工具栏打开**目录与查找**，窄屏中是放大�
 
 下载备份不会把进度标成已交接。通用提示词见 [AGENT_PROMPT.md](../AGENT_PROMPT.md)。
 
-需要脚本和示例时，可使用发布离线套件 `html-review-v0.1.0.zip`，或源码仓库。agent 先运行以下命令核对批注对应的原文件版本；脚本需要 Python 3：
+需要脚本和示例时，发布后可使用离线套件 `html-review-v0.2.0.zip`，或源码仓库。agent 先运行以下命令核对批注对应的原文件版本；脚本需要 Python 3：
 
 ```sh
 python3 scripts/inspect_review.py report.review.json report.html
@@ -56,7 +56,7 @@ python3 scripts/inspect_review.py report.review.json report.html
 
 ## 4. 查看修改，接收处理结果
 
-agent 返回文件后，在工作区点击**agent 已返回文件**，按两种用途分别读入：
+agent 返回文件后，在工作区进入**读取返回文件**，点击**agent 已返回文件**，按两种用途分别读入：
 
 | 返回材料 | 操作 | 更新什么 |
 | --- | --- | --- |
@@ -77,7 +77,7 @@ python3 scripts/update_review.py report.review.json \
   --output report.review-results.json
 ```
 
-将结果放在原 HTML 旁边：`report.html` 对应 `report.review-results.json`。**已关联文件夹**时，重载会同时读取该结果；仅关联单个文档时没有相邻 JSON 的读取权限，可在返回步骤或批注列表点击**导入处理记录 JSON**。
+将结果放在原文档旁边：`report.html`、`report.docx` 或 `report.pdf` 对应 `report.review-results.json`。**已关联文件夹**时，重载会同时读取该结果；仅关联单个文档时没有相邻 JSON 的读取权限，可在返回步骤或批注列表点击**导入处理记录 JSON**。
 
 读取后点击**逐条复核**查看完成说明与当前内容；位置检查数量收在可展开的详情中。完成记录供对照，复核不会改状态或原定位。待处理目标有变化时，核对候选并明确确认，或重新选择位置；有多个候选时不会自动绑定。保存新意见后，下一步回到交接，准备下一轮修改。
 
@@ -88,3 +88,5 @@ python3 scripts/update_review.py report.review.json \
 显示**本机已保存**后，同一标签刷新可恢复草稿；重新打开工具地址会提示恢复。每个工具地址只保留最近一个工作区，浏览器清理数据或存储不可用可能导致恢复失败。**本机保存不等于下载副本**，需要长期保留或跨设备使用时请下载。
 
 仅打开可信 HTML。页面脚本可运行，网络资源仍可能联网。普通独立 HTML 和所选目录内的相对资源是主要支持范围；服务器接口、ES 模块依赖、嵌套 iframe、跨页跳转和需同源运行的应用可能无法完整重现。原始 HTML 上限 20 MiB，文件夹合计 50 MiB、最多 500 个文件，单资源 40 MiB，批注副本重新导入上限 100 MiB。完整协议与限制保留在 [完整参考](REFERENCE.md)。
+
+DOCX 预览不还原 Word 分页与完整排版，不写回 Word 原生批注；PDF 无 OCR，部分修改需配套可编辑源。新格式可从[文档示例](../examples/documents/README.md)体验。本次未进行 Windows 实体机或实体手机测试。

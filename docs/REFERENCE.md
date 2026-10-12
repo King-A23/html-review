@@ -2,6 +2,8 @@
 
 [项目首页](../README.md) · [快速开始](QUICKSTART.md) · [Windows 使用](WINDOWS.md) · [agent 结果接口](AGENT_RESULTS.md)
 
+本页对应 v0.2.0 发布候选，尚不代表已发布或官网已升级。v0.1.0 Release 当前仍是草稿；新资产链接在正式发布后生效。
+
 本页保留完整操作说明、保存格式、数据字段、定位语义、支持范围与开发流程。日常使用可先看[快速开始](QUICKSTART.md)。
 
 ## 完整使用流程
@@ -35,9 +37,9 @@
 
 “当前文档”区域只显示文件名；文件大小、HTML 编码与资源、DOCX 类型以及哈希仍保存在副本数据中，可通过**保存副本 → 查看批注数据**检查。
 
-批注编辑器与列表默认位于左侧，可通过预览工具栏的**批注栏**选择**左侧批注**或**右侧批注**，切换时保留当前预览、批注目标和未保存的意见。浏览器允许本地存储时会记住位置偏好，下载副本也会保留当前布局；窄屏时自动上下排列。原页面在独立 iframe 中渲染，页面样式不会扩散到批注界面。右上方**视口**可选择自适应、390px、768px 或 1280px；这些是预览页面的宽度，不是整个浏览器窗口的宽度。需要复现布局意见时先设好视口，再保存批注。**重载页面**会重新读取关联的原始 HTML 或 DOCX；HTML 关联文件夹时也会更新 CSS、图片、脚本等本地资源。DOCX 的图片和内容从原始 ZIP 重新生成预览。重载保留已保存的批注、未保存的意见、当前批注模式及撤销历史，并重置原页面脚本运行状态。
+批注编辑器与列表默认位于左侧，可通过预览工具栏的**批注栏**选择**左侧批注**或**右侧批注**，切换时保留当前预览、批注目标和未保存的意见。浏览器允许本地存储时会记住位置偏好，下载副本也会保留当前布局；窄屏时自动上下排列。原页面在独立 iframe 中渲染，页面样式不会扩散到批注界面。右上方**视口**可选择自适应、390px、768px 或 1280px；这些是预览页面的宽度，不是整个浏览器窗口的宽度。需要复现布局意见时先设好视口，再保存批注。**重载页面**会重新读取关联的原始 HTML、DOCX 或 PDF；HTML 关联文件夹时也会更新 CSS、图片、脚本等本地资源。DOCX 的图片和内容从原始 ZIP 重新生成预览。重载保留已保存的批注、未保存的意见、当前批注模式及撤销历史，并重置原页面脚本运行状态。
 
-## PDF 阅读操作（本地开发版）
+## PDF 阅读操作
 
 PDF 以原页比例连续显示，文字层用于选择原文；**区域**可框选图表、图片或扫描页。**单页**针对物理页，**整体**针对全文件。PDF 仍使用独立受控预览，HTML / DOCX 的 iframe 功能保留。
 
@@ -65,7 +67,7 @@ PDF 以原页比例连续显示，文字层用于选择原文；**区域**可框
 
 ## 批注状态与 agent 回传
 
-批注列表支持**全部记录、待处理、已完成**筛选。agent 完成修改后，通过 [`scripts/update_review.py`](../scripts/update_review.py) 按批注 ID 生成轻量处理结果 JSON；已关联文件夹时，预览的**重载页面**会读取原 HTML 或 DOCX 旁边的同名 `.review-results.json`。也可点击列表的**导入处理记录 JSON**。回报只更新状态和处理说明，原文、意见与定位上下文继续保留；已完成记录不再要求定位已删除的原句。
+批注列表支持**全部记录、待处理、已完成**筛选。agent 完成修改后，通过 [`scripts/update_review.py`](../scripts/update_review.py) 按批注 ID 生成轻量处理结果 JSON；已关联文件夹时，预览的**重载页面**会读取原 HTML、DOCX 或 PDF 旁边的同名 `.review-results.json`。也可点击列表的**导入处理记录 JSON**。回报只更新状态和处理说明，原文、意见与定位上下文继续保留；已完成记录不再要求定位已删除的原句。
 
 新批注显示**新增意见**；收到未完成回报显示**待处理**；修改已有处理记录的意见显示**已更新**并重新进入待处理；完成后显示**已完成**。导出副本、轻量 JSON 与复制修改任务保留这些状态和历史，交接说明明确要求 agent 只处理未完成意见。没有回报的意见一直视为新增，不通过导出时间推测是否处理过。
 
@@ -118,7 +120,7 @@ Base64 和批注界面会让副本比原文件与资源的合计体积更大，�
 
 ## 下载的副本包含什么
 
-顶部下载按钮旁可选择保存格式：
+顶部**保存副本**可选择保存格式：
 
 | 保存格式 | 包含内容 | 使用方式 |
 | --- | --- | --- |
@@ -216,7 +218,7 @@ DOCX 的 `source.type` 固定为 `docx`，`source.adapterVersion` 固定为字�
 
 文字范围的 `start` 与 `end` 必须同时存在，分别给出块 ID 与段落预览字符串中的 UTF-16 码元偏移。段落字符串按原顺序拼接 `w:t`，制表符为 `\t`，普通 `w:br` 与 `w:cr` 为 `\n`；页、列分隔不增加字符。`w:noBreakHyphen` 与 `w:softHyphen` 分别为 U+2011 与 U+00AD。显示插入内容，忽略删除内容。脚注标号与返回链接等预览生成字符不属于原文偏移。`quote.exact/prefix/suffix` 保留精确选中文字及前后文，供再次核对。不要将这些偏移当作 XML、ZIP 字节或 Word 光标坐标。
 
-DOCX 预览用于阅读与批注，不能替代 Word 的排版结果；复杂域、文本框、嵌入对象、修订、页眉页脚及特殊格式可能无法完整展示或定位。修改时保留原 ZIP 中未改动的 part、关系和媒体，避免仅凭预览重建文档。哈希不一致时应先重新核对版本。
+DOCX 预览用于阅读与批注，不写回 Word 原生批注，不能替代 Word 的排版结果；复杂域、文本框、嵌入对象、修订、页眉页脚及特殊格式可能无法完整展示或定位。修改时保留原 ZIP 中未改动的 part、关系和媒体，避免仅凭预览重建文档。哈希不一致时应先重新核对版本。
 
 静态检查器只使用 Python 标准库。它限制 ZIP 至 3000 个条目和合计 100 MiB 解压大小，拒绝重复/不安全路径与 XML 实体声明；使用安全的逐级路径解析核对段落、表格与图片关系。输出包含批注及其对应的原文证据，不输出完整文档、图片字节或 Base64；整体意见没有选中块时只输出元数据和意见。轻量批注须配套原始 DOCX：
 
@@ -293,7 +295,7 @@ python3 scripts/inspect_review.py "报告.review.json" "报告.pdf"
 2. 完整副本会在脚本中解码并校验原文件和资源快照；轻量 JSON 没有快照，需要提供配套原文件，HTML 还需配套外部资源。DOCX 的媒体已包含在原 ZIP 中；PDF 的字体和媒体位于原文件中。
 3. 检查脚本的版本校验结果。版本不一致时先报告差异并重新核对定位；脚本输出保留完整批注和定位上下文。
 4. HTML 按批注原文、元素内容、选择器与上下文定位源代码；DOCX 按对应的 OOXML part、路径与文字或图片证据核对源文档；PDF 按物理页、原文及原始用户空间坐标独立核对，Python 检查不解析其正文。定位失效或目标有歧义时说明情况，避免猜测修改。
-5. 仅处理 `status=open` 的意见，修改原始 HTML、相应资源、原始 DOCX 或原始 PDF，验证效果；按批注 ID 生成处理结果 JSON，已完成记录仅供参考。结果接口见 [`docs/AGENT_RESULTS.md`](../docs/AGENT_RESULTS.md)。
+5. 仅处理 `status=open` 的意见，修改原始 HTML、相应资源、原始 DOCX 或原始 PDF，验证效果；按批注 ID 生成处理结果 JSON，已完成记录仅供参考。结果接口见 [`docs/AGENT_RESULTS.md`](../docs/AGENT_RESULTS.md)，处理结果保持 `schemaVersion: 1`，不随原文档格式升级。
 
 如果批注要求修改外部 CSS 或 JavaScript，请同时交给 agent 对应的原项目文件。副本内的资源快照可辅助核对，但实际交付应修改原项目中的文件。
 
@@ -301,6 +303,7 @@ python3 scripts/inspect_review.py "报告.review.json" "报告.pdf"
 
 ## 示例与验证
 
+- [`examples/documents/README.md`](../examples/documents/README.md)：DOCX / PDF 原文档、示范轻量批注和 agent 返回复核步骤。截图见 [DOCX](docx-preview.png)、[PDF](pdf-preview.png)，真实浏览器录屏见 [文档演示](media/documents-demo.mp4)。
 - [`examples/demo.html`](../examples/demo.html)：无外部依赖，包含中文、emoji、跨行内元素文字、重复文案、三列卡片、内嵌 SVG，以及可点击按钮。
 - [`examples/pages.html`](../examples/pages.html)：三个已有打印页，适合体验单页与整体范围的区别。
 - [`examples/demo.review.html`](../examples/demo.review.html)：实际下载得到的可编辑批注副本，含文字、卡片区域和整体布局三类反馈，直接打开即可继续使用。
@@ -338,6 +341,16 @@ npm test
 
 构建会从 `src/` 生成根目录 `index.html`。修改源代码后应重新构建，将源代码与生成的单文件产物一起提交。实际浏览器操作验证用于确认选择、下载、重新打开等行为；单元测试不能替代这个闭环。
 
+DOCX / PDF 发布门槛为 `npm run test:documents`：17 套检查集中必跑，依赖缺失或测试跳过不能记为通过。先安装 PDF fixture / 视觉测试的 Python 依赖：
+
+```sh
+python3 -m pip install -r tests/pdf-requirements.txt
+npx playwright install chromium
+npm run test:documents
+```
+
+PDF 视觉检查还需要 Poppler（`pdftoppm` 在 PATH 中）和中文字体。Ubuntu 可安装 `poppler-utils`、`fonts-noto-cjk`；其他系统安装等效依赖。
+
 浏览器端到端测试使用锁定版本的 Playwright。安装开发依赖后，首次下载 Chromium，再运行各套件：
 
 ```sh
@@ -362,7 +375,7 @@ npm run site:build
 npm run test:site
 ```
 
-常规测试通过本地 `file://` URL 打开工具和下载副本，无需启动 HTTP 服务器。重载和处理结果专项测试会启动并关闭一个临时本机 HTTP 服务，使用 Chromium 原生文件系统句柄验证新内容读取、目录关联和 IndexedDB 恢复；文件选择器返回测试句柄，不操作系统选择窗口。兼容路径使用实际磁盘文件和目录选择事件。已有浏览器和 Playwright 的环境可用 `BROWSER_PATH` 指定浏览器可执行文件，或用 `PLAYWRIGHT_MODULE_PATH` 指定现有 Playwright 包的绝对目录或 `index.mjs` 入口文件；会话测试还支持 `.js` 入口与 `file:` URL。未设置时使用已安装的 Playwright 与它的 Chromium。例如在 PowerShell 中：
+常规测试通过本地 `file://` URL 打开工具和下载副本，无需启动 HTTP 服务器。重载和处理结果专项测试会启动并关闭一个临时本机 HTTP 服务，使用 Chromium 原生文件系统句柄验证新内容读取、目录关联和 IndexedDB 恢复；文件选择器返回测试句柄，不操作系统选择窗口。兼容路径使用实际磁盘文件和目录选择事件。已有浏览器和 Playwright 的环境可用 `BROWSER_PATH` 指定浏览器可执行文件（reading-tools 套件也支持 `BROWSER_CHANNEL`），或用 `PLAYWRIGHT_MODULE_PATH` 指定现有 Playwright 包的绝对目录或 `index.mjs` 入口文件；会话测试还支持 `.js` 入口与 `file:` URL。未设置时使用已安装的 Playwright 与它的 Chromium。例如在 PowerShell 中：
 
 ```powershell
 $env:PLAYWRIGHT_MODULE_PATH = 'C:\path\to\node_modules\playwright'
@@ -372,11 +385,11 @@ node tests/e2e.mjs
 
 将示例路径替换成实际安装位置；仅在使用已有测试依赖或浏览器时需要设置这些变量。
 
-GitHub Actions 在推送、PR 和手动运行时，在 Windows 与 Linux 上按工作流配置的 Node.js 矩阵检查生成文件、单元测试和上述浏览器套件，并保存测试报告与截图。Linux 首次安装浏览器依赖可执行 `npx playwright install --with-deps chromium`。
+GitHub Actions 配置在 Windows 与 Linux 的 Node.js 矩阵检查生成文件、单元测试及浏览器套件，并保存测试报告与截图。配置描述预期覆盖；本次候选是否通过须查看对应提交的实际运行。本次准备未进行 Windows 实体机或实体手机测试，窄屏模拟不能代替实体手机验证。Linux 首次安装浏览器依赖可执行 `npx playwright install --with-deps chromium`。
 
 官网源文件位于 `site/`，`npm run site:build` 生成被忽略的 `_site/`。构建只收录页面、应用、展示素材与下载资产，不部署工作目录、原视频工程或开发依赖。网站专项验证通过临时 HTTP 服务检查真实下载、示例保存/恢复与离线重开，并在结束时关闭服务和浏览器。离线 ZIP 不包含完整宣传片，重建官网时该视频会引用已发布的网站素材。
 
-Pages 使用 `.github/workflows/pages.yml`。管理员先在仓库设置中启用 GitHub Pages 的 GitHub Actions 构建，再将仓库变量 `PAGES_ENABLED` 设置为 `true`；后续主分支推送自动部署。部署只会在网站验收通过后进行，PR 不发布。私有仓库能否使用 Pages 取决于账户套餐，不能通过工作流绕过。
+Pages 使用 `.github/workflows/pages.yml`。管理员先在仓库设置中启用 GitHub Pages 的 GitHub Actions 构建，再将仓库变量 `PAGES_ENABLED` 设置为 `true`；公开 Release 后，部署其 tag 对应的网站。主分支推送不自动部署候选；PR 只做验证。手动重部署需指定已公开的 `release_tag`。部署前要求同一提交的 CI 成功，并逐字节核对 Release 与网站下载资产，完整步骤见 [发布与回退](RELEASE_PROCESS.md)。私有仓库能否使用 Pages 取决于账户套餐，不能通过工作流绕过。
 
 ## 可选：命令行打开
 
@@ -393,7 +406,7 @@ html-review "./报告.review.json" # DOCX / PDF 轻量批注配对工作区
 
 macOS 默认使用 Google Chrome；Windows/Linux 使用系统默认浏览器。
 命令不会覆盖已有文件：同名副本已存在时生成 `.review.1.html` 等新文件。
-生成的副本包含原文件快照；批注后仍需点击“下载批注副本”保存。
+生成的副本包含原文件快照；批注后仍需点击**保存副本**保存，或通过**交给 agent**准备交接材料。
 外部 CSS、图片、JS 不会由命令自动收录，请运行无参数命令后使用“导入文件夹”。
 
 ## 已知限制
@@ -411,4 +424,4 @@ macOS 默认使用 Google Chrome；Windows/Linux 使用系统默认浏览器。
 
 ## 许可证与反馈
 
-项目采用 [MIT 许可证](../LICENSE)。v0.1.0 为 public beta；支持范围、界面与数据接口仍可能在后续版本调整。反馈问题时，请提供浏览器版本、复现步骤和可公开的最小 HTML 示例；不要附带未经处理的私人文件或资源。可通过 [GitHub Issues](https://github.com/King-A23/html-review/issues) 反馈。
+项目采用 [MIT 许可证](../LICENSE)。v0.2.0 继续作为 public beta；支持范围、界面与数据接口仍可能在后续版本调整。反馈问题时，请提供浏览器版本、复现步骤和可公开的最小 HTML / DOCX / PDF 示例；不要附带未经处理的私人文件或资源。可通过 [GitHub Issues](https://github.com/King-A23/html-review/issues) 反馈。

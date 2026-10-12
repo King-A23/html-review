@@ -12,12 +12,15 @@ FILES = (
     "index.html", "LICENSE", "README.md", "README.en.md", "CHANGELOG.md",
     "AGENT_PROMPT.md", "VERIFICATION.md", "CONTRIBUTING.md", "docs/QUICKSTART.md", "docs/AGENT_RESULTS.md", "docs/WINDOWS.md",
     "docs/preview.png", "docs/agent-feedback.png", "docs/REFERENCE.md",
+    "docs/docx-preview.png", "docs/pdf-preview.png", "docs/RELEASE_PROCESS.md", "docs/RELEASE_VALIDATION.md",
     "docs/media/demo.gif", "docs/media/demo.mp4", "docs/media/social-preview.png", "docs/media/README.md",
+    "docs/media/documents-demo.mp4", "docs/media/documents-demo.gif",
     "docs/media/licenses/HyperFrames-SFX-CREDITS.md", "docs/media/licenses/OFL-NotoSansSC.txt", "docs/media/licenses/OFL-JetBrainsMono.txt",
     "scripts/inspect_review.py", "scripts/update_review.py",
     "scripts/build.mjs", "scripts/package_release.py", "scripts/capture_docs.mjs", "scripts/build_site.mjs",
     "package.json", "package-lock.json", "bin/html-review.mjs", ".gitattributes",
-    "scripts/test.mjs", "scripts/python.mjs",
+    "scripts/test.mjs", "scripts/test_documents.mjs", "scripts/python.mjs", "tests/pdf-requirements.txt",
+    "scripts/capture_documents.mjs", "scripts/create_document_examples.py",
 )
 
 
@@ -26,11 +29,13 @@ def package(output):
     if not re.fullmatch(r"\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?", version):
         raise ValueError("Invalid release version")
     paths = list(FILES) + [f"docs/releases/v{version}.md"]
+    paths += sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / "docs").rglob("*.md")
+                    if p.is_file())
     paths += sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / "examples").rglob("*")
-                    if p.is_file() and p.suffix in (".html", ".svg", ".css", ".js", ".md"))
+                    if p.is_file() and p.suffix in (".html", ".svg", ".css", ".js", ".md", ".docx", ".pdf", ".json"))
     paths += sorted(p.relative_to(ROOT).as_posix() for folder in ("src", "tests", "site")
                     for p in (ROOT / folder).iterdir()
-                    if p.is_file() and p.suffix in (".mjs", ".js", ".css", ".html", ".svg"))
+                    if p.is_file() and p.suffix in (".mjs", ".js", ".css", ".html", ".svg", ".py"))
     paths += sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / "tests/helpers").rglob("*.py")
                     if p.is_file())
     contents = {}

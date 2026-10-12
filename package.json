@@ -1,12 +1,13 @@
 {
   "name": "html-review",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "轻量、离线可用的本地 HTML 批注工具",
+  "description": "离线可用的 HTML、Word 和 PDF 文档审阅与 agent 交接工具",
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "node scripts/build.mjs --check",
     "test": "node scripts/test.mjs",
+    "test:documents": "node scripts/test_documents.mjs",
     "test:e2e": "node tests/e2e.mjs",
     "test:bridge": "node tests/bridge.browser.mjs",
     "test:session": "node tests/session.browser.mjs",
@@ -18,6 +19,7 @@
     "site:build": "npm run release:prepare && node scripts/build_site.mjs",
     "test:site": "node tests/site.browser.mjs",
     "release:prepare": "npm run check && node scripts/python.mjs scripts/package_release.py",
+    "test:release": "node tests/release-upgrade.browser.mjs",
     "test:docx": "node tests/docx.browser.mjs",
     "test:docx-errors": "node tests/docx-errors.browser.mjs",
     "test:docx-location": "node tests/docx-location.browser.mjs",

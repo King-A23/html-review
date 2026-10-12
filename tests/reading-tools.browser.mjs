@@ -22,7 +22,7 @@ async function search(query){await page.locator('#document-search').fill(query);
 async function closeSearch(){await page.keyboard.press('Escape');await page.locator('#document-nav-dialog').waitFor({state:'hidden'});}
 async function readData(){await openAnnotationData(page);const d=JSON.parse(await page.locator('#data-preview').textContent());await page.locator('#data-dialog [data-close]').click();await page.locator('#data-dialog').waitFor({state:'hidden'});return d;}
 try{
- browser=await chromium.launch({channel,headless:true});
+ browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{channel})});
  for(const type of ['docx','pdf']){
   const context=await browser.newContext({viewport:{width:1440,height:960},acceptDownloads:true,offline:true});
   page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(/^https?:/.test(r.url()))requests.push(r.url());});page.on('dialog',d=>d.accept());

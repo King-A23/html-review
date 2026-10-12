@@ -24,10 +24,13 @@ try {
   const fake=path.join(temp,'fake.pdf');await writeFile(fake,'not a PDF');await open(page,fake);await ready(page);assert.match(await page.locator('#status').textContent(),/PDF/);
   const big=path.join(temp,'big.pdf');await writeFile(big,Buffer.alloc(20*1024*1024+1));await open(page,big);await ready(page);assert.match(await page.locator('#status').textContent(),/20 MiB/);
   await open(page,files.encrypted);await page.locator('#pdf-password-dialog').waitFor({state:'visible'});await page.locator('#pdf-password-input').fill('wrong-password');await page.locator('#pdf-password-submit').click();await page.locator('#pdf-password-error').filter({hasText:'不正确'}).waitFor();await page.locator('#pdf-password-cancel').click();await ready(page);assert.equal(await page.locator('#source-name').textContent(),'base.pdf');assert.equal(await page.locator('#annotation-count').textContent(),'1');assert.equal(await page.locator('#comment-input').inputValue(),'保留未保存草稿');assert.equal(await page.locator('#pdf-password-input').inputValue(),'');
-  for(const dismissal of ['escape','backdrop']) {
+  // Reopening immediately after ready must never interact with a previous closing prompt.
+  assert.equal(await page.locator('#pdf-password-dialog').evaluate(dialog=>dialog.open),false);
+  for(const dismissal of ['escape','backdrop','escape','backdrop']) {
     await open(page,files.encrypted);await page.locator('#pdf-password-dialog').waitFor({state:'visible'});await page.locator('#pdf-password-input').fill('must-not-persist');
     if(dismissal==='escape')await page.keyboard.press('Escape');else await page.mouse.click(5,5);
     await page.locator('#pdf-password-dialog').waitFor({state:'hidden'});await ready(page);
+    assert.equal(await page.locator('#pdf-password-dialog').evaluate(dialog=>dialog.open),false);
     assert.equal(await page.locator('#source-name').textContent(),'base.pdf');assert.equal(await page.locator('#annotation-count').textContent(),'1');assert.equal(await page.locator('#comment-input').inputValue(),'保留未保存草稿');assert.equal(await page.locator('#pdf-password-input').inputValue(),'');
   }
   await open(page,files.encrypted);await page.locator('#pdf-password-dialog').waitFor({state:'visible'});await page.locator('#pdf-password-input').fill(PDF_PASSWORD);await page.locator('#pdf-password-submit').click();await page.locator('#pdf-password-dialog').waitFor({state:'hidden'});await ready(page);await rendered(page);assert.equal(await page.locator('#pdf-password-input').inputValue(),'');await save(page,'加密文档整体意见。');

@@ -1,0 +1,4 @@
+# Development/CI fixtures only; the distributed application needs no Python.
+reportlab==4.4.9
+pypdf==6.10.0
+Pillow==12.3.0

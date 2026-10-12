@@ -30,3 +30,16 @@ HyperFrames 检查通过：无运行、布局、动画、静态结构错误或�
 - 字体使用 Noto Sans SC 与 JetBrains Mono；留存 [Noto OFL](licenses/OFL-NotoSansSC.txt) 和 [JetBrains Mono OFL](licenses/OFL-JetBrainsMono.txt)。此次公开素材只有渲染后的文字画面，不包含字体软件。
 
 来源说明与官方许可核对日期：2026-10-06。原配音、音乐与音效均保留，没有额外生成或付费调用。
+
+## Word 和 PDF 新功能演示
+
+- `documents-demo.mp4`：20 秒，1600×1000，30 fps，H.264 / YUV 4:2:0 / faststart，静音，约 2.03 MiB。
+- `documents-demo.gif`：同一独立文档演示，640×400，6 fps，循环播放。
+- `../docx-preview.png` 和 `../pdf-preview.png`：1600×1000 的真实 Chrome 工作区截图。
+- 可打开的原文档和轻量批注在 `examples/documents/`，每个文档均有两条真实保存的批注，详见该目录 README。
+
+新增片段全部取自 `scripts/capture_documents.mjs` 的真实 Chrome 录屏：DOCX 点击段落并写意见；PDF 框选表格区域、对第二页写意见；分别保存、下载轻量批注并打开交接窗口。录制没有伪造 AI 修改结果，没有重新绘制产品 UI；播放速度为原录屏的 0.75 倍，以便阅读。示例使用虚构 Harbor 复盘，无个人信息、外部链接或未授权素材。原 HTML 演示及完整宣传片保持原样。
+
+可复现命令：先运行 `python3 scripts/create_document_examples.py`，再运行 `node scripts/capture_documents.mjs`。临时录屏和 HyperFrames 0.8.149 可编辑工程保存在 `output/playwright/release-demo/`，此目录已被 Git 忽略；在 `film/` 内运行 `npx hyperframes check` 与 `npx hyperframes render --quality delivery --output <输出路径>`。原始 WebM 已转为每秒关键帧的 H.264 素材，避免浏览器跳转时冻结；最终成片再次压缩并写入 faststart。GIF 从成片生成，没有新增声音、图片或付费调用。
+
+验证：DOCX 经 LibreOffice、PDF 经 Poppler 各独立渲染两页并逐页检查。真实 UI 导出的 JSON 与源文件 SHA-256 一致；重新打开 JSON 并配对原文档，两条批注均能准确定位。录屏阶段无 HTTP 请求和页面错误。HyperFrames 检查通过，0 静态、运行、布局与动画问题，9 个布局样本；画面全为录屏，无新增文本对比度检查。最终视频关键帧已检查，时长与像素格式经 ffprobe 确认。本次新增预览、浏览器及渲染进程均已退出，`PROCESS_CLEANUP_COMPLETE`。

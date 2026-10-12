@@ -49,15 +49,22 @@
     input.value='';const events=new AbortController();
     const finish=cancelled=>{
       events.abort();input.value='';resumeClock();session.passwordCancel=null;
-      global.HRUI.closeDialog(dialog);
+      // Release the modal before import controls become available again.
+      global.HRUI.closeDialog(dialog,true);
       if(cancelled) {destroy(session);session.rejectImport?.(abortError());}
     };
-    session.passwordCancel=()=>{events.abort();input.value='';resumeClock();global.HRUI.closeDialog(dialog);};
+    session.passwordCancel=()=>{events.abort();input.value='';resumeClock();global.HRUI.closeDialog(dialog,true);};
     const submit=()=>{if(!input.value) {input.focus();return;} const password=input.value;finish(false);updatePassword(password);};
     document.getElementById('pdf-password-submit').addEventListener('click',submit,{signal:events.signal});
     document.getElementById('pdf-password-cancel').addEventListener('click',()=>finish(true),{signal:events.signal});
     dialog.addEventListener('cancel',event=>{event.preventDefault();finish(true);},{signal:events.signal});
-    dialog.addEventListener('close',()=>{if(session.passwordWaiting)finish(true);},{signal:events.signal});
+    // Native close events are queued; an earlier prompt can close just before a retry opens.
+    dialog.addEventListener('close',()=>{if(!dialog.open && session.passwordWaiting)finish(true);},{signal:events.signal});
+    dialog.addEventListener('click',event=>{
+      if(event.target!==dialog)return;
+      const rect=dialog.getBoundingClientRect();
+      if(event.clientX<rect.left || event.clientX>rect.right || event.clientY<rect.top || event.clientY>rect.bottom)finish(true);
+    },{signal:events.signal});
     input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();submit();}},{signal:events.signal});
     global.HRUI.openDialog(dialog);input.focus();
   }

@@ -10,7 +10,7 @@ import {waitPreviewLayout} from './preview-layout.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const output=path.join(root,'output/playwright/robustness');await mkdir(output,{recursive:true});
 const temp=await mkdtemp(path.join(os.tmpdir(),'review-robustness-'));
-const browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
+const browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_PATH||(process.platform==='darwin'?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':undefined)});
 const checks=[],errors=[];
 async function fresh(viewport){
  const context=await browser.newContext({viewport,acceptDownloads:true,...(viewport.width<=760?{isMobile:true,hasTouch:true}:{})});

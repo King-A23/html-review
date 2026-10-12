@@ -5,6 +5,8 @@ import {build} from 'esbuild';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const read = name => readFile(path.join(root, name), 'utf8');
+const {version} = JSON.parse(await read('package.json'));
+if (!/^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/.test(version)) throw new Error('Invalid release version');
 const script = (id, content) => `<script id="${id}">\n${content.replace(/<\/script/gi, '<\\/script')}\n</script>`;
 const worker = await build({entryPoints:[path.join(root,'src/docx-worker.js')],bundle:true,platform:'browser',format:'iife',write:false,minify:true,legalComments:'inline',metafile:true});
 const handoffLibrary = await build({entryPoints:[path.join(root,'src/handoff-lib.js')],bundle:true,platform:'browser',format:'iife',write:false,minify:true,legalComments:'inline'});
@@ -49,6 +51,7 @@ const [template, css, core, session, localFiles, shortcuts, bridge, ui, layout, 
 const awaitPdfCss = await read('src/pdf-text-layer.css');
 const productCss = await read('src/product.css');
 const output = template
+  .replace('{{VERSION}}', () => version)
   .replace('<!-- HR_STYLES -->', () => `<style>\n${css}\n${productCss}\n${awaitPdfCss}\n</style>`)
   .replace('<!-- HR_EXAMPLE -->', () => `<script type="application/json" id="html-review-example">${JSON.stringify({ name: 'demo.html', base64: example.toString('base64') })}</script>`)
   .replace('<!-- HR_SCRIPTS -->', () => [licenseBlock,'<script id="hr-docx-worker" type="text/plain">'+Buffer.from(worker.outputFiles[0].text).toString('base64')+'</script>',script('hr-core', core),script('hr-docx',docx), ...pdfBlocks, script('hr-handoff-library',handoffLibrary.outputFiles[0].text),script('hr-handoff',handoff), script('hr-session', session), script('hr-local-files', localFiles), script('hr-shortcuts', shortcuts), script('hr-bridge', bridge), script('hr-ui', ui), script('hr-workspace-layout', layout), script('hr-app', app)].join('\n'));

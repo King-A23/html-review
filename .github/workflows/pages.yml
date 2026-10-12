@@ -1,13 +1,19 @@
 name: Website
 
 on:
-  push:
-    branches: [main]
+  release:
+    types: [published]
   pull_request:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published release tag to deploy (for example v0.2.0)
+        required: true
+        type: string
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: website-${{ github.ref }}
@@ -21,6 +27,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.event.release.tag_name || inputs.release_tag || github.ref }}
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '24'
@@ -31,6 +38,19 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run site:build
+      - name: Require a published release, successful CI and identical downloads
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+        shell: bash
+        run: |
+          node -e 'const p=require("./package.json"); if(process.env.RELEASE_TAG!=="v"+p.version) throw Error("Release tag/version mismatch");'
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = false
+          candidate_sha=$(git rev-parse HEAD)
+          test "$(gh run list --workflow ci.yml --commit "$candidate_sha" --status success --json databaseId --jq length)" -gt 0
+          gh release download "$RELEASE_TAG" --dir release-assets --pattern html-review.html --pattern 'html-review-v*.zip' --pattern SHA256SUMS.txt
+          node -e 'const fs=require("fs");const p=require("./package.json");for(const name of ["html-review.html",`html-review-v${p.version}.zip`,"SHA256SUMS.txt"]){if(!fs.readFileSync("dist/"+name).equals(fs.readFileSync("release-assets/"+name)))throw Error("Release asset/source mismatch: "+name);}'
       - run: npm run test:site
       - name: Save browser verification
         if: always()
@@ -45,7 +65,7 @@ jobs:
           path: _site
 
   deploy:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.PAGES_ENABLED == 'true'
+    if: github.event_name != 'pull_request' && vars.PAGES_ENABLED == 'true'
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10

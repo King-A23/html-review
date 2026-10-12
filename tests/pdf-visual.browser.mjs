@@ -10,7 +10,7 @@ import {chromium} from 'playwright';
 import {fixturePython,inspectPdfFixture} from './pdf-fixtures.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url)),out=path.join(root,'output/pdf-review');
 const source=path.join(out,'复杂审阅.pdf'),temp=await mkdtemp(path.join(os.tmpdir(),'html-review-pdf-visual-'));
-const executablePath=process.env.BROWSER_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const executablePath=process.env.BROWSER_PATH||(process.platform==='darwin'?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':undefined);
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 const preserved={};for(const name of ['demo.review.json','agent-task.txt'])preserved[name]=digest(await readFile(path.join(out,name)));
 const evidence={hostOS:os.platform(),browserExecutable:executablePath,sourceHash:digest(await readFile(source)),preservedArtifacts:preserved,checks:[],pageErrors:[],externalRequests:[]};

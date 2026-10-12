@@ -50,8 +50,16 @@
       </ol>
       <p class="handoff-note">由你将任务与原文件交给 agent。工具不自动调用 AI，也不覆盖原文件。</p>
     </section>
+    <section class="documents wrap" aria-labelledby="documents-title">
+      <div class="section-intro"><p class="eyebrow">HTML · Word · PDF</p><h2 id="documents-title">用自己的文档，走完一次审阅。</h2></div>
+      <div class="documents-grid">
+        <article><h3>Word：在段落和表格上写意见</h3><p>连续内容预览，适合审阅文字、表格和图片；不还原 Word 分页与完整排版。</p><img src="assets/docx-preview.png" width="1600" height="1000" loading="lazy" alt="Word 示例中已保存两条段落批注"><div class="sample-links"><a href="examples/documents/review.docx" download="review.docx">下载 DOCX 示例 ↓</a><a href="examples/documents/docx.review.json" download="docx.review.json">配套批注 JSON ↓</a></div></article>
+        <article><h3>PDF：在原页上选中文字或框选</h3><p>保留原页显示，支持区域和单页意见；扫描页用框选，暂不提供 OCR。</p><img src="assets/pdf-preview.png" width="1600" height="1000" loading="lazy" alt="PDF 示例中已保存区域和单页批注"><div class="sample-links"><a href="examples/documents/review.pdf" download="review.pdf">下载 PDF 示例 ↓</a><a href="examples/documents/pdf.review.json" download="pdf.review.json">配套批注 JSON ↓</a></div></article>
+      </div>
+      <figure class="documents-film"><video id="documents-demo" controls playsinline preload="metadata" width="1600" height="1000" poster="assets/docx-preview.png" aria-label="20 秒 Word 与 PDF 真实操作演示"><source src="media/documents-demo.mp4" type="video/mp4"></video><figcaption>20 秒真实操作 · 示例内容全部虚构。先打开批注 JSON，再选择对应原文档，即可继续审阅。</figcaption></figure>
+    </section>
     <section id="demo" class="film wrap" aria-labelledby="film-title">
-      <div class="film-heading"><div><p class="eyebrow">看一次完整流程</p><h2 id="film-title">从“你说的是哪里？”<br>到清楚的修改任务。</h2></div><p>真实报告 · 真实批注 · 真实导出<br>约一分钟，了解它如何工作。</p></div>
+      <div class="film-heading"><div><p class="eyebrow">HTML 流程参考 · 旧版界面</p><h2 id="film-title">从“你说的是哪里？”<br>到清楚的修改任务。</h2></div><p>虚构报告 · 真实批注 · 真实导出<br>约一分钟，了解它如何工作。</p></div>
       <video id="launch-film" controls playsinline preload="metadata" width="1920" height="1080" poster="media/social-preview.png" aria-label="HTML Review 中文宣传片"><source src="{{LAUNCH_VIDEO}}" type="video/mp4"></video>
     </section>
     <section class="start wrap" aria-labelledby="start-title">

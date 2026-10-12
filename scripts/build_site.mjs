@@ -2,6 +2,7 @@
 import {mkdir, readFile, writeFile, copyFile, stat, rm} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const output = path.join(root, '_site');
 const {version} = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
@@ -21,7 +22,9 @@ async function copy(from, to) {
 let launchVideo = 'https://king-a23.github.io/html-review/media/launch.mp4';
 try { await copy('docs/media/launch.mp4', 'media/launch.mp4'); launchVideo = 'media/launch.mp4'; }
 catch (error) { if (error.code !== 'ENOENT') throw error; }
-for (const name of ['demo.mp4','social-preview.png']) await copy(`docs/media/${name}`, `media/${name}`);
+for (const name of ['demo.mp4','social-preview.png','documents-demo.mp4']) await copy(`docs/media/${name}`, `media/${name}`);
+for (const name of ['docx-preview.png','pdf-preview.png']) await copy(`docs/${name}`, `assets/${name}`);
+for (const name of ['review.docx','review.pdf','docx.review.json','pdf.review.json']) await copy(`examples/documents/${name}`, `examples/documents/${name}`);
 for (const name of ['style.css','main.js','favicon.svg']) await copy(`site/${name}`, name);
 for (const name of ['html-review.html', `html-review-v${version}.zip`, 'SHA256SUMS.txt']) await copy(`dist/${name}`, `downloads/${name}`);
 await copy('docs/preview.png', 'assets/preview.png');
@@ -37,5 +40,5 @@ if (!app.includes(onlineBar)) throw new Error('Unable to add online navigation')
 await writeFile(path.join(output, 'app.html'), app);
 await writeFile(path.join(output, '.nojekyll'), '');
 await writeFile(path.join(output, '404.html'), '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>返回 HTML Review</title><body style="font:18px system-ui;padding:8vw;background:#f7f6f0;color:#2e372e"><h1>这个页面不存在。</h1><a href="/html-review/">返回 HTML Review 首页 →</a></body></html>');
-await writeFile(path.join(output, 'version.json'), JSON.stringify({version, standaloneBytes:standalone.length})+'\n');
+await writeFile(path.join(output, 'version.json'), JSON.stringify({version, standaloneBytes:standalone.length, standaloneSha256:createHash('sha256').update(standalone).digest('hex')})+'\n');
 console.log(`Site built: _site/ · v${version} · direct HTML download ${(standalone.length / 1024).toFixed(1)} KiB`);
