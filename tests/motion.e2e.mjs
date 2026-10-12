@@ -60,7 +60,7 @@ try {
   return {before,closing,opening,open:dialog.open,scrims:document.querySelectorAll('.modal-scrim').length};
  }); assert.equal(dialogReverse.before,dialogReverse.closing); assert.equal(dialogReverse.closing,dialogReverse.opening); assert(dialogReverse.open); assert.equal(dialogReverse.scrims,1);
  for(const name of ['help','shortcuts','workspace','shortcuts','help']) {await page.evaluate(name=>window.HRUI.openSettings(name),name); await page.waitForTimeout(30);}
- await page.waitForTimeout(320); assert.deepEqual(await page.locator('[data-settings-panel]:not([hidden])').evaluateAll(p=>p.map(e=>e.dataset.settingsPanel)),['help']); assert.equal(await page.locator('#help-dialog').getAttribute('inert'),null); assert.equal(await page.locator('#help-dialog').getAttribute('aria-hidden'),null);
+ await page.waitForFunction(()=>{const visible=[...document.querySelectorAll('[data-settings-panel]:not([hidden])')];return visible.length===1 && visible[0].dataset.settingsPanel==='help';},null,{timeout:5000}); assert.deepEqual(await page.locator('[data-settings-panel]:not([hidden])').evaluateAll(p=>p.map(e=>e.dataset.settingsPanel)),['help']); assert.equal(await page.locator('#help-dialog').getAttribute('inert'),null); assert.equal(await page.locator('#help-dialog').getAttribute('aria-hidden'),null);
  const repeat=await page.evaluate(()=>{
   window.HRUI.openSettings('shortcuts');
   const panel=document.querySelector('#shortcuts-dialog'), animation=panel.getAnimations()[0];
@@ -69,7 +69,7 @@ try {
   animation.play(); return {before,after};
  }); assert.equal(repeat.before,repeat.after);
  await page.screenshot({path:path.join(output,'motion-section-switch.png')});
- await page.waitForTimeout(320);
+ await page.waitForFunction(()=>{const visible=[...document.querySelectorAll('[data-settings-panel]:not([hidden])')];return visible.length===1 && visible[0].dataset.settingsPanel==='shortcuts';},null,{timeout:5000});
  for(let i=0;i<8;i++){await page.evaluate(()=>window.HRUI.closeDialog(document.querySelector('#settings-dialog'))); await page.waitForTimeout(25); await page.evaluate(()=>window.HRUI.openSettings('shortcuts')); await page.waitForTimeout(25);}
  await page.keyboard.press('Escape'); await page.locator('#settings-dialog').waitFor({state:'hidden'}); assert.equal(await page.locator('.modal-scrim').count(),0); assert.equal(await page.locator('#settings-button').evaluate(e=>e===document.activeElement),true);
  console.log('PASS dialog reversal, rapid section switching, repeated close/reopen and scrim cleanup');
