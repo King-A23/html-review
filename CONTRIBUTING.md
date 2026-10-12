@@ -4,7 +4,7 @@
 
 ## 本地开发
 
-需要 Node.js 22.13+、Python 3.8+。工具本身不需要这些依赖，开发与检查才需要。
+需要 Node.js 22.13+；静态检查与打包使用 Python 3.8+，完整文档回归的锁定依赖需要 Python 3.10+。工具本身不需要这些依赖，开发与检查才需要。
 
 ```sh
 npm ci
@@ -27,5 +27,4 @@ Pull Request 请说明用户遇到的问题、修改后如何操作，以及实�
 
 Issues and pull requests are welcome in Chinese or English. Include browser/OS details, reproduction steps, expected behavior, and a minimal public HTML / DOCX / PDF fixture. Keep private reports and credentials out of attachments.
 
-Development requires Node.js 22.13+ and Python 3.8+. Install with `npm ci` and `npx playwright install chromium
-python3 -m pip install -r tests/pdf-requirements.txt`. Edit `src/`, regenerate `index.html` with `npm run build`, then run the relevant checks. Explain the user-visible change and validation in your pull request. Preserve compatibility with existing review copies and result files.
+Development requires Node.js 22.13+. Python 3.8+ supports inspection and packaging; the locked document test dependencies require Python 3.10+. Run `npm ci`, `npx playwright install chromium`, and `python3 -m pip install -r tests/pdf-requirements.txt`. Edit `src/`, regenerate `index.html` with `npm run build`, then run the relevant checks. Explain the user-visible change and validation in your pull request. Preserve compatibility with existing review copies and result files.

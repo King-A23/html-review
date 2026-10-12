@@ -4,9 +4,10 @@ The product uses PDF.js. Python and Poppler are optional development tools used
 only to create and independently verify the fixture corpus. They are not product
 runtime dependencies.
 
-Use Python with `reportlab`, `pypdf` and `Pillow` installed:
+Use Python 3.10+ with the locked `reportlab`, `pypdf` and `Pillow` dependencies:
 
 ```sh
+python3 -m pip install -r tests/pdf-requirements.txt
 python3 tests/helpers/pdf-fixture.py output/pdf-review/fixtures --all
 node --test tests/pdf-fixtures.test.mjs
 PDF_FIXTURE_RENDER=1 node --test tests/pdf-fixtures.test.mjs
@@ -23,6 +24,13 @@ Poppler raster verification is unavailable. The rendering comparison is opt-in
 because font discovery can be slow on some machines. No network calls or package installs
 occur during fixture tests. Each subprocess exits after its operation and all
 test temporary directories are removed in `finally` blocks.
+
+For release verification, missing tooling must fail instead of skipping:
+
+```sh
+PDF_FIXTURE_REQUIRED=1 PDF_FIXTURE_RENDER=1 node --test tests/pdf-fixtures.test.mjs
+npm run test:documents
+```
 
 The generator emits `manifest.json` with SHA-256 hashes and byte sizes. PDFs use
 fixed metadata and identifiers so repeated generation with the same library

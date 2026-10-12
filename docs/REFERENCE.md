@@ -341,7 +341,7 @@ npm test
 
 构建会从 `src/` 生成根目录 `index.html`。修改源代码后应重新构建，将源代码与生成的单文件产物一起提交。实际浏览器操作验证用于确认选择、下载、重新打开等行为；单元测试不能替代这个闭环。
 
-DOCX / PDF 发布门槛为 `npm run test:documents`：17 套检查集中必跑，依赖缺失或测试跳过不能记为通过。先安装 PDF fixture / 视觉测试的 Python 依赖：
+DOCX / PDF 发布门槛为 `npm run test:documents`：17 套检查集中必跑，依赖缺失或测试跳过不能记为通过。先使用 Python 3.10+ 安装 PDF fixture / 视觉测试的锁定依赖：
 
 ```sh
 python3 -m pip install -r tests/pdf-requirements.txt
@@ -349,7 +349,7 @@ npx playwright install chromium
 npm run test:documents
 ```
 
-PDF 视觉检查还需要 Poppler（`pdftoppm` 在 PATH 中）和中文字体。Ubuntu 可安装 `poppler-utils`、`fonts-noto-cjk`；其他系统安装等效依赖。
+PDF 视觉检查还需要 Poppler（`pdftoppm` 在 PATH 中）和中文 TrueType 字体。Ubuntu 可安装 `poppler-utils`、`fonts-arphic-uming`，测试会自动发现 UMing；其他系统安装等效字体并按需设置 `PDF_FIXTURE_CJK_FONT`。
 
 浏览器端到端测试使用锁定版本的 Playwright。安装开发依赖后，首次下载 Chromium，再运行各套件：
 
