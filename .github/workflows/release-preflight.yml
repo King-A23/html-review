@@ -42,8 +42,8 @@ jobs:
         run: |
           test "$PAGES_ENABLED" = true
           test "$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .build_type)" = workflow
-          test "$(gh api "repos/$GITHUB_REPOSITORY/environments/github-pages" --jq '.protection_rules | length')" = 0
-          test "$(gh api "repos/$GITHUB_REPOSITORY/environments/github-pages" --jq '.deployment_branch_policy == null')" = true
+          test "$(gh api "repos/$GITHUB_REPOSITORY/environments/github-pages" --jq '[.protection_rules[] | select(.type == "required_reviewers" or .type == "wait_timer")] | length')" = 0
+          test "$(gh api "repos/$GITHUB_REPOSITORY/environments/github-pages/deployment-branch-policies" --jq '[.branch_policies[] | select(.type == "tag" and .name == "v*")] | length')" -gt 0
       - name: Save publication readiness evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
