@@ -76,6 +76,29 @@ with open(sys.argv[2],'wb') as f:w.write(f)
     await page.mouse.click(box.x+180,box.y+150);await page.locator('#target-preview').waitFor({state:'hidden'});assert(await page.locator('#save-button').isDisabled());assert.equal(await page.locator('#comment-input').inputValue(),'微小点击后保留草稿');assert.equal(await page.locator('.pdf-focus').count(),0);
     return {selectedRegionCleared:true,draftRetained:true};
   });
+  await phase('Superseded PDF text rendering restores the internal link layer',async()=>{
+    const page=await freshPage();await open(page,source);
+    await page.evaluate(async()=>{
+      const prototype=window.HRPdfLib.TextLayer.prototype,original=prototype.render;
+      let entered,release,timer,armed=true;
+      const pending=new Promise(resolve=>{entered=resolve;}),gate=new Promise(resolve=>{release=resolve;});
+      prototype.render=function(...args){
+        const result=original.apply(this,args);
+        if(!armed)return result;
+        armed=false;entered();return Promise.resolve(result).then(()=>gate);
+      };
+      try{
+        window.HRPdf.setZoom(1);
+        await Promise.race([pending,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Text render pause was not reached')),5000);})]);
+        // Changing the render generation while text is pending must not let
+        // the old task mark a page without links as fully rendered.
+        window.HRPdf.goToPage(1);release();
+      }finally{clearTimeout(timer);release();prototype.render=original;}
+    });
+    await rendered(page,1);await page.locator('.pdf-page[data-page-number="1"] .pdf-link[href="#"]').click();await rendered(page,3);
+    await page.waitForFunction(()=>document.getElementById('pdf-page-number').value==='3');
+    return {cancellationBoundary:'real TextLayer.render promise',internalLinkDestination:3};
+  });
   await phase('PDF autosave, refresh recovery, native file and folder reload with results',async()=>{
     const app=await readFile(path.join(root,'index.html'));server=createServer((_req,res)=>{res.setHeader('Content-Type','text/html;charset=utf-8');res.end(app);});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const url=`http://127.0.0.1:${server.address().port}/`;
     const context=await chromium.launchPersistentContext(path.join(temp,'native-chrome-profile'),{headless:true,executablePath,viewport:{width:1440,height:1000},acceptDownloads:true});contexts.push(context);context.on('close',()=>{if(!cleaningUp)evidence.browserEvents.push({event:'native-persistent-context-closed'});});await context.addInitScript(()=>{window.__pickerCounts={file:0,directory:0};window.showOpenFilePicker=async()=>{window.__pickerCounts.file++;return[await(await navigator.storage.getDirectory()).getFileHandle('review.pdf')];};window.showDirectoryPicker=async()=>{window.__pickerCounts.directory++;return navigator.storage.getDirectory();};});

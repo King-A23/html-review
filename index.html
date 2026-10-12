@@ -4407,7 +4407,14 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   }
   async function renderSlot(session,slot,generation) {
     alive(session);if(generation!==session.renderGeneration || slot.node.dataset.rendered==='true') return;
+    // Navigation and resizing can supersede any awaited layer, including text
+    // and links. Never cache a canceled partial page as a completed render.
+    const superseded=()=>{
+      if(generation===session.renderGeneration && !session.destroyed)return false;
+      clearSlot(slot);return true;
+    };
     clearSlot(slot);const page=await session.doc.getPage(slot.number), viewport=slot.viewport;
+    if(superseded())return;
     const ratio=Math.min(global.devicePixelRatio||1,2,Math.sqrt(MAX_PIXELS/(viewport.width*viewport.height)));
     const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.floor(viewport.width*ratio));canvas.height=Math.max(1,Math.floor(viewport.height*ratio));
     canvas.className='pdf-canvas';canvas.setAttribute('aria-label','第 '+slot.number+' 页');canvas.style.width='100%';canvas.style.height='100%';slot.canvas=canvas;slot.node.append(canvas);
@@ -4415,15 +4422,17 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
     slot.renderTask=page.render({canvasContext:canvas.getContext('2d'),viewport,transform:[ratio,0,0,ratio,0,0],annotationMode:lib.AnnotationMode.ENABLE});
     try {
       await timed(session,slot.renderTask.promise,'页面渲染');
-      if(generation!==session.renderGeneration || session.destroyed) {clearSlot(slot);return;}
+      if(superseded())return;
       await nativeNotes(page,canvas,viewport,ratio);
-      if(generation!==session.renderGeneration || session.destroyed) {clearSlot(slot);return;}
-      const c=await content(session,slot.number);slot.content=c;
+      if(superseded())return;
+      const c=await content(session,slot.number);if(superseded())return;slot.content=c;
       slot.textLayer=new lib.TextLayer({textContentSource:c.value,container:textContainer,viewport});await slot.textLayer.render();
+      if(superseded())return;
       slot.texts=slot.textLayer.textDivs;
       slot.texts.forEach((node,index)=>{node.dataset.pdfItem=String(index);node.dataset.pdfPage=String(slot.number);});
       slot.node.dataset.noText=String(!c.stream.trim());
       await links(session,slot,page,generation);
+      if(superseded())return;
       slot.node.dataset.rendered='true';slot.renderTask=null;paintFocus(session);paintSearch(session);guideScan(session);
     } catch(error) {if(error.name!=='RenderingCancelledException' && error.name!=='AbortException') throw error;}
   }
