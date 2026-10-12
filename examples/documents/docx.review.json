@@ -1,0 +1,156 @@
+{
+  "format": "html-review-annotations",
+  "schemaVersion": 2,
+  "createdAt": "2026-10-12T04:26:56.612Z",
+  "updatedAt": "2026-10-12T04:27:00.734Z",
+  "source": {
+    "name": "review.docx",
+    "path": "review.docx",
+    "byteLength": 37878,
+    "lastModified": 1791779215011,
+    "sha256": "5a3a9a681a73eba54cb5fd746848d21ae1594c9402e041378606a957896a04af",
+    "type": "docx",
+    "adapterVersion": "1"
+  },
+  "resources": [],
+  "annotations": [
+    {
+      "revision": 1,
+      "status": "open",
+      "history": [],
+      "id": "3085f7e2-ac6c-4982-bcaf-3ac9ac3cbca0",
+      "kind": "element",
+      "comment": "请补充完成率的定义、样本数与统计口径。",
+      "createdAt": "2026-10-12T04:26:58.934Z",
+      "updatedAt": "2026-10-12T04:26:58.934Z",
+      "target": {
+        "selector": "html \u003e body \u003e p:nth-of-type(3)",
+        "domPath": [
+          1,
+          4
+        ],
+        "tag": "p",
+        "id": "",
+        "classes": [],
+        "attributes": {},
+        "attributeFingerprints": {},
+        "text": "The pilot included 40 fictional participants across two groups. Completion rose from 68% to 84%. These figures are illustrative and do not describe a real organization.",
+        "textLength": 168,
+        "textFingerprint": "e33a9406",
+        "context": {
+          "ancestor": {
+            "tag": "body",
+            "id": "",
+            "text": "Harbor pilot reviewFictional project report for document review practiceWe recommend a second, smaller pilot before a wider launch. The four-week trial improved task completion, but the report needs clearer metric definitions and a named ow"
+          },
+          "siblingBefore": {
+            "tag": "h1",
+            "id": "",
+            "text": "Pilot results"
+          },
+          "siblingAfter": {
+            "tag": "div",
+            "id": "",
+            "text": "MeasureBeforeAfterCompletion68%84%Time per task12 min9 minSupport requests1811"
+          }
+        },
+        "rect": {
+          "x": 151,
+          "y": 359,
+          "width": 860,
+          "height": 58,
+          "scrollX": 0,
+          "scrollY": 0
+        },
+        "docx": {
+          "adapterVersion": "1",
+          "sourceSha256": "5a3a9a681a73eba54cb5fd746848d21ae1594c9402e041378606a957896a04af",
+          "blocks": [
+            {
+              "id": "dx5",
+              "part": "word/document.xml",
+              "path": "/w:document[1]/w:body[1]/w:p[5]"
+            }
+          ],
+          "occurrences": 1
+        },
+        "kind": "element"
+      },
+      "view": {
+        "width": 1162,
+        "height": 774,
+        "devicePixelRatio": 1
+      },
+      "taskState": "new"
+    },
+    {
+      "revision": 1,
+      "status": "open",
+      "history": [],
+      "id": "51a435b8-2747-4476-809e-d2a9aa8d38f1",
+      "kind": "element",
+      "comment": "请明确下一轮试点的负责人和开始日期。",
+      "createdAt": "2026-10-12T04:27:00.734Z",
+      "updatedAt": "2026-10-12T04:27:00.734Z",
+      "target": {
+        "selector": "html \u003e body \u003e p:nth-of-type(9)",
+        "domPath": [
+          1,
+          14
+        ],
+        "tag": "p",
+        "id": "",
+        "classes": [],
+        "attributes": {},
+        "attributeFingerprints": {},
+        "text": "Assign an owner for the next pilot and confirm the start date. The current draft does not identify either, so the schedule cannot yet be approved.",
+        "textLength": 146,
+        "textFingerprint": "796950ce",
+        "context": {
+          "ancestor": {
+            "tag": "body",
+            "id": "",
+            "text": "Harbor pilot reviewFictional project report for document review practiceWe recommend a second, smaller pilot before a wider launch. The four-week trial improved task completion, but the report needs clearer metric definitions and a named ow"
+          },
+          "siblingBefore": {
+            "tag": "h1",
+            "id": "",
+            "text": "Decisions to review"
+          },
+          "siblingAfter": {
+            "tag": "p",
+            "id": "",
+            "text": "Publish the metric definition with the final report. Include the sample size and the number of completed tasks so the percentage can be checked."
+          }
+        },
+        "rect": {
+          "x": 151,
+          "y": 358,
+          "width": 860,
+          "height": 58,
+          "scrollX": 0,
+          "scrollY": 796
+        },
+        "docx": {
+          "adapterVersion": "1",
+          "sourceSha256": "5a3a9a681a73eba54cb5fd746848d21ae1594c9402e041378606a957896a04af",
+          "blocks": [
+            {
+              "id": "dx26",
+              "part": "word/document.xml",
+              "path": "/w:document[1]/w:body[1]/w:p[14]"
+            }
+          ],
+          "occurrences": 1
+        },
+        "kind": "element"
+      },
+      "view": {
+        "width": 1162,
+        "height": 774,
+        "devicePixelRatio": 1
+      },
+      "taskState": "new"
+    }
+  ]
+}

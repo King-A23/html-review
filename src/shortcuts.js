@@ -11,5 +11,5 @@ window.HRShortcut = function HRShortcut(event, editable) {
   if (editable) return null;
   if (key === '?') return 'help';
   if (event.shiftKey) return null;
-  return {v: 'browse', t: 'text', e: 'element', p: 'page', a: 'whole'}[key] || null;
+  return {v: 'browse', t: 'text', e: 'element', p: 'page', a: 'browse'}[key] || null;
 };

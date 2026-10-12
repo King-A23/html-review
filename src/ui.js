@@ -9,8 +9,11 @@
     file: '<path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6"/>',
     'file-plus': '<path d="M6 3h8l4 4v7M14 3v5h4M6 3v18h7M18 16v6M15 19h6"/>',
     'arrow-right': '<path d="M4 12h16m-6-6 6 6-6 6"/>',
+    'arrow-left': '<path d="M20 12H4m6-6-6 6 6 6"/>',
+    search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
+    trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6m4-6v6"/>',
     'arrow-up-right': '<path d="M6 18 18 6M6 6h12v12"/>',
-    'chevron-down': '<path d="m6 9 6 6 6-6"/>', check: '<path d="m5 12 4 4L19 6"/>', close: '<path d="m6 6 12 12M6 18 18 6"/>',
+    'chevron-up': '<path d="m6 15 6-6 6 6"/>', 'chevron-down': '<path d="m6 9 6 6 6-6"/>', check: '<path d="m5 12 4 4L19 6"/>', close: '<path d="m6 6 12 12M6 18 18 6"/>',
     crosshair: '<circle cx="12" cy="12" r="6"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>',
     layout: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>',
     shield: '<path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM8 12l3 3 5-6"/>',
@@ -47,6 +50,79 @@
   reducedMotion.addEventListener('change', () => {
     if (reducedMotion.matches) for (const animation of activeAnimations) { try { animation.finish(); } catch (_) { animation.cancel(); } }
   });
+  const disclosures = new WeakMap();
+  function disclose(element, open, motion = true) {
+    const previous = disclosures.get(element);
+    if (previous?.open === open) return;
+    const height = element.hidden ? 0 : element.getBoundingClientRect().height;
+    const opacity = element.hidden ? 0 : Number(getComputedStyle(element).opacity);
+    previous?.animation?.cancel();
+    const record = {open, animation: null}; disclosures.set(element, record);
+    element.inert = !open;
+    element.setAttribute('aria-hidden', String(!open));
+    if (!motion || reducedMotion.matches || (!open && element.hidden)) { element.hidden = !open; return; }
+    element.hidden = false;
+    record.animation = animate(element, [
+      {height: height + 'px', opacity},
+      {height: (open ? element.scrollHeight : 0) + 'px', opacity: open ? 1 : 0}
+    ], {duration: open ? 230 : 150, fill: 'both'});
+    record.animation.finished.then(() => {
+      if (disclosures.get(element) !== record) return;
+      element.hidden = !open; record.animation.cancel(); record.animation = null;
+    }, () => {});
+  }
+  const reflows = new WeakMap();
+  function reflow(element, change) {
+    const height = element.getBoundingClientRect().height;
+    reflows.get(element)?.cancel();
+    change();
+    const nextHeight = element.getBoundingClientRect().height;
+    const animation = animate(element, [{height: height + 'px'}, {height: nextHeight + 'px'}], {duration: 210});
+    if (animation) reflows.set(element, animation);
+  }
+  const scopeAnimations = new WeakMap();
+  function scopeChanged(badge, preview) {
+    if (preview) reflows.get(preview)?.cancel();
+    for (const element of [badge, preview].filter(Boolean)) {
+      scopeAnimations.get(element)?.cancel();
+      const animation = animate(element, [{opacity: .5, transform: 'translateY(3px)'}, {opacity: 1, transform: 'translateY(0)'}], {duration: 170});
+      if (animation) scopeAnimations.set(element, animation);
+    }
+  }
+  const notice = $('status').closest('.notice-surface');
+  let noticeAnimation=null,noticeTimer=null,noticeRevision=0,noticeDeadline=0,noticeRemaining=0;
+  function stopNoticeTimer(){clearTimeout(noticeTimer);noticeTimer=null;}
+  function dismissFeedback() {
+    stopNoticeTimer();noticeRemaining=0;
+    const status=$('status');if(status.hidden)return;
+    const revision=++noticeRevision,opacity=Number(getComputedStyle(notice).opacity),transform=getComputedStyle(notice).transform;
+    noticeAnimation?.cancel();notice.inert=true;notice.dataset.motion='closing';
+    const finish=()=>{if(revision!==noticeRevision)return;status.hidden=true;$('status-dismiss').hidden=true;noticeAnimation?.cancel();noticeAnimation=null;notice.inert=false;delete notice.dataset.motion;};
+    noticeAnimation=animate(notice,[{opacity,transform},{opacity:0,transform:'translateY(6px)'}],{duration:140,fill:'both'});
+    if(noticeAnimation)noticeAnimation.finished.then(finish,()=>{});else finish();
+  }
+  function scheduleNotice() {
+    stopNoticeTimer();if(!noticeRemaining)return;
+    noticeDeadline=performance.now()+noticeRemaining;noticeTimer=setTimeout(()=>{
+      noticeTimer=null;
+      if(notice.matches(':hover,:focus-within') || $('status').querySelector('button')){noticeRemaining=1500;return;}
+      dismissFeedback();
+    },noticeRemaining);
+  }
+  function feedback(message,{error=false,duration=0}={}) {
+    stopNoticeTimer();const status=$('status');
+    if(!message){dismissFeedback();return;}
+    const hidden=status.hidden,opacity=hidden?0:Number(getComputedStyle(notice).opacity),transform=hidden?'translateY(8px)':getComputedStyle(notice).transform;
+    ++noticeRevision;noticeAnimation?.cancel();noticeAnimation=null;notice.inert=false;
+    status.textContent=message;status.hidden=false;status.classList.toggle('error',error);
+    notice.dataset.tone=error?'attention':'neutral';notice.dataset.motion='open';$('status-dismiss').hidden=false;
+    noticeAnimation=animate(notice,[{opacity,transform},{opacity:1,transform:'translateY(0)'}],{duration:190});
+    noticeRemaining=error?0:duration;scheduleNotice();
+  }
+  function pauseNotice(){if(noticeTimer){noticeRemaining=Math.max(0,noticeDeadline-performance.now());stopNoticeTimer();}}
+  notice.addEventListener('pointerenter',pauseNotice);notice.addEventListener('focusin',pauseNotice);
+  notice.addEventListener('pointerleave',scheduleNotice);notice.addEventListener('focusout',()=>{if(!notice.matches(':focus-within'))scheduleNotice();});
+  $('status-dismiss').addEventListener('click',()=>{document.querySelector('#sidebar-toggle:not(:disabled)')?.focus({preventScroll:true});dismissFeedback();});
   // Each surface keeps one timeline. Reversing it preserves its current geometry.
   function drive(record, opening, finish) {
     const revision = ++record.revision;
@@ -91,7 +167,7 @@
     if (menu?.select === field.select && field.select.disabled) closeMenu();
     if (id === 'sidebar-position') for (const choice of document.querySelectorAll('[data-sidebar-choice]')) choice.setAttribute('aria-pressed', String(choice.dataset.sidebarChoice === field.select.value));
   }
-  const exportDetails = {html: ['file', '可继续编辑 · .review.html'], gzip: ['layers', '完整副本，更小体积 · .html.gz'], annotations: ['code', '配合原文件交给 agent · .json']};
+  const exportDetails = {html: ['file', '可继续编辑 · .review.html'], gzip: ['layers', '完整副本，更小体积 · .html.gz'], annotations: ['code', '仅批注数据，不含原文档 · .json']};
   function openMenu(field, last = false) {
     const {select, trigger} = field;
     if (select.disabled) return;
@@ -104,7 +180,7 @@
     }
     closeMenu(false, true);
     const popup = document.createElement('div'); popup.className = 'select-popover'; popup.id = 'hr-select-popover'; popup.dataset.uiTransient = 'menu'; popup.setAttribute('role', 'listbox'); popup.setAttribute('aria-label', select.getAttribute('aria-label') || '选择选项');
-    if (select.id === 'export-format') { const caption = document.createElement('div'); caption.className = 'popover-caption'; caption.textContent = '选择交付方式'; popup.append(caption); }
+    if (select.id === 'export-format') { const caption = document.createElement('div'); caption.className = 'popover-caption'; caption.textContent = '保存格式'; popup.append(caption); }
     const buttons = [];
     for (const option of select.options) {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'select-option'; button.dataset.value = option.value; button.setAttribute('role', 'option'); button.setAttribute('aria-selected', String(option.selected)); button.disabled = option.disabled; button.tabIndex = -1;
@@ -121,17 +197,16 @@
     const bounds = popup.getBoundingClientRect(); popup.style.left = Math.max(12, Math.min(rect.left, innerWidth - bounds.width - 12)) + 'px';
     const above = rect.bottom + bounds.height + 8 > innerHeight;
     popup.style.top = Math.max(12, above ? rect.top - bounds.height - 8 : rect.bottom + 8) + 'px';
-    popup.style.transformOrigin = Math.max(12, Math.min(bounds.width - 12, rect.left + rect.width / 2 - parseFloat(popup.style.left))) + 'px ' + (above ? 'bottom' : 'top');
-    const shift = above ? 8 : -8;
+    const shift = above ? 6 : -6;
     const rowAnimations = reducedMotion.matches ? [] : buttons.map((button, index) => button.animate([
       {opacity: 0, transform: 'translateY(' + shift / 2 + 'px)', offset: 0},
       {opacity: 0, transform: 'translateY(' + shift / 2 + 'px)', offset: .12 + Math.min(index, 5) * .06, easing: ease},
       {opacity: 1, transform: 'translateY(0)', offset: .87}, {opacity: 1, transform: 'translateY(0)', offset: 1}
-    ], {duration: 300, easing: 'linear', fill: 'both'}));
+    ], {duration: 220, easing: 'linear', fill: 'both'}));
     const motion = surface(popup, [
-      {opacity: 0, transform: 'translateY(' + shift + 'px) scale(.94, .92)', clipPath: 'inset(' + (above ? '18% 0 0' : '0 0 18%') + ' 0 round 14px)', boxShadow: '0 3px 12px #293e2200'},
-      {opacity: 1, transform: 'translateY(0) scale(1)', clipPath: 'inset(0 round 14px)', boxShadow: '0 12px 40px #293e2222, 0 2px 6px #293e2210'}
-    ], 300, rowAnimations);
+      {opacity: 0, transform: 'translateY(' + shift + 'px)', clipPath: 'inset(' + (above ? '18% 0 0' : '0 0 18%') + ' 0 round 14px)'},
+      {opacity: 1, transform: 'translateY(0)', clipPath: 'inset(0 round 14px)'}
+    ], 220, rowAnimations);
     trigger.setAttribute('aria-expanded', 'true'); trigger.setAttribute('aria-controls', popup.id); menu = {...field, popup, buttons, motion, anchor: {top: rect.top, left: rect.left}};
     const current = menu; drive(motion, true, () => { motion.state = 'open'; popup.dataset.motion = 'open'; });
     (last ? buttons.at(-1) : buttons.find(button => button.getAttribute('aria-selected') === 'true') || buttons[0])?.focus({preventScroll: true});
@@ -145,7 +220,7 @@
       if (event.key === 'Tab') closeMenu(true);
     });
   }
-  for (const id of ['export-format', 'sidebar-position', 'preview-width', 'entry-select', 'page-select', 'annotation-filter']) {
+  for (const id of ['export-format', 'sidebar-position', 'preview-width', 'pdf-zoom', 'entry-select', 'page-select', 'annotation-filter']) {
     const select = $(id); if (!select) continue;
     let wrapper = select.parentElement.classList.contains('select-field') ? select.parentElement : null;
     if (!wrapper) { wrapper = document.createElement('span'); wrapper.className = 'select-field'; select.before(wrapper); wrapper.append(select); }
@@ -161,6 +236,55 @@
   }
   document.addEventListener('pointerdown', event => { if (menu && !menu.popup.contains(event.target) && !menu.trigger.contains(event.target)) closeMenu(); }, true);
   window.addEventListener('resize', () => closeMenu()); window.addEventListener('scroll', event => { if (menu && !menu.popup.contains(event.target)) { const rect = menu.trigger.getBoundingClientRect(); if (Math.abs(rect.top - menu.anchor.top) > 1 || Math.abs(rect.left - menu.anchor.left) > 1) closeMenu(); } }, true);
+  const backup = $('backup-menu');
+  const backupPanel = backup.querySelector('.backup-panel');
+  let backupMotion = null;
+  function positionBackup() {
+    const edge = backup.getBoundingClientRect().right;
+    const right = Math.min(innerWidth - 12, Math.max(backupPanel.offsetWidth + 12, edge));
+    backupPanel.style.right = (edge - right) + 'px';
+  }
+  window.addEventListener('resize', () => { if (backup.open) positionBackup(); });
+  function toggleBackup() {
+    if (backupMotion?.state === 'closing' || !backup.open) {
+      backup.open = true; positionBackup();
+      if (!backupMotion) {
+        backupMotion = surface(backupPanel, [
+          {opacity: 0, transform: 'translateY(-6px)', clipPath: 'inset(0 0 10% 0 round 16px)'},
+          {opacity: 1, transform: 'translateY(0)', clipPath: 'inset(0 round 16px)'}
+        ], 230);
+      }
+      backupPanel.inert = false; backupPanel.removeAttribute('aria-hidden');
+      const record = backupMotion;
+      drive(record, true, () => { record.state = 'open'; backupPanel.dataset.motion = 'open'; });
+    } else closeBackup();
+  }
+  function closeBackup(immediate = false) {
+    if (!backup.open || (!immediate && backupMotion?.state === 'closing')) return;
+    if (!backupMotion) { backup.open = false; return; }
+    const record = backupMotion;
+    const returnFocus = backupPanel.contains(document.activeElement);
+    backupPanel.inert = true; backupPanel.setAttribute('aria-hidden', 'true');
+    if (returnFocus) backup.querySelector('summary').focus({preventScroll: true});
+    const finish = () => {
+      backup.open = false;
+      for (const animation of record.animations) animation.cancel();
+      delete backupPanel.dataset.motion;
+      backupPanel.inert = false; backupPanel.removeAttribute('aria-hidden');
+      backupMotion = null;
+    };
+    if (immediate) { ++record.revision; finish(); }
+    else drive(record, false, finish);
+  }
+  // Direct native closure (including a restored copy) must release old timelines.
+  backup.addEventListener('toggle', () => {
+    if (!backup.open && backupMotion) {
+      ++backupMotion.revision;
+      for (const animation of backupMotion.animations) animation.cancel();
+      backupMotion = null; delete backupPanel.dataset.motion;
+      backupPanel.inert = false; backupPanel.removeAttribute('aria-hidden');
+    }
+  });
   const dialogs = new WeakMap();
   const panelAnimations = new Map();
   const panels = Array.from(document.querySelectorAll('[data-settings-panel]'));
@@ -213,30 +337,31 @@
     dialogs.delete(dialog); delete dialog.dataset.motion;
     for (const panel of panels) { cancelPanel(panel); panel.hidden = panel !== currentSettingsPage; panel.inert = false; panel.removeAttribute('aria-hidden'); }
   }
-  function closeDialog(dialog) {
+  function closeDialog(dialog, immediate = false) {
     const record = dialogs.get(dialog);
     if (!dialog?.open) return;
     closeMenu(false, true);
     if (!record) { dialog.close(); return; }
+    if (immediate) { destroyDialog(dialog, record); return; }
     if (record.state === 'closing') return;
     drive(record, false, () => destroyDialog(dialog, record));
   }
   function openDialog(dialog) {
-    closeMenu(false, true);
+    closeMenu(false, true); closeBackup(true);
     let record = dialogs.get(dialog);
     if (dialog.open && record?.state !== 'closing') return;
     if (!record) {
       const scrim = document.createElement('div'); scrim.className = 'modal-scrim'; scrim.dataset.uiTransient = 'scrim'; scrim.setAttribute('aria-hidden', 'true'); document.body.append(scrim);
       dialog.showModal();
-      const backdrop = reducedMotion.matches ? [] : [scrim.animate([{opacity: 0, backdropFilter: 'blur(0px)'}, {opacity: 1, backdropFilter: 'blur(7px)'}], {duration: 380, easing: ease, fill: 'both'})];
+      const backdrop = reducedMotion.matches ? [] : [scrim.animate([{opacity: 0}, {opacity: 1}], {duration: 280, easing: ease, fill: 'both'})];
       if (dialog.id === 'settings-dialog' && !reducedMotion.matches) backdrop.push(dialog.querySelector('.settings-content').animate([
         {opacity: 0, transform: 'translateY(5px)', offset: 0}, {opacity: 0, transform: 'translateY(5px)', offset: .16, easing: ease},
         {opacity: 1, transform: 'translateY(0)', offset: .88}, {opacity: 1, transform: 'translateY(0)', offset: 1}
-      ], {duration: 380, easing: 'linear', fill: 'both'}));
+      ], {duration: 280, easing: 'linear', fill: 'both'}));
       record = surface(dialog, [
-        {opacity: 0, transform: 'translateY(22px) scale(.94)'},
-        {opacity: 1, transform: 'translateY(0) scale(1)'}
-      ], 380, backdrop);
+        {opacity: 0, transform: 'translateY(12px)'},
+        {opacity: 1, transform: 'translateY(0)'}
+      ], 280, backdrop);
       record.scrim = scrim; dialogs.set(dialog, record);
 
     }
@@ -256,11 +381,10 @@
     if (reducedMotion.matches) return;
     const visible = Array.from(list.querySelectorAll('.is-new')).filter(card => { const rect = card.getBoundingClientRect(); return rect.bottom > 0 && rect.top < innerHeight; }).slice(0, 8);
     for (const card of visible) {
-      const style = getComputedStyle(card);
       animate(card, [
-        {height: '0px', opacity: 0, paddingTop: '0px', paddingBottom: '0px', marginBottom: '0px', transform: 'translateY(-6px)', overflow: 'hidden'},
-        {height: card.offsetHeight + 'px', opacity: 1, paddingTop: style.paddingTop, paddingBottom: style.paddingBottom, marginBottom: style.marginBottom, transform: 'translateY(0)', overflow: 'hidden'}
-      ], {duration: 360});
+        {opacity: 0, transform: 'translateY(5px)'},
+        {opacity: 1, transform: 'translateY(0)'}
+      ], {duration: 190});
     }
   }
   let saveFeedback = null;
@@ -286,5 +410,5 @@
   for (const button of document.querySelectorAll('[data-settings-page]')) button.addEventListener('click', () => openSettings(button.dataset.settingsPage));
   for (const choice of document.querySelectorAll('[data-sidebar-choice]')) choice.addEventListener('click', () => { $('sidebar-position').value = choice.dataset.sidebarChoice; $('sidebar-position').dispatchEvent(new Event('change', {bubbles: true})); });
   $('settings-button').addEventListener('click', () => openSettings());
-  window.HRUI = {icon, syncSelect, closeMenu, closeDialog, openDialog, openSettings, enterCards, saved};
+  window.HRUI = {icon, syncSelect, closeMenu, toggleBackup, closeBackup, closeDialog, openDialog, openSettings, enterCards, saved, disclose, reflow, scopeChanged, feedback};
 })();

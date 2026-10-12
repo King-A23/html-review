@@ -1,0 +1,129 @@
+{
+  "format": "html-review-annotations",
+  "schemaVersion": 3,
+  "createdAt": "2026-10-12T04:27:04.280Z",
+  "updatedAt": "2026-10-12T04:27:08.739Z",
+  "source": {
+    "name": "review.pdf",
+    "path": "review.pdf",
+    "byteLength": 3507,
+    "lastModified": 1791779215013,
+    "sha256": "95f8534aceae34cd8ce0817498962ca7bcb51ba93df4580828e6a30584562f95",
+    "type": "pdf",
+    "adapterVersion": "1"
+  },
+  "resources": [],
+  "annotations": [
+    {
+      "revision": 1,
+      "status": "open",
+      "history": [],
+      "id": "408157cc-dde2-4be0-9149-cf8766cd2429",
+      "kind": "region",
+      "comment": "请给表格补充样本量与完成率的统计口径。",
+      "createdAt": "2026-10-12T04:27:06.823Z",
+      "updatedAt": "2026-10-12T04:27:06.823Z",
+      "target": {
+        "kind": "region",
+        "selector": "pdf-page-1",
+        "pdf": {
+          "adapterVersion": "1",
+          "sourceSha256": "95f8534aceae34cd8ce0817498962ca7bcb51ba93df4580828e6a30584562f95",
+          "pages": [
+            {
+              "pageNumber": 1,
+              "label": "1",
+              "viewBox": [
+                0,
+                0,
+                595.2756,
+                841.8898
+              ],
+              "rotation": 0,
+              "userUnit": 1,
+              "fingerprint": {
+                "textSha256": "013143c3fadc58cc3302982899fb9435e9084f13043e5413c770ee8103a6dcde",
+                "visualSha256": "4bcc803feb8638c9f6f9bdbee745e25c5c8715104414151bbf4b6c64548e8b01"
+              },
+              "rects": [
+                [
+                  60,
+                  428.55646666666667,
+                  535.2708333333334,
+                  588.5564666666667
+                ]
+              ]
+            }
+          ]
+        },
+        "text": "第 1 页 · 框选区域"
+      },
+      "view": {
+        "width": 1202,
+        "height": 757,
+        "devicePixelRatio": 1
+      },
+      "taskState": "new"
+    },
+    {
+      "revision": 1,
+      "status": "open",
+      "history": [],
+      "id": "574c206a-9282-48ba-9a48-e8636484f517",
+      "kind": "page",
+      "comment": "请明确试点负责人和开始日期后再确认计划。",
+      "createdAt": "2026-10-12T04:27:08.739Z",
+      "updatedAt": "2026-10-12T04:27:08.739Z",
+      "target": {
+        "kind": "page",
+        "selector": "pdf-page-2",
+        "pdf": {
+          "adapterVersion": "1",
+          "sourceSha256": "95f8534aceae34cd8ce0817498962ca7bcb51ba93df4580828e6a30584562f95",
+          "pages": [
+            {
+              "pageNumber": 2,
+              "label": "2",
+              "viewBox": [
+                0,
+                0,
+                595.2756,
+                841.8898
+              ],
+              "rotation": 0,
+              "userUnit": 1,
+              "fingerprint": {
+                "textSha256": "fb90c8b83df303a832012675a74cc6ced80e1df7908f64454cebd80efd7ba80e",
+                "visualSha256": "de491f7834b8063ff04eae915c4ae3865161570b553b194a9563b8af505807cc"
+              },
+              "rects": [
+                [
+                  0,
+                  0,
+                  595.2756,
+                  841.8898
+                ]
+              ]
+            }
+          ]
+        },
+        "scope": "single-page",
+        "pageIndex": 2,
+        "pageCount": 2,
+        "pageTitle": "PDF 第 2 页",
+        "text": "PDF 第 2 页",
+        "viewport": {
+          "width": 1202,
+          "height": 757,
+          "devicePixelRatio": 1
+        }
+      },
+      "view": {
+        "width": 1202,
+        "height": 757,
+        "devicePixelRatio": 1
+      },
+      "taskState": "new"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 import {runPython} from '../scripts/python.mjs';
 /* Full feedback loop: actual exports → Python agent interface → native directory reload → next handoff. */
 import assert from 'node:assert/strict';
@@ -24,8 +25,8 @@ async function writeNative(page, filename, text) {
   }, {filename, text});
 }
 async function exported(page, filename) {
-  await page.locator('#export-format').selectOption('annotations');
-  const downloading = page.waitForEvent('download'); await page.locator('#download-button').click();
+  await ensureBackup(page); await page.locator('#export-format').selectOption('annotations');
+  const downloading = page.waitForEvent('download'); await ensureBackup(page); await page.locator('#download-button').click();
   const target = path.join(workspace, filename); await (await downloading).saveAs(target);
   return {target, data: JSON.parse(await readFile(target, 'utf8'))};
 }
@@ -47,7 +48,7 @@ try {
   await page.locator('[data-mode=element]').click(); await frame(page).locator('#obsolete').click();
   await page.locator('#target-text').filter({hasText: '这句话需要删除。'}).waitFor();
   await page.locator('#comment-input').fill('删除这句内容'); await page.locator('#save-button').click();
-  await page.locator('[data-mode=whole]').click();
+  await page.locator('[data-mode=browse]').click();
   await page.locator('#comment-input').fill('统一页面风格'); await page.locator('#save-button').click();
   const first = await exported(page, 'report.review.json');
   const [deleted, pending] = first.data.annotations;
@@ -96,7 +97,7 @@ try {
   assert.equal(await card(page, deleted.id).getAttribute('data-review-state'), 'updated');
   await page.locator('#reload-preview').click(); await ready(page);
   assert.equal(await card(page, deleted.id).getAttribute('data-review-state'), 'updated');
-  await page.locator('[data-mode=whole]').click();
+  await page.locator('[data-mode=browse]').click();
   await page.locator('#comment-input').fill('新增要求：补充来源说明'); await page.locator('#save-button').click();
   next = await exported(page, 'next-round.review.json');
   assert.deepEqual(next.data.annotations.map(annotation => annotation.taskState), ['updated', 'pending', 'new']);
@@ -114,7 +115,7 @@ try {
 
   await card(page, pending.id).locator('[data-action=status]').click();
   await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText: async text => { window.__copiedTask = text; }}}));
-  await page.locator('#copy-agent-task').click();
+  await page.locator('#handoff-button').click(); await page.locator('#copy-agent-text').click();
   const copied = await page.evaluate(() => window.__copiedTask);
   assert.match(copied, /仅处理 status=open/);
   assert.deepEqual(JSON.parse(copied.slice(copied.indexOf('{'))).annotations.map(annotation => annotation.taskState), ['updated', 'completed', 'new']);
@@ -124,8 +125,8 @@ try {
     assert.match(task, /仅处理 status=open/); assert.match(task, /completed/); assert.match(task, /updated/);
     await page.locator('#agent-task-dialog [data-close]').click(); await page.locator('#agent-task-dialog').waitFor({state: 'hidden'});
   }
-  await page.locator('#export-format').selectOption('html');
-  const downloading = page.waitForEvent('download'); await page.locator('#download-button').click();
+  await ensureBackup(page); await page.locator('#export-format').selectOption('html');
+  const downloading = page.waitForEvent('download'); await ensureBackup(page); await page.locator('#download-button').click();
   const full = path.join(workspace, 'complete.review.html'); await (await downloading).saveAs(full);
   const reopened = await context.newPage(); await reopened.goto(pathToFileURL(full).href); await ready(reopened);
   assert.equal(await card(reopened, pending.id).getAttribute('data-review-state'), 'completed');

@@ -1,3 +1,4 @@
+import {ensureBackup} from './backup-ui.mjs';
 /* High-priority usability acceptance checks. Run after `npm run build`.
  * Uses real file:// pages, IndexedDB and the sandboxed preview iframe.
  */
@@ -126,17 +127,22 @@ try {
   await check('first-run guide describes the three steps, restarts from help, and sample provides three usable targets', async () => {
     const {context, page} = await newPage();
     try {
+      assert(await page.locator('#onboarding-card').isHidden(),'Empty workspace presents the open action first');
+      await page.locator('#example-button').click();
+      await frameFor(page);
+      if(await page.locator('#workflow-details').isHidden())await page.locator('#workflow-details-toggle').click();
       await page.locator('#onboarding-card').waitFor({state: 'visible'});
       for (const step of ['open', 'annotate', 'deliver']) assert(await page.locator(`[data-guide-step="${step}"]`).isVisible());
       await page.locator('#onboarding-dismiss').click();
+      await waitAutosaved(page);
       await page.reload();
+      await frameFor(page);
       assert.equal(await page.locator('#onboarding-card').isVisible(), false);
       await page.locator('#settings-button').click();
       await page.locator('#help-button').click();
       await page.locator('#restart-guide').click();
       await page.locator('#onboarding-card').waitFor({state: 'visible'});
       await page.locator('#onboarding-dismiss').click();
-      await page.locator('#example-button').click();
       await frameFor(page);
       assert.equal(await annotationCount(page), 3);
       assert.deepEqual(await page.locator('.annotation-card .tag').allTextContents(), ['文字', '元素', '整体']);
@@ -216,9 +222,9 @@ try {
 
       await page.locator('[data-mode="element"]').click();
       await frame.locator('#market-image').click();
-      await page.locator('#target-selector').filter({hasText: /^#market-image$/}).waitFor();
+      await page.waitForFunction(()=>document.querySelector('#target-selector').textContent === '#market-image');
       await page.locator('#parent-target').click();
-      await page.locator('#target-selector').filter({hasText: /figure|hero-visual/i}).waitFor();
+      await page.waitForFunction(()=>/figure|hero-visual/i.test(document.querySelector('#target-selector').textContent));
       assert.match(await page.locator('#target-selector').textContent(), /figure|hero-visual/i);
       await saveAnnotation(page, '图片和图注应提供更清楚的来源说明。');
 
@@ -226,7 +232,7 @@ try {
       await frame.locator('#holding-b').click();
       await saveAnnotation(page, '表格中的现金流验证状态需要进一步解释。');
 
-      await page.getByText('整体', {exact: true}).first().click();
+      await page.locator('[data-mode="browse"]').click();
       await saveAnnotation(page, '全页的风险提示应始终在主要结论附近可见。');
       assert.equal(await annotationCount(page), 9);
       const cards = await page.locator('.annotation-card').all();
@@ -259,13 +265,13 @@ try {
       await page.screenshot({path: path.join(resultDir, 'usability-recovered-draft.png'), fullPage: true});
       const downloads = [];
       page.on('download', download => downloads.push(download));
-      await page.locator('#download-button').click();
+      await ensureBackup(page); await page.locator('#download-button').click();
       await page.waitForTimeout(150);
       assert.equal(downloads.length, 0, 'a pending draft must block export instead of silently omitting it');
       await page.locator('#save-button').click();
       await waitAutosaved(page);
       const pending = page.waitForEvent('download');
-      await page.locator('#download-button').click();
+      await ensureBackup(page); await page.locator('#download-button').click();
       const download = await pending;
       assert.equal(download.suggestedFilename(), 'index.review.html');
       await waitAutosaved(page);
@@ -351,7 +357,7 @@ try {
         window.HRSession = window.HRSession;
         Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText: async text => { window.__agentTask = text; }}});
       });
-      await page.locator('#copy-agent-task').click();
+      await page.locator('#handoff-button').click(); await page.locator('#copy-agent-text').click();
       assert.equal(await page.locator('#save-state').textContent(), saveStateBeforeCopy, 'copying must not alter download-dirty state');
       const copied = await page.evaluate(() => window.__agentTask);
       assert.match(copied, /用于撤销和 agent 任务的整体意见/);
@@ -360,14 +366,15 @@ try {
       assert.equal(copiedExport.resources.some(resource => 'base64' in resource), false);
       assert.equal(copiedExport.annotations[0].comment, '用于撤销和 agent 任务的整体意见。');
       assert.equal(typeof copiedExport.annotations[0].target.context, 'object');
+      await page.locator('[data-close="agent-task-dialog"]').click(); await page.locator('#agent-task-dialog').waitFor({state:'hidden'});
       await page.locator('#comment-input').fill('这条草稿不能泄露给 agent。');
-      assert.equal(await page.locator('#copy-agent-task').isDisabled(), true, 'pending editor text must block task copy');
+      assert.equal(await page.locator('#handoff-button').isDisabled(), true, 'pending editor text must block task copy');
       await page.locator('#cancel-edit').click();
 
       await page.evaluate(() => {
         Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText: async () => { throw new Error('denied'); }}});
       });
-      await page.locator('#copy-agent-task').click();
+      await page.locator('#handoff-button').click(); await page.locator('#copy-agent-text').click();
       await page.locator('#agent-task-dialog').waitFor({state: 'visible'});
       const task = await page.locator('#agent-task-text').inputValue();
       assert.match(task, /finance\/index\.html|index\.html/);
@@ -387,7 +394,7 @@ try {
       const mainChooser = page.waitForEvent('filechooser');
       await page.locator('body').press('Control+o');
       await mainChooser;
-      for (const [key, mode] of [['v', 'browse'], ['t', 'text'], ['e', 'element'], ['p', 'page'], ['a', 'whole']]) {
+      for (const [key, mode] of [['v', 'browse'], ['t', 'text'], ['e', 'element'], ['p', 'page'], ['a', 'browse']]) {
         await page.locator('body').press(key);
         assert.equal(await page.locator(`[data-mode="${mode}"]`).getAttribute('aria-pressed'), 'true');
       }
@@ -401,7 +408,7 @@ try {
       await frame.locator('#topic-input').press('t');
       assert.equal((await frame.locator('#topic-input').inputValue()).length, before.length + 1);
       assert.match(await frame.locator('#topic-input').inputValue(), /现金流质量/);
-      assert.equal(await page.locator('[data-mode="whole"]').getAttribute('aria-pressed'), 'true');
+      assert.equal(await page.locator('[data-mode="browse"]').getAttribute('aria-pressed'), 'true');
       await frame.locator('#topic-input').press(nativeUndo);
       assert.equal(await frame.locator('#topic-input').inputValue(), before);
 
@@ -418,7 +425,7 @@ try {
       await editor.press('t');
       assert.equal((await editor.textContent()).length, 5);
       assert.match(await editor.textContent(), /edit/);
-      assert.equal(await page.locator('[data-mode="whole"]').getAttribute('aria-pressed'), 'true');
+      assert.equal(await page.locator('[data-mode="browse"]').getAttribute('aria-pressed'), 'true');
       await editor.press(nativeUndo);
       assert.equal(await editor.textContent(), 'edit');
 

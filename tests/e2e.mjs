@@ -1,3 +1,5 @@
+import {waitPreviewLayout} from './preview-layout.mjs';
+import {ensureBackup} from './backup-ui.mjs';
 import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
@@ -44,6 +46,12 @@ async function frameFor(page) {
     else document.addEventListener('DOMContentLoaded', resolve, {once: true});
   }));
   await page.waitForFunction(() => !document.querySelector('#open-button').disabled);
+  await page.locator('#preview-frame[aria-busy="false"]').waitFor();
+  await frame.locator('body').evaluate(() => new Promise(resolve => {
+    if (document.readyState === 'complete') resolve();
+    else window.addEventListener('load', resolve, {once: true});
+  }));
+  await waitPreviewLayout(page);
   return frame;
 }
 async function waitCount(page, count) {
@@ -51,7 +59,7 @@ async function waitCount(page, count) {
 }
 async function download(page, filename, expectedName) {
   const pending = page.waitForEvent('download');
-  await page.locator('#download-button').click();
+  await ensureBackup(page); await page.locator('#download-button').click();
   const downloaded = await pending;
   if (expectedName) assert.equal(downloaded.suggestedFilename(), expectedName);
   const destination = path.join(resultDir, filename);
@@ -100,7 +108,7 @@ try {
     await frame.locator('#demo-button').click();
     assert.equal(await frame.locator('#demo-count').textContent(), '已点击 1 次');
     assert.equal(await frame.locator('body').evaluate(() => {try { return parent.document.body.innerHTML; } catch (_) { return 'isolated'; }}), 'isolated');
-    assert.equal(await page.locator('.source-info').innerText(), '当前文档\ndemo.html');
+    assert.equal(await page.locator('.source-info').innerText(), '当前文档\ndemo.html\nHTML');
     assert.equal(await page.locator('#preview-label').textContent(), 'demo.html');
     assert.equal(await page.locator('#source-meta, #source-version').count(), 0);
   });
@@ -121,7 +129,7 @@ try {
     await wholeFile.locator('#comment-input').fill('调整整个文件的说明顺序。');
     assert(await wholeFile.locator('#save-button').isDisabled());
     assert(await wholeFile.locator('#target-preview').isHidden());
-    await wholeFile.locator('[data-mode="whole"]').click();
+    await wholeFile.locator('[data-mode="browse"]').click();
     assert.equal(await wholeFile.locator('#comment-input').inputValue(), '调整整个文件的说明顺序。');
     await wholeFile.locator('#save-button').click();
     await waitCount(wholeFile, 3);
@@ -146,7 +154,7 @@ try {
     await wholeFile.goto(pathToFileURL(wholeCopy).href);
     await frameFor(wholeFile); await waitCount(wholeFile, 5);
     await wholeFile.locator('.annotation-card').first().locator('[data-action="edit"]').click();
-    assert.equal(await wholeFile.locator('[data-mode="whole"]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await wholeFile.locator('[data-mode="browse"]').getAttribute('aria-pressed'), 'true');
     assert.equal(await wholeFile.locator('#draft-status').textContent(), '');
     await wholeFile.locator('#comment-input').fill('整个文件统一术语，并合并重复章节。');
     await wholeFile.locator('#save-button').click();
@@ -164,9 +172,9 @@ try {
     await layout.goto(appUrl);
     const sidebar = () => layout.locator('.sidebar').boundingBox();
     const preview = () => layout.locator('.preview-section').boundingBox();
-    assert((await sidebar()).x < (await preview()).x);
     await layout.locator('#file-input').setInputFiles(originalPath);
     const frame = await frameFor(layout);
+    assert((await sidebar()).x < (await preview()).x);
     await frame.locator('#demo-button').click();
     await selectText(layout, '#cross-node-text');
     await layout.locator('#comment-input').fill('保留选中的原文，简化表达。');
@@ -205,10 +213,15 @@ try {
       assert.equal(await portable.locator('#target-kind').textContent(), '文字');
       await portable.locator('#sidebar-position').selectOption('right');
       await portable.setViewportSize({width: 900, height: 900});
-      assert.equal((await portable.locator('.sidebar').boundingBox()).width, 320);
+      await portable.waitForFunction(()=>document.querySelector('#sidebar-resizer').getAttribute('aria-valuenow')==='300');
+      assert.equal((await portable.locator('.sidebar').boundingBox()).width, 300, 'default sidebar becomes compact on narrow laptops');
+      assert((await portable.locator('.preview-section').boundingBox()).width >= 360, 'adaptive sidebar preserves usable document space');
       assert((await portable.locator('.sidebar').boundingBox()).x > (await portable.locator('.preview-section').boundingBox()).x);
       await portable.setViewportSize({width: 600, height: 900});
-      assert((await portable.locator('.sidebar').boundingBox()).y >= (await portable.locator('.preview-section').boundingBox()).y + (await portable.locator('.preview-section').boundingBox()).height);
+      const mobilePreview=await portable.locator('.preview-section').boundingBox();
+      await portable.locator('#mobile-write').click();
+      assert.deepEqual(await portable.locator('.preview-section').boundingBox(),mobilePreview,'mobile editor overlays without resizing the document');
+      const panel=await portable.locator('.sidebar').boundingBox();assert(panel.x>=0&&panel.x+panel.width<=600&&panel.y>=0&&panel.y+panel.height<=900,'bottom panel fits the viewport');
       assert(await portable.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
       await portable.screenshot({path: path.join(resultDir, '05-narrow-sidebar.png')});
     } finally { await isolated.close(); }
@@ -268,7 +281,7 @@ try {
     const stored = await extract(fullPath);
     assert.match(fullBytes.toString('utf8'), /id="html-review-example">null<\/script>/);
     assert(!fullBytes.toString('utf8').match(dataPattern)[2].includes('\n'));
-    await formats.locator('#export-format').selectOption('gzip');
+    await ensureBackup(formats); await formats.locator('#export-format').selectOption('gzip');
     const packedPath = await download(formats, 'exports.review.html.gz', 'demo.review.html.gz');
     const packed = await readFile(packedPath);
     const unpackedPath = path.join(resultDir, 'exports.unpacked.review.html');
@@ -279,7 +292,7 @@ try {
     await frameFor(unpacked); await waitCount(unpacked, 1);
     assert.equal(await unpacked.locator('.annotation-comment').textContent(), comment);
     assert.equal(await unpacked.evaluate(() => window.__exportXss), undefined);
-    await formats.locator('#export-format').selectOption('annotations');
+    await ensureBackup(formats); await formats.locator('#export-format').selectOption('annotations');
     const lightPath = await download(formats, 'exports.review.json', 'demo.review.json');
     const lightBytes = await readFile(lightPath);
     const light = JSON.parse(lightBytes);
@@ -288,7 +301,7 @@ try {
     assert.equal(light.source.sha256, originalHash);
     assert.deepEqual(light.annotations, stored.annotations.map(annotation => ({...annotation, taskState: 'new'})));
     assert(!lightBytes.includes(Buffer.from(stored.source.base64)));
-    assert((await formats.locator('#save-state').textContent()).includes('连同原文件保留'));
+    assert((await formats.locator('#save-state').textContent()).includes('与原始文档一起交付'));
     assert(packed.length < fullBytes.length);
     assert(lightBytes.length < packed.length);
     exportSizes = {original: originalBytes.length, html: fullBytes.length, gzip: packed.length, annotations: lightBytes.length};
@@ -311,7 +324,7 @@ try {
     await waitCount(page, 2);
   });
   await check('whole-page feedback records responsive viewport and layout instruction', async () => {
-    await page.locator('[data-mode="whole"]').click();
+    await page.locator('[data-mode="browse"]').click();
     await page.locator('#preview-width').selectOption('390');
     await saveNote(page, '手机宽度下缩小标题与说明之间的间距，卡片改为单列，正文保持易读。');
     await waitCount(page, 3);
@@ -349,8 +362,9 @@ try {
     assert.equal(await reopened.locator('#target-kind').textContent(), '元素');
     assert.equal(await reopened.locator('#target-selector').textContent(), '#card-collaborate');
     await reopened.locator('#save-button').click();
+    const readingWidth=await reopened.locator('#preview-width').inputValue();
     await reopened.locator('.annotation-card').nth(2).locator('[data-action="edit"]').click();
-    assert.equal(await reopened.locator('#preview-width').inputValue(), '390');
+    assert.equal(await reopened.locator('#preview-width').inputValue(), readingWidth, 'editing a whole-document opinion keeps the current reading width');
     assert.equal(await reopened.locator('#draft-status').textContent(), '');
     await reopened.locator('#cancel-edit').click();
   });
@@ -362,7 +376,7 @@ try {
     assert.equal(await reopened.locator('#comment-input').inputValue(), (await reopened.locator('.annotation-comment').first().textContent()));
     await selectText(reopened, '#cross-node-text');
     await reopened.locator('#comment-input').fill('改为：具体的建议，让修改位置与要求一目了然。');
-    await reopened.locator('#download-button').click();
+    await ensureBackup(reopened); await reopened.locator('#download-button').click();
     await reopened.waitForFunction(() => document.querySelector('#status').textContent.includes('尚未保存') || document.querySelector('#status').textContent.includes('未保存'));
     await reopened.locator('#save-button').click();
     await waitCount(reopened, 3);
@@ -373,7 +387,7 @@ try {
   const injection = '把字面量 </script><script>window.__reviewXss=1</script> 当作普通文字保留。';
   let second;
   await check('literal script-closing text survives export and reopening without execution', async () => {
-    await reopened.locator('[data-mode="whole"]').click();
+    await reopened.locator('[data-mode="browse"]').click();
     await saveNote(reopened, injection);
     await waitCount(reopened, 4);
     second = await download(reopened, 'demo.second.review.html');
@@ -441,13 +455,18 @@ try {
     await assets.locator('#file-input').setInputFiles(path.join(root, 'examples/with-assets/index.html'));
     await frameFor(assets);
     assert(await assets.locator('#warnings').isVisible());
+    // File-input handlers are async: wait for the replacement document, not
+    // the previous iframe's already-complete load state.
+    const bundledNavigation = assets.waitForEvent('framenavigated', {predicate: candidate => candidate.parentFrame() === assets.mainFrame()});
     await assets.locator('#folder-input').setInputFiles(path.join(root, 'examples/with-assets'));
+    await bundledNavigation;
     const frame = await frameFor(assets);
     await frame.locator('#landscape').waitFor();
     await frame.locator('#landscape').evaluate(image => image.decode());
     assert((await frame.locator('#landscape').evaluate(image => image.naturalWidth)) > 0);
     assert.equal(await frame.locator('body').evaluate(element => getComputedStyle(element).backgroundColor), 'rgb(246, 244, 235)');
     const before = await frame.locator('#save-status').textContent();
+    await waitPreviewLayout(assets);
     await frame.locator('#save-note').click();
     assert.notEqual(await frame.locator('#save-status').textContent(), before);
     await assets.locator('[data-mode="element"]').click();
@@ -458,7 +477,7 @@ try {
     const stored = await extract(assetCopy);
     assert.equal(stored.annotations[0].target.attributes.src, 'images/landscape.svg');
     assert.equal(stored.resources.length, 5);
-    await assets.locator('#export-format').selectOption('annotations');
+    await ensureBackup(assets); await assets.locator('#export-format').selectOption('annotations');
     const light = JSON.parse(await readFile(await download(assets, 'with-assets.review.json'), 'utf8'));
     assert.equal(light.resources.length, 5);
     assert(light.resources.every((resource, index) => resource.sha256 === stored.resources[index].sha256 && resource.base64 === undefined));

@@ -1,3 +1,4 @@
+import {openAnnotationData} from './backup-ui.mjs';
 /* Real Chromium filesystem handles + IndexedDB, with an isolated native filesystem fixture.
  * Picker UI is stubbed; all file reads, writes, directory enumeration and handle cloning are native.
  */
@@ -30,7 +31,7 @@ const svg = color => `<svg xmlns="http://www.w3.org/2000/svg" width="80" height=
 const ready = page => page.waitForFunction(() => !document.getElementById('open-button').disabled);
 const preview = page => page.frameLocator('#preview-frame');
 const report = async page => {
-  await page.locator('#data-button').click();
+  await openAnnotationData(page);
   const value = JSON.parse(await page.locator('#data-preview').textContent());
   await page.locator('#data-dialog [data-close]').click();
   await page.locator('#data-dialog').waitFor({state: 'hidden'});

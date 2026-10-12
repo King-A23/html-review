@@ -1,0 +1,174 @@
+/* PDF.js 6.4.299 text layer styles, Apache-2.0; see bundled licenses. */
+#pdf-preview .textLayer {
+  color-scheme: only light;
+
+  position: absolute;
+  text-align: initial;
+  inset: 0;
+  overflow: clip;
+  opacity: 1;
+  line-height: 1;
+  letter-spacing: normal;
+  word-spacing: normal;
+  -webkit-text-size-adjust: none;
+     -moz-text-size-adjust: none;
+          text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: CanvasText;
+  z-index: 0;
+
+  &.highlighting {
+    touch-action: none;
+  }
+
+  :is(span, br) {
+    color: transparent;
+    position: absolute;
+    white-space: pre;
+    cursor: text;
+    transform-origin: 0% 0%;
+    -webkit-user-select: text;
+       -moz-user-select: text;
+            user-select: text;
+  }
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+
+  > :not(.markedContent),
+  .markedContent span:not(.markedContent) {
+    z-index: 1;
+
+    --font-height: 0;
+    font-size: calc(var(--text-scale-factor) * var(--font-height));
+
+    --scale-x: 1;
+    --rotate: 0deg;
+    transform: rotate(var(--rotate)) scaleX(var(--scale-x))
+      scale(var(--min-font-size-inv));
+  }
+
+  .markedContent {
+    display: contents;
+  }
+
+  span[role="img"] {
+    -webkit-user-select: none;
+       -moz-user-select: none;
+            user-select: none;
+    cursor: default;
+  }
+
+  .highlight {
+    --highlight-bg-color: rgb(180 0 170 / 0.25);
+    --highlight-selected-bg-color: rgb(0 100 0 / 0.25);
+    --highlight-backdrop-filter: none;
+    --highlight-selected-backdrop-filter: none;
+
+    @media screen and (forced-colors: active) {
+      --highlight-bg-color: transparent;
+      --highlight-selected-bg-color: transparent;
+      --highlight-backdrop-filter: var(--hcm-highlight-filter);
+      --highlight-selected-backdrop-filter: var(
+        --hcm-highlight-selected-filter
+      );
+    }
+
+    margin: -1px;
+    padding: 1px;
+    background-color: var(--highlight-bg-color);
+    backdrop-filter: var(--highlight-backdrop-filter);
+    border-radius: 4px;
+
+    &.appended {
+      position: initial;
+    }
+
+    &.begin {
+      border-radius: 4px 0 0 4px;
+    }
+
+    &.end {
+      border-radius: 0 4px 4px 0;
+    }
+
+    &.middle {
+      border-radius: 0;
+    }
+
+    &.selected {
+      background-color: var(--highlight-selected-bg-color);
+      backdrop-filter: var(--highlight-selected-backdrop-filter);
+      scroll-margin-top: 50px;
+    }
+  }
+
+  ::-moz-selection {
+    background: rgba(0 0 255 / 0.25);
+    background: color-mix(in srgb, AccentColor, transparent 50%);
+    color: transparent;
+  }
+
+  ::selection {
+    background: rgba(0 0 255 / 0.25);
+    background: color-mix(in srgb, AccentColor, transparent 50%);
+    color: transparent;
+  }
+
+  &.selectionRendering {
+    ::-moz-selection {
+      background: transparent;
+      color: transparent;
+    }
+    ::selection {
+      background: transparent;
+      color: transparent;
+    }
+  }
+  br::-moz-selection {
+    background: transparent;
+  }
+  br::selection {
+    background: transparent;
+  }
+
+  .endOfContent {
+    display: block;
+    position: absolute;
+    inset: 100% 0 0;
+    z-index: 0;
+    cursor: default;
+    -webkit-user-select: none;
+       -moz-user-select: none;
+            user-select: none;
+  }
+
+  &.selecting .endOfContent {
+    top: 0;
+  }
+}
+
+#pdf-preview { background:#e9ece5; overflow:auto; padding:24px; width:100%; height:100%; min-height:400px; overscroll-behavior:contain; }
+#pdf-preview .pdf-page { position:relative; margin:0 auto 28px; background:#fff; box-shadow:0 2px 10px #24372c17; flex-shrink:0; --min-font-size:1; }
+#pdf-preview .pdf-page[data-rendered="false"]::before { content:attr(aria-label); position:absolute; inset:20px auto auto 20px; font:13px system-ui; color:#7c887b; }
+#pdf-preview .pdf-canvas { display:block; pointer-events:none; }
+#pdf-preview .textLayer { z-index:1; }
+#pdf-preview[data-pdf-mode="browse"] .textLayer, #pdf-preview[data-pdf-mode="region"] .textLayer, #pdf-preview[data-pdf-mode="page"] .textLayer { pointer-events:none; user-select:none; }
+#pdf-preview[data-pdf-mode="region"] .pdf-page { cursor:crosshair; touch-action:none; }
+#pdf-preview[data-pdf-mode="page"] .pdf-page { cursor:crosshair; }
+#pdf-preview .pdf-focus { position:absolute; pointer-events:none; z-index:4; border:2px solid #bc5639; background:#de795621; border-radius:2px; }
+#pdf-preview .pdf-link { position:absolute; z-index:2; background:transparent; border:0; padding:0; }
+#pdf-preview[data-pdf-mode="text"] .pdf-link, #pdf-preview[data-pdf-mode="region"] .pdf-link, #pdf-preview[data-pdf-mode="page"] .pdf-link { pointer-events:none; }
+#pdf-preview .pdf-link:focus-visible { outline:2px solid #476249; }
+#pdf-preview .pdf-native-note { position:absolute; z-index:2; background:transparent; }
+#pdf-preview:not([data-pdf-mode="browse"]) .pdf-native-note { pointer-events:none; }
+
+#pdf-preview .pdf-search-highlight { position:absolute; pointer-events:none; z-index:3; background:#f5d54d60; border-radius:2px; }
+#pdf-preview .pdf-search-highlight.active { background:#eaa93680; outline:2px solid #9a6013; }
+#pdf-thumbnails { overflow:auto; overscroll-behavior:contain; }
+#pdf-thumbnails .pdf-thumbnail { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-height:170px; width:100%; margin:0 0 8px; padding:8px; background:#f5f6f1; border:1px solid transparent; border-radius:6px; cursor:pointer; color:#425240; font:12px system-ui; }
+#pdf-thumbnails .pdf-thumbnail[aria-current="page"] { border-color:#526b45; background:#e8eedf; }
+#pdf-thumbnails .pdf-thumbnail:focus-visible { outline:2px solid #526b45; outline-offset:-2px; }
+#pdf-thumbnails .pdf-thumbnail canvas { display:block; max-width:112px; max-height:144px; background:white; box-shadow:0 1px 5px #24372c25; }
+@media (forced-colors:active) { #pdf-preview .pdf-search-highlight { border:1px solid Highlight; } #pdf-preview .pdf-search-highlight.active { outline:2px solid Highlight; } }

@@ -1,9 +1,11 @@
+import {ensureBackup, openAnnotationData} from './backup-ui.mjs';
 /* Verify the deployed subpath, actual downloads and trial persistence in a real browser. */
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {createReadStream} from 'node:fs';
 import {mkdir, readFile, stat, writeFile} from 'node:fs/promises';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const site = path.join(root, '_site');
@@ -38,7 +40,7 @@ const server = createServer(async (request, response) => {
 });
 let browser;
 async function snapshotData(page) {
-  await page.locator('#data-button').click();
+  await openAnnotationData(page);
   const data = JSON.parse(await page.locator('#data-preview').textContent());
   await page.keyboard.press('Escape');
   await page.locator('#data-dialog').waitFor({state:'hidden'});
@@ -87,6 +89,19 @@ try {
   const zip = await download(page, page.getByRole('link',{name:'下载离线套件 ZIP ↓'}), `html-review-v${version}.zip`);
   assert.deepEqual(await readFile(zip),await readFile(path.join(root,`dist/html-review-v${version}.zip`)));
   report.push('One-click HTML and ZIP downloads match the exact release artifacts');
+  const versionInfo = await (await page.request.get(base+'version.json')).json();
+  assert.equal(versionInfo.version, version);
+  assert.equal(versionInfo.standaloneSha256, createHash('sha256').update(await readFile(standalone)).digest('hex'));
+  await page.waitForFunction(() => document.querySelector('#documents-demo').readyState >= 1);
+  const documentsMedia = await page.locator('#documents-demo').evaluate(v => ({width:v.videoWidth,height:v.videoHeight,duration:v.duration}));
+  assert.deepEqual(documentsMedia, {width:1600,height:1000,duration:20});
+  for (const type of ['docx','pdf']) {
+    for (const name of [`review.${type}`,`${type}.review.json`]) {
+      const result = await page.request.get(base+'examples/documents/'+name);
+      assert(result.ok()); assert.deepEqual(await result.body(),await readFile(path.join(root,'examples/documents',name)));
+    }
+  }
+  report.push('New Word/PDF sample downloads and 20-second recording match the release; version endpoint exposes the standalone SHA-256');
   await page.locator('#launch-film').evaluate(v => v.load());
   await page.waitForFunction(() => document.querySelector('#launch-film').readyState >= 1);
   assert(Math.abs(await page.locator('#launch-film').evaluate(v=>v.duration)-62.833) < .2);
@@ -98,9 +113,10 @@ try {
   for (const width of [320,390,768,1440]) {
     await page.setViewportSize({width,height:1000});
     assert(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth), `Online workspace fits ${width}px`);
+    if(width<=760){await page.locator('#mobile-dock').waitFor({state:'visible'});const preview=await page.locator('.preview-section').boundingBox(),dock=await page.locator('#mobile-dock').boundingBox();assert(preview.y+preview.height<=dock.y,'website navigation does not push reading behind the mobile dock');await page.locator('#mobile-write').click();assert(await page.locator('#comment-input').isVisible());await page.locator('#mobile-reading').click();await page.locator('#review-sidebar').waitFor({state:'hidden'});}
   }
   await page.screenshot({path:path.join(output,'site-online-workspace.png'),fullPage:true});
-  await page.locator('[data-mode="whole"]').click();
+  await page.locator('[data-mode="browse"]').click();
   const comment = '在线体验新增意见：统一章节标题与图表单位。';
   await page.locator('#comment-input').fill(comment); await page.locator('#save-button').click();
   assert.equal(await page.locator('#annotation-count').textContent(),'4');
@@ -121,7 +137,7 @@ try {
   assert.equal((await snapshotData(other)).annotations.find(a=>a.id===saved.id).comment,comment);
   await other.close();
   report.push('A newly opened trial preserves pending recovery instead of overwriting it');
-  const review = await download(page,page.locator('#download-button'),'demo.review.html');
+  await ensureBackup(page); const review = await download(page,page.locator('#download-button'),'demo.review.html');
   const copy = await readFile(review,'utf8');
   assert(!/<(?:style|nav)[^>]*data-site-only/.test(copy)); assert(!copy.includes('class="online-bar"'));
   const offline = await context.newPage(); await offline.goto(pathToFileURL(review).href);
@@ -131,6 +147,19 @@ try {
   assert.equal(await offline.locator('[data-site-only]').count(),0);
   await offline.screenshot({path:path.join(output,'site-offline-copy.png'),fullPage:true});
   report.push('Online review downloads reopen offline with annotations and without website navigation');
+  for (const type of ['docx','pdf']) {
+    const docs = await context.newPage(); await docs.goto(base+'app.html');
+    await docs.waitForFunction(()=>!document.querySelector('#open-button').disabled);
+    await docs.locator('#file-input').setInputFiles(path.join(root,'examples/documents',`${type}.review.json`));
+    await docs.locator('#pair-source').waitFor({state:'visible'});
+    await docs.locator('#file-input').setInputFiles(path.join(root,'examples/documents',`review.${type}`));
+    await docs.waitForFunction(()=>!document.querySelector('#open-button').disabled && document.querySelector('#annotation-count').textContent==='2');
+    await docs.locator(type==='pdf'?'.pdf-page[data-page-number="1"][data-rendered=true]':'#preview-frame[aria-busy=false]').waitFor();
+    const sample = JSON.parse(await readFile(path.join(root,'examples/documents',`${type}.review.json`),'utf8'));
+    assert.equal((await snapshotData(docs)).source.sha256,sample.source.sha256);
+    assert.equal((await snapshotData(docs)).annotations.length,2); await docs.close();
+  }
+  report.push('Online app restores the actual DOCX/PDF sample JSON with its matching original');
   const reduced = await browser.newContext({reducedMotion:'reduce',viewport:{width:390,height:900}});
   const quiet = await reduced.newPage(); await quiet.goto(base);
   assert(await quiet.locator('#quick-demo').evaluate(v=>v.paused));

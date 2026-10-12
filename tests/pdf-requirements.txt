@@ -1,0 +1,5 @@
+# Development/CI fixtures only; the distributed application needs no Python.
+# Python 3.10+ is required by these locked versions.
+reportlab==4.4.9
+pypdf==6.10.0
+Pillow==12.3.0

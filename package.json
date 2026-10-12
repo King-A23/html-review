@@ -1,12 +1,13 @@
 {
   "name": "html-review",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "轻量、离线可用的本地 HTML 批注工具",
+  "description": "离线可用的 HTML、Word 和 PDF 文档审阅与 agent 交接工具",
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "node scripts/build.mjs --check",
     "test": "node scripts/test.mjs",
+    "test:documents": "node scripts/test_documents.mjs",
     "test:e2e": "node tests/e2e.mjs",
     "test:bridge": "node tests/bridge.browser.mjs",
     "test:session": "node tests/session.browser.mjs",
@@ -17,15 +18,40 @@
     "test:results": "node tests/results.browser.mjs",
     "site:build": "npm run release:prepare && node scripts/build_site.mjs",
     "test:site": "node tests/site.browser.mjs",
-    "release:prepare": "npm run check && node scripts/python.mjs scripts/package_release.py"
+    "release:prepare": "npm run check && node scripts/python.mjs scripts/package_release.py",
+    "test:release": "node tests/release-upgrade.browser.mjs",
+    "test:docx": "node tests/docx.browser.mjs",
+    "test:docx-errors": "node tests/docx-errors.browser.mjs",
+    "test:docx-location": "node tests/docx-location.browser.mjs",
+    "test:docx-session": "node tests/docx-session.browser.mjs",
+    "test:simplification": "node tests/ui-simplification.browser.mjs",
+    "test:reload-review": "node tests/reload-review.browser.mjs",
+    "test:pdf": "node tests/pdf.browser.mjs",
+    "test:pdf-errors": "node tests/pdf-errors.browser.mjs",
+    "test:pdf-lifecycle": "node tests/pdf-lifecycle.browser.mjs",
+    "test:pdf-visual": "node tests/pdf-visual.browser.mjs",
+    "test:pdf-copy": "node tests/pdf-copy.browser.mjs",
+    "test:pdf-reading": "node tests/pdf-reading.browser.mjs",
+    "test:location-candidates": "node tests/location-candidates.browser.mjs",
+    "test:ux-flow": "node tests/ux-flow.browser.mjs",
+    "test:workflow": "node tests/workflow.browser.mjs",
+    "test:roundtrip": "node tests/real-roundtrip.browser.mjs",
+    "test:performance": "node tests/performance.browser.mjs",
+    "test:reading-workspace": "node tests/reading-workspace.browser.mjs",
+    "test:product": "node tests/product-experience.browser.mjs",
+    "test:frontend-robustness": "node tests/frontend-robustness.browser.mjs",
+    "test:review-navigation": "node tests/review-navigation.browser.mjs",
+    "test:reading-tools": "node tests/reading-tools.browser.mjs",
+    "release:verify": "node scripts/verify_release.mjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13.0"
   },
   "bin": {
     "html-review": "bin/html-review.mjs"
   },
   "devDependencies": {
+    "esbuild": "0.25.12",
     "playwright": "1.62.0"
   },
   "license": "MIT",
@@ -36,5 +62,11 @@
   "homepage": "https://king-a23.github.io/html-review/",
   "bugs": {
     "url": "https://github.com/King-A23/html-review/issues"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "0.8.15",
+    "jszip": "3.10.2",
+    "mammoth": "1.13.0",
+    "pdfjs-dist": "6.4.299"
   }
 }

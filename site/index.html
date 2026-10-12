@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HTML Review — 让修改意见有落点</title>
-  <meta name="description" content="在 HTML 页面上批注文字、元素、单页或整个文件，把原文、位置与上下文交给 coding agent。本地优先，无需安装或登录。">
+  <meta name="description" content="在 HTML、Word 和 PDF 上留下批注，把原文、位置与上下文交给 coding agent。本地优先，无需安装或登录。">
   <meta name="theme-color" content="#f7f6f0">
   <link rel="canonical" href="https://king-a23.github.io/html-review/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="HTML Review · 让修改意见有落点">
-  <meta property="og:description" content="打开 HTML，圈出问题，把意见交给你使用的 agent。无需安装或登录。">
+  <meta property="og:description" content="打开 HTML、Word 或 PDF，标出问题，把意见交给你使用的 agent。无需安装或登录。">
   <meta property="og:url" content="https://king-a23.github.io/html-review/">
   <meta property="og:image" content="https://king-a23.github.io/html-review/media/social-preview.png">
   <meta property="og:image:width" content="1200">
@@ -28,7 +28,7 @@
   <main id="main">
     <section class="hero wrap" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <p class="eyebrow"><span class="dot"></span> 给人与 coding agent 的页面审阅工具</p>
+        <p class="eyebrow"><span class="dot"></span> 给人与 coding agent 的文档审阅工具</p>
         <h1 id="hero-title">让修改意见，<br><span>有落点。</span></h1>
         <p class="hero-description">“这段再精简一点”，究竟是哪一段？<br>直接在页面上选中目标，写下意见。<br>让原文、位置与上下文，一起交给 agent。</p>
         <div class="actions"><a class="button primary" href="app.html?demo=1">立即体验 <span aria-hidden="true">↗</span></a><a class="button secondary" href="downloads/html-review.html" download="html-review.html" data-download>下载离线版 <span aria-hidden="true">↓</span></a></div>
@@ -44,23 +44,31 @@
     <section class="workflow wrap" aria-labelledby="workflow-title">
       <div class="section-intro"><p class="eyebrow">从意见，到下一轮修改</p><h2 id="workflow-title">三步，就能开始。</h2></div>
       <ol class="steps">
-        <li><span class="step-number">01</span><h3>打开页面</h3><p>独立 HTML 直接打开。带图片或样式？导入整个文件夹。</p></li>
+        <li><span class="step-number">01</span><h3>打开文档</h3><p>拖入 HTML、Word 或 PDF 即可开始。HTML 带本地图片或样式时，可导入文件夹。</p></li>
         <li><span class="step-number">02</span><h3>把意见留在目标上</h3><p>一段文字、一个元素、已有分页区块，或整个文件，都能批注。</p></li>
-        <li><span class="step-number">03</span><h3>交给 agent，再核对</h3><p>复制修改任务，或下载轻量批注。改完重载页面，继续下一轮。</p></li>
+        <li><span class="step-number">03</span><h3>交给 agent，再核对</h3><p>复制修改任务，或下载含原文档的交接包。读取返回文件，再逐条复核。</p></li>
       </ol>
       <p class="handoff-note">由你将任务与原文件交给 agent。工具不自动调用 AI，也不覆盖原文件。</p>
     </section>
+    <section class="documents wrap" aria-labelledby="documents-title">
+      <div class="section-intro"><p class="eyebrow">HTML · Word · PDF</p><h2 id="documents-title">用自己的文档，走完一次审阅。</h2></div>
+      <div class="documents-grid">
+        <article><h3>Word：在段落和表格上写意见</h3><p>连续内容预览，适合审阅文字、表格和图片；不还原 Word 分页与完整排版。</p><img src="assets/docx-preview.png" width="1600" height="1000" loading="lazy" alt="Word 示例中已保存两条段落批注"><div class="sample-links"><a href="examples/documents/review.docx" download="review.docx">下载 DOCX 示例 ↓</a><a href="examples/documents/docx.review.json" download="docx.review.json">配套批注 JSON ↓</a></div></article>
+        <article><h3>PDF：在原页上选中文字或框选</h3><p>保留原页显示，支持区域和单页意见；扫描页用框选，暂不提供 OCR。</p><img src="assets/pdf-preview.png" width="1600" height="1000" loading="lazy" alt="PDF 示例中已保存区域和单页批注"><div class="sample-links"><a href="examples/documents/review.pdf" download="review.pdf">下载 PDF 示例 ↓</a><a href="examples/documents/pdf.review.json" download="pdf.review.json">配套批注 JSON ↓</a></div></article>
+      </div>
+      <figure class="documents-film"><video id="documents-demo" controls playsinline preload="metadata" width="1600" height="1000" poster="assets/docx-preview.png" aria-label="20 秒 Word 与 PDF 真实操作演示"><source src="media/documents-demo.mp4" type="video/mp4"></video><figcaption>20 秒真实操作 · 示例内容全部虚构。先打开批注 JSON，再选择对应原文档，即可继续审阅。</figcaption></figure>
+    </section>
     <section id="demo" class="film wrap" aria-labelledby="film-title">
-      <div class="film-heading"><div><p class="eyebrow">看一次完整流程</p><h2 id="film-title">从“你说的是哪里？”<br>到清楚的修改任务。</h2></div><p>真实报告 · 真实批注 · 真实导出<br>约一分钟，了解它如何工作。</p></div>
+      <div class="film-heading"><div><p class="eyebrow">HTML 流程参考 · 旧版界面</p><h2 id="film-title">从“你说的是哪里？”<br>到清楚的修改任务。</h2></div><p>虚构报告 · 真实批注 · 真实导出<br>约一分钟，了解它如何工作。</p></div>
       <video id="launch-film" controls playsinline preload="metadata" width="1920" height="1080" poster="media/social-preview.png" aria-label="HTML Review 中文宣传片"><source src="{{LAUNCH_VIDEO}}" type="video/mp4"></video>
     </section>
     <section class="start wrap" aria-labelledby="start-title">
-      <div><p class="eyebrow">下一条意见，从这里开始</p><h2 id="start-title">打开就能用。</h2><p>先体验示例，或下载到本机，开始审阅自己的页面。</p></div>
+      <div><p class="eyebrow">下一条意见，从这里开始</p><h2 id="start-title">打开就能用。</h2><p>先体验示例，或下载到本机，开始审阅自己的文档。</p></div>
       <div class="actions"><a class="button primary" href="app.html?demo=1">立即体验 <span aria-hidden="true">↗</span></a><a class="button secondary" href="downloads/html-review.html" download="html-review.html" data-download>下载离线版 <span aria-hidden="true">↓</span></a></div>
     </section>
     <section class="support wrap" aria-label="使用帮助">
       <details><summary>使用帮助与更多下载 <span aria-hidden="true">＋</span></summary><div class="support-content">
-        <div><h3>怎么开始？</h3><p>下载后用 Chrome 或 Edge 打开 <code>html-review.html</code>，Windows、macOS 和 Linux 均可使用。移动端可观看演示，完整审阅建议使用电脑。</p><a href="https://github.com/King-A23/html-review/blob/main/docs/QUICKSTART.md">快速开始 ↗</a> · <a href="https://github.com/King-A23/html-review/blob/main/docs/WINDOWS.md">Windows 使用 ↗</a></div>
+        <div><h3>怎么开始？</h3><p>下载后用 Chrome 或 Edge 打开 <code>html-review.html</code>，Windows、macOS 和 Linux 均可使用。窄屏也可阅读和写批注；精细框选与长文档审阅建议使用电脑。</p><a href="https://github.com/King-A23/html-review/blob/main/docs/QUICKSTART.md">快速开始 ↗</a> · <a href="https://github.com/King-A23/html-review/blob/main/docs/WINDOWS.md">Windows 使用 ↗</a></div>
         <div><h3>需要脚本、示例或校验？</h3><p>单文件已包含完整工具。离线套件另含示例、说明与 agent 交接脚本。</p><a href="downloads/html-review-v{{VERSION}}.zip" download>下载离线套件 ZIP ↓</a> · <a href="downloads/SHA256SUMS.txt" download>校验文件 ↓</a></div>
         <div><h3>页面和数据如何处理？</h3><p>原文件与批注在本机处理。下载副本以长期保留；只导入可信 HTML，原页面的脚本及网络资源仍可能运行或联网。</p><a href="https://github.com/King-A23/html-review/blob/main/docs/REFERENCE.md">完整参考 ↗</a></div>
       </div></details>

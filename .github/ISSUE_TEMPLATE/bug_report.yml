@@ -5,9 +5,23 @@ body:
     id: environment
     attributes:
       label: Browser, OS and version / 浏览器、系统与版本
-      placeholder: Chrome 153, macOS, HTML Review v0.1.0
+      placeholder: Edge 155, Windows 11, HTML Review v0.2.0
     validations:
       required: true
+  - type: dropdown
+    id: document_format
+    attributes:
+      label: Document format / 文档格式
+      options:
+        - HTML
+        - DOCX / Word
+        - PDF
+        - Review workspace / 审阅副本
+  - type: input
+    id: entry_point
+    attributes:
+      label: Opened from / 使用入口
+      placeholder: Downloaded HTML, extracted ZIP, online app / 单文件、ZIP 解压、在线版
   - type: textarea
     id: reproduction
     attributes:

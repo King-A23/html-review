@@ -3,8 +3,14 @@ test-results/
 *.log
 .DS_Store
 output/playwright/
+output/docx-review/
+output/docx-user-test/
+output/docx-word-comparison/
+output/pdf-review/
 .playwright-cli/
 __pycache__/
 *.pyc
 dist/
 _site/
+output/ux-review/
+output/iteration-review/
