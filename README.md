@@ -60,17 +60,17 @@ HTML 主要面向**独立 HTML**，以及所选文件夹内带相对 CSS、图�
 
 ## 文档与示例
 
-[快速开始](docs/QUICKSTART.md) · [Windows / PowerShell](docs/WINDOWS.md) · [完整参考](docs/REFERENCE.md) · [验证记录](VERIFICATION.md) · [v0.2.0 候选发布说明](docs/releases/v0.2.0.md) · [v0.1.0 历史说明](docs/releases/v0.1.0.md)
+[快速开始](docs/QUICKSTART.md) · [Windows / PowerShell](docs/WINDOWS.md) · [完整参考](docs/REFERENCE.md) · [验证记录](VERIFICATION.md) · [v0.2.0 发布说明](docs/releases/v0.2.0.md) · [v0.1.0 历史说明](docs/releases/v0.1.0.md)
 
 新格式：[DOCX](examples/documents/review.docx) · [PDF](examples/documents/review.pdf) · [示范批注与闭环操作](examples/documents/README.md)。预览：[Word](docs/docx-preview.png) · [PDF](docs/pdf-preview.png) · [真实操作短录屏](docs/media/documents-demo.mp4)。
 
 HTML 示例：[独立页面](examples/demo.html) · [已有分页](examples/pages.html) · [带本地资源](examples/with-assets/index.html) · [可编辑批注副本](examples/demo.review.html)
 
-计划发布资产为 `html-review.html`、`html-review-v0.2.0.zip` 和 `SHA256SUMS.txt`。发布完成后可在 [v0.2.0](https://github.com/King-A23/html-review/releases/tag/v0.2.0) 获取；在此之前使用候选源码构建，此前 v0.1.0 Release 当前仍是草稿，不能作为已公开下载入口；历史版本与源码可用于回退。
+发布资产为 `html-review.html`、`html-review-v0.2.0.zip` 和 `SHA256SUMS.txt`，见 [v0.2.0 Release](https://github.com/King-A23/html-review/releases/tag/v0.2.0)。草稿公开后即可下载；也可从源码构建。各版本的实际验收记录见对应 Release 与 CI，发布和回退步骤见[发布流程](docs/RELEASE_PROCESS.md)。
 ## 开发与反馈
 
 开发需 Node.js 22.13+、Python 3.8+；成品工具无需这些运行环境。`npm ci` 后运行 `npm run build`、`npm run check` 和 `npm test`。文档功能发布门槛为 `npm run test:documents`（17 套必跑检查），依赖安装见[开发参考](docs/REFERENCE.md#开发与测试)。浏览器测试与可选命令行入口见[开发参考](docs/REFERENCE.md#开发与测试)；Windows 操作见[专门说明](docs/WINDOWS.md)。
 
 采用 [MIT 许可证](LICENSE)。v0.2.0 继续作为 public beta，界面和数据接口可能调整。通过 [GitHub Issues](https://github.com/King-A23/html-review/issues) 反馈问题时，请附浏览器版本、复现步骤和可公开的最小文档示例。
 
-本次未进行 Windows 实体机或实体手机测试；浏览器窄屏模拟不等同于手机实测，CI 配置也不等同于已通过的运行记录。
+本次未进行 Windows 实体机或实体手机测试；浏览器窄屏模拟不等同于手机实测。Windows / Linux、Node 22.13 / 24、Windows Edge 和文档专项的实际 CI 运行链接随 Release 提供。

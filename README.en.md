@@ -59,16 +59,16 @@ See the [full reference](docs/REFERENCE.md) for encoding, resource handling, sho
 
 ## Documentation and examples
 
-[Quick start](docs/QUICKSTART.md) · [Windows / PowerShell](docs/WINDOWS.md) · [Full reference](docs/REFERENCE.md) · [Verification](VERIFICATION.md) · [v0.2.0 candidate notes](docs/releases/v0.2.0.md) · [v0.1.0 history](docs/releases/v0.1.0.md)
+[Quick start](docs/QUICKSTART.md) · [Windows / PowerShell](docs/WINDOWS.md) · [Full reference](docs/REFERENCE.md) · [Verification](VERIFICATION.md) · [v0.2.0 release notes](docs/releases/v0.2.0.md) · [v0.1.0 history](docs/releases/v0.1.0.md)
 
 New formats: [DOCX](examples/documents/review.docx) · [PDF](examples/documents/review.pdf) · [sample annotations and workflow](examples/documents/README.md). Previews: [Word](docs/docx-preview.png) · [PDF](docs/pdf-preview.png) · [recorded browser demo](docs/media/documents-demo.mp4).
 
 HTML examples: [standalone page](examples/demo.html) · [existing pages](examples/pages.html) · [local resources](examples/with-assets/index.html) · [editable review copy](examples/demo.review.html)
 
-Planned assets are `html-review.html`, `html-review-v0.2.0.zip` and `SHA256SUMS.txt`, available from [v0.2.0](https://github.com/King-A23/html-review/releases/tag/v0.2.0) once published. Until then, build the candidate source; the existing v0.1.0 Release is still a draft, not a public download. Preserve historical source and assets for rollback.
+Release assets are `html-review.html`, `html-review-v0.2.0.zip` and `SHA256SUMS.txt`, available from [the v0.2.0 Release](https://github.com/King-A23/html-review/releases/tag/v0.2.0) once the draft is published. You can also build from source. Each Release links to its verification and CI results; see the [publication and rollback process](docs/RELEASE_PROCESS.md).
 ## Development and feedback
 
-Development requires Node.js 22.13+ and Python 3.8+; the standalone tool requires neither. Run `npm ci`, then `npm run build`, `npm run check` and `npm test`. Rebuild and commit `index.html` with source changes. Browser suites and the optional CLI are documented in the [development reference](docs/REFERENCE.md#开发与测试). The document release gate is `npm run test:documents` (17 mandatory suites); see the development reference for Python, font and Poppler dependencies. Windows / Linux CI configuration describes intended coverage, not a passing run for this candidate.
+Development requires Node.js 22.13+ and Python 3.8+; the standalone tool requires neither. Run `npm ci`, then `npm run build`, `npm run check` and `npm test`. Rebuild and commit `index.html` with source changes. Browser suites and the optional CLI are documented in the [development reference](docs/REFERENCE.md#开发与测试). The document release gate is `npm run test:documents` (17 mandatory suites); see the development reference for Python, font and Poppler dependencies. Each Release links to actual Windows / Linux, Node 22.13 / 24, Windows Edge and document CI runs.
 
 [MIT license](LICENSE). v0.2.0 remains a public beta; the interface and data APIs may evolve. Report issues through [GitHub Issues](https://github.com/King-A23/html-review/issues) with your browser version, reproduction steps and a shareable minimal document example.
 
