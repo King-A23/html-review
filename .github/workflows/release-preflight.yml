@@ -10,7 +10,9 @@ on:
         type: string
 
 permissions:
-  contents: read
+  # GitHub hides draft releases from read-only tokens. This manual gate only
+  # reads/downloads the draft; it never publishes or modifies release assets.
+  contents: write
   actions: read
   pages: read
 
