@@ -8,7 +8,7 @@ Open HTML, Word (DOCX) or PDF and leave feedback on text, images or regions in t
 
 Download the file and open it in your browser. No installation, account, server or AI configuration is required. **The interface is currently in Chinese.** Modern desktop browsers on Windows, macOS and Linux are the target; Chrome or Edge is recommended.
 
-**v0.2.0 is a release candidate introducing DOCX and PDF.** This documentation describes the candidate source and planned assets. Check Releases for the published version; the online app and public downloads should not yet be assumed to include these changes.
+**v0.2.0 introduces DOCX and PDF.** See [Releases](https://github.com/King-A23/html-review/releases) for version notes, supported features and downloads; public availability is shown there.
 
 ![Review Word and PDF documents, save feedback and hand off the original files](docs/media/documents-demo.gif)
 

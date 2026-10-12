@@ -1,0 +1,53 @@
+name: Release preflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Frozen draft release to verify (does not publish)
+        required: true
+        default: v0.2.0
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  pages: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      PAGES_ENABLED: ${{ vars.PAGES_ENABLED }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npm run site:build
+      - name: Verify draft target, main CI, uploaded assets and checksums
+        run: npm run release:verify -- "$RELEASE_TAG"
+      - name: Verify Pages is ready for the publication event
+        run: |
+          test "$PAGES_ENABLED" = true
+          test "$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .build_type)" = workflow
+          test "$(gh api "repos/$GITHUB_REPOSITORY/environments/github-pages" --jq '.protection_rules | length')" = 0
+          test "$(gh api "repos/$GITHUB_REPOSITORY/environments/github-pages" --jq '.deployment_branch_policy == null')" = true
+      - name: Save publication readiness evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-preflight
+          path: test-results/release-preflight.json
+          if-no-files-found: error

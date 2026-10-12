@@ -30,7 +30,7 @@ test('release downloads preserve the standalone app, use a curated bundle and ma
       'tests/docx_inspect_test.py','tests/roundtrip-fixture.py','tests/roundtrip-verify.py', 'tests/pdf-requirements.txt',
       'examples/documents/review.docx','examples/documents/review.pdf','examples/documents/docx.review.json','examples/documents/pdf.review.json',
       'docs/docx-preview.png','docs/pdf-preview.png','docs/media/documents-demo.mp4','docs/media/documents-demo.gif',
-      'docs/RELEASE_PROCESS.md','docs/RELEASE_VALIDATION.md','docs/DOCX_DEVELOPMENT.md','docs/PDF_DEVELOPMENT.md']) assert(archive.names.includes(`html-review/${name}`), name);
+      'scripts/verify_release.mjs','docs/RELEASE_PROCESS.md','docs/RELEASE_VALIDATION.md','docs/DOCX_DEVELOPMENT.md','docs/PDF_DEVELOPMENT.md']) assert(archive.names.includes(`html-review/${name}`), name);
     assert(archive.names.includes('html-review/tests/helpers/pdf-fixture.py'), 'PDF fixture generator travels with its development tests');
     assert(archive.names.every(name => name.startsWith('html-review/')));
     assert(archive.names.every(name => !name.includes('\\')), 'ZIP paths use portable forward slashes on every OS');

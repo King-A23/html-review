@@ -44,13 +44,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
         shell: bash
-        run: |
-          node -e 'const p=require("./package.json"); if(process.env.RELEASE_TAG!=="v"+p.version) throw Error("Release tag/version mismatch");'
-          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = false
-          candidate_sha=$(git rev-parse HEAD)
-          test "$(gh run list --workflow ci.yml --commit "$candidate_sha" --status success --json databaseId --jq length)" -gt 0
-          gh release download "$RELEASE_TAG" --dir release-assets --pattern html-review.html --pattern 'html-review-v*.zip' --pattern SHA256SUMS.txt
-          node -e 'const fs=require("fs");const p=require("./package.json");for(const name of ["html-review.html",`html-review-v${p.version}.zip`,"SHA256SUMS.txt"]){if(!fs.readFileSync("dist/"+name).equals(fs.readFileSync("release-assets/"+name)))throw Error("Release asset/source mismatch: "+name);}'
+        run: npm run release:verify -- "$RELEASE_TAG" --published
       - run: npm run test:site
       - name: Save browser verification
         if: always()

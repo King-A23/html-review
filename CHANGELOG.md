@@ -2,7 +2,7 @@
 
 本文件记录面向使用者的版本变化。实际发布状态以 [Releases](https://github.com/King-A23/html-review/releases) 为准。
 
-## v0.2.0 — 发布候选 / Unreleased
+## v0.2.0 — Public beta
 
 首次加入 Word（DOCX）与 PDF 审阅，沿用原文件、目标、意见和 agent 回报的闭环：
 
@@ -15,7 +15,7 @@
 
 DOCX 不还原 Word 完整排版、不写回原生批注；PDF 暂无 OCR，部分修改需另附可编辑源。本次未进行 Windows 实体机或实体手机测试；跨平台 CI 的配置不能视为本次通过记录。
 
-计划资产：`html-review.html`、`html-review-v0.2.0.zip`、`SHA256SUMS.txt`。候选详情和发布顺序见 [v0.2.0 发布说明](docs/releases/v0.2.0.md)。本节不代表已发布或官网已升级；下方为历史版本记录。
+发布资产：`html-review.html`、`html-review-v0.2.0.zip`、`SHA256SUMS.txt`。版本详情和发布顺序见 [v0.2.0 发布说明](docs/releases/v0.2.0.md)。实际公开状态以 Releases 为准；下方为历史版本记录。
 
 ## v0.1.0 — Public beta
 

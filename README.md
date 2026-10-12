@@ -8,7 +8,7 @@
 
 下载后用浏览器打开即可使用，无需安装、登录、启动服务器或配置 AI 服务。界面目前为中文，面向 Windows、macOS 和 Linux 的现代桌面浏览器；推荐 Chrome 或 Edge。
 
-**v0.2.0 为发布候选版，首次加入 DOCX / PDF。** 本页对应候选源码与待发布资产；线上工具部署需另行核实，公开下载以 Releases 为准，尚不能据此认为已升级。
+**v0.2.0 首次加入 DOCX / PDF。** 版本说明、支持边界和下载资产见 [Releases](https://github.com/King-A23/html-review/releases)；公开状态以 Releases 为准。
 
 ![HTML Review 的 Word 与 PDF 真实批注操作](docs/media/documents-demo.gif)
 

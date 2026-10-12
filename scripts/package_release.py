@@ -19,7 +19,7 @@ FILES = (
     "scripts/inspect_review.py", "scripts/update_review.py",
     "scripts/build.mjs", "scripts/package_release.py", "scripts/capture_docs.mjs", "scripts/build_site.mjs",
     "package.json", "package-lock.json", "bin/html-review.mjs", ".gitattributes",
-    "scripts/test.mjs", "scripts/test_documents.mjs", "scripts/python.mjs", "tests/pdf-requirements.txt",
+    "scripts/verify_release.mjs", "scripts/test.mjs", "scripts/test_documents.mjs", "scripts/python.mjs", "tests/pdf-requirements.txt",
     "scripts/capture_documents.mjs", "scripts/create_document_examples.py",
 )
 

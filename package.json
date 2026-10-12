@@ -41,7 +41,8 @@
     "test:product": "node tests/product-experience.browser.mjs",
     "test:frontend-robustness": "node tests/frontend-robustness.browser.mjs",
     "test:review-navigation": "node tests/review-navigation.browser.mjs",
-    "test:reading-tools": "node tests/reading-tools.browser.mjs"
+    "test:reading-tools": "node tests/reading-tools.browser.mjs",
+    "release:verify": "node scripts/verify_release.mjs"
   },
   "engines": {
     "node": ">=22.13.0"
