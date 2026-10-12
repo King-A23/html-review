@@ -1,3 +1,4 @@
+import {fileURLToPath} from 'node:url';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -101,7 +102,7 @@ test('DOCX historical mappings retain old source hashes without requiring curren
 test('Python validates target history and emits only revisions/kinds, preserving old DOCX source hashes', async t => {
   try { await runPython(['--version']); } catch { t.skip('Python is unavailable'); return; }
   const dir = await mkdtemp(path.join(tmpdir(), 'review-target-history-'));
-  const inspector = new URL('../scripts/inspect_review.py', import.meta.url).pathname;
+  const inspector = fileURLToPath(new URL('../scripts/inspect_review.py', import.meta.url));
   try {
     for (const data of [await fixture(), await docxHistoryFixture()]) {
       const source = path.join(dir, data.source.name), review = path.join(dir,'review.json');

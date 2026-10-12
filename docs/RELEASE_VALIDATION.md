@@ -22,6 +22,8 @@
 
 浏览器证据写入被忽略的 `test-results/` 与 `output/`，不混入发布包。GitHub CI 的准确状态以候选 PR 对应 SHA 的检查为准；本记录不把 CI 配置当作执行成功。CI 包含 Linux / Windows、Node 22.13 / 24、Windows Edge，以及两档 Node 的文档专项门禁。
 
+Windows CI 发现 DOCX 缩进、PDF 检查器与定位历史测试误将 URL pathname 作为磁盘路径，造成 `/D:/...` 无法打开。相关构建及 Python 入口统一改为 `fileURLToPath`，保留盘符并解码文件路径；修复后的 Windows 结果以最终提交检查为准。
+
 ## 依赖审计
 
 锁定依赖的 `npm audit` 报告 **3 个 moderate、0 个 high、0 个 critical**，三项来自同一条链：`mammoth@1.13.0 → argparse@1.0.10 → sprintf-js@1.0.3`。公告 [GHSA-hp3w-g68c-fv3c](https://github.com/advisories/GHSA-hp3w-g68c-fv3c) 涉及不受控格式精度造成 RangeError / 拒绝服务，当前无已公布的修复版本。

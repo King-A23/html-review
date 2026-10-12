@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
+import {fileURLToPath} from 'node:url';
 import {webcrypto} from 'node:crypto';
 import {build} from 'esbuild';
 import JSZip from 'jszip';
 import {DOMParser} from '@xmldom/xmldom';
 import {createDocxFixture} from './docx-fixtures.mjs';
 const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
-const bundled=await build({entryPoints:[new URL('../src/docx-worker.js',import.meta.url).pathname],bundle:true,write:false,platform:'browser',format:'iife',globalName:'adapter'});
+const bundled=await build({entryPoints:[fileURLToPath(new URL('../src/docx-worker.js',import.meta.url))],bundle:true,write:false,platform:'browser',format:'iife',globalName:'adapter'});
 const context={crypto:webcrypto,TextDecoder,TextEncoder,Uint8Array,ArrayBuffer,URL,Blob,setImmediate,clearImmediate,setTimeout,clearTimeout,console};
 vm.runInNewContext(bundled.outputFiles[0].text,context);
 async function convert(left='720',direct='') {
